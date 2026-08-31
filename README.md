@@ -2,7 +2,7 @@
 
 Student Grouper is a local-first classroom tool for making student groups, continuing station rotations across days, and printing picture-friendly schedules for young readers.
 
-[Try it in a browser](https://excodecowboy.github.io/StudentGrouper/) · [Download for Mac](https://github.com/ExCodeCowboy/StudentGrouper/releases/latest)
+[Public site](https://student-grouper.jkodesign.chatgpt.site) · [Try it in a browser](https://excodecowboy.github.io/StudentGrouper/) · [Download for Mac](https://github.com/ExCodeCowboy/StudentGrouper/releases/latest)
 
 ![Student Grouper: classroom groups and station rotations, made simpler](website/public/og.png)
 
