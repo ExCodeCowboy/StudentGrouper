@@ -9,6 +9,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "start": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "test": "node scripts/run-domain-tests.mjs",
     "lint": "oxlint src tests scripts components/ui/button.tsx components/ui/dialog.tsx components/ui/input.tsx lib/utils.ts",
     "format": "oxfmt"
@@ -26,17 +29,18 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.2.1",
+    "@tauri-apps/cli": "^2.11.4",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
-    "esbuild": "0.27.3",
+    "esbuild": "^0.28.2",
     "oxfmt": "0.61.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
-    "vite": "8.0.13"
+    "vite": "^8.2.2"
   },
   "type": "module"
 }

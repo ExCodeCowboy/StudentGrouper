@@ -8,6 +8,7 @@ import type {
   Student,
 } from './model';
 import { makeId } from './model';
+import { cloneData } from './platform';
 
 function stationForAssignment(
   session: RotationSession,
@@ -255,7 +256,7 @@ export function fillOpenSpots(
   session: RotationSession,
   groupSet: GroupSet,
 ): RotationSession {
-  const working = structuredClone(session);
+  const working = cloneData(session);
   for (let index = 0; index < working.rounds.length; index += 1) {
     const round = working.rounds[index];
     if (round.completed) continue;

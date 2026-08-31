@@ -1,24 +1,45 @@
 # Student Grouper
 
-Student Grouper is a local-first classroom tool for building student groups and continuing station rotations across multiple days. It is designed to be quick to operate on a 13-inch laptop and to produce pictographic rotation charts for young readers.
+Student Grouper is a local-first classroom tool for making student groups, continuing station rotations across days, and printing picture-friendly schedules for young readers.
 
-## Current application
+[Try it in a browser](https://excodecowboy.github.io/StudentGrouper/) · [Download for Mac](https://github.com/ExCodeCowboy/StudentGrouper/releases/latest)
 
-- Paste a class roster and edit language, gender, reading, math, and writing information.
-- Add simple “prefer together” and “keep apart” grouping notes.
-- Save multiple group arrangements.
-- Generate mixed or similar skill groups with an optional gender or language preference.
-- Drag only the student you want to move; that placement locks without moving anyone else.
-- Edit rotations by station or by group.
-- Drag a rotation assignment to implicitly lock it.
-- Fill empty schedule cells without changing placed work, or explicitly rebuild only unlocked future work.
-- Choose different station lineups for different days.
-- Mark completed rounds so later days continue from each learner’s actual station history, even after regrouping.
-- Add custom GIF, JPG, or PNG station pictures.
-- Print a landscape chart with group symbols, station pictures, and station words.
-- Automatically save locally and export or restore a complete backup.
+![Student Grouper: classroom groups and station rotations, made simpler](website/public/og.png)
+
+## Why it exists
+
+This was made for the small, repetitive planning decisions that consume a surprising amount of a teacher’s morning. The app can make a useful first draft, but the teacher stays in control:
+
+- Build mixed or similar reading, math, or writing groups.
+- Add one clear secondary preference, such as mixed gender or shared language.
+- Note students who work well together or should have space.
+- Drag one student without causing other students to jump between groups.
+- Lock deliberate choices and rebuild only what remains unlocked.
+- Continue activity history across dates, even after regrouping.
+- Plan activities and reusable classroom locations separately.
+- Print group routes with activity pictures, words, colors, and symbols.
+- Export and restore a complete local backup.
+
+## Privacy
+
+Student Grouper has no accounts, cloud database, analytics, advertising, or tracking. The Mac app stores classroom information on that Mac. The browser version stores it inside that browser on that device. Exported backups go only where the teacher chooses to save them.
+
+The app was created with help from AI, but AI is not part of the running app and student information is never sent to an AI model.
+
+## Mac downloads
+
+The release workflow produces two DMG installers:
+
+- `x86_64` for older Intel MacBook Air models.
+- `aarch64` for Apple-silicon Macs (M1 and newer).
+
+The current minimum is macOS 10.15. Early public builds are ad-hoc signed rather than Apple-notarized, so macOS may require a Control-click → **Open** confirmation on first launch.
+
+The desktop shell is Tauri. It uses the Mac’s built-in webview instead of shipping a second browser engine, so the application code and local data model are shared with the browser build.
 
 ## Development
+
+Install and run the classroom app:
 
 ```text
 npm install
@@ -28,15 +49,21 @@ npm run dev
 Validation:
 
 ```text
-npm run test
+npm test
 npm run lint
 npm run build
 ```
 
-## Mac packaging boundary
+Run inside the desktop shell:
 
-The application is intentionally a static Vite/React build. It has no server routes, hosted database, cloud bindings, or Node-only code in the product interface. `npm run build` produces the complete interface in `dist/`.
+```text
+npm run tauri:dev
+```
 
-Local persistence sits behind `PersistencePort` in `src/storage.ts`. The current implementation uses IndexedDB, which also works inside a macOS webview. A future Tauri wrapper can initially package the existing `dist/` output unchanged. If native file storage is later desired, only the persistence adapter needs to change; the data model, grouping engine, rotation engine, screens, printing layout, and image workflow remain the same.
+The public information site lives in `website/` and has its own lockfile and scripts.
 
-Mac packaging is deliberately not configured yet. That phase should add the native shell, app identity, icon, signing/notarization settings, and Mac-specific print verification without rebuilding the product.
+## Product boundaries
+
+The project intentionally does not include a student information system integration, behavior tracking, cloud sync, accounts, analytics, AI scheduling, weighted optimization controls, or a multi-week calendar editor. The working product contract is in [PRODUCT_SPEC.md](PRODUCT_SPEC.md).
+
+Created with AI for a teacher I know.

@@ -1,0 +1,55 @@
+name: Build the Mac downloads
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-mac:
+    name: ${{ matrix.name }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Older Intel Macs
+            target: x86_64-apple-darwin
+          - name: Apple silicon Macs
+            target: aarch64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+      - run: npm ci
+      - run: npm test
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: '-'
+        with:
+          tagName: v__VERSION__
+          releaseName: Student Grouper v__VERSION__
+          releaseBody: |
+            First public Mac release of Student Grouper.
+
+            - Choose `x86_64` for an older Intel MacBook Air.
+            - Choose `aarch64` for an M1 or newer Mac.
+            - This early build is ad-hoc signed rather than Apple-notarized. On first launch, Control-click the app, choose Open, and confirm.
+
+            Student data stays on the device. Export a backup before moving classroom data between devices.
+          releaseDraft: false
+          prerelease: false
+          uploadUpdaterJson: false
+          releaseAssetNamePattern: Student-Grouper-[arch].[ext]
+          args: --target ${{ matrix.target }}

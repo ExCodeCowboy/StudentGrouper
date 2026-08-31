@@ -142,4 +142,5 @@ export const levelLabel = (value: SkillLevel) =>
   value === 1 ? 'Low' : value === 2 ? 'Medium' : 'High';
 
 export const makeId = (prefix: string) =>
-  `${prefix}-${crypto.randomUUID()}`;
+  `${prefix}-${randomUuid()}`;
+import { randomUuid } from './platform';

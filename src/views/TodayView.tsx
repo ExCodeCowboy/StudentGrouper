@@ -39,6 +39,7 @@ import type {
   ScheduleIssue,
   StationIconKey,
 } from '../model';
+import { makeId } from '../model';
 import { normalizeUploadedImage } from '../storage';
 import {
   calendarMonth,
@@ -258,7 +259,7 @@ export function TodayView({
         (item) => !item.archived && !usedLocationIds.has(item.id),
       ) ?? classroom.locations.find((item) => !item.archived);
       return [...plans, {
-        id: `station-${crypto.randomUUID()}`,
+        id: makeId('station'),
         activityName: '',
         locationId: location?.id ?? '',
         iconKey: 'independent',

@@ -36,6 +36,7 @@ import type {
   Student,
 } from './model';
 import { makeId } from './model';
+import { cloneData } from './platform';
 import { createGroupShells, createSampleData } from './sample';
 import { generateGroups, moveStudent } from './grouping';
 import {
@@ -199,7 +200,7 @@ export function App() {
       const currentClassroom = currentData.classrooms.find((item) => item.id === currentData.activeClassroomId);
       if (!currentClassroom) return currentData;
       if (remember) {
-        setUndoStack((stack) => [...stack.slice(-29), structuredClone(currentData)]);
+        setUndoStack((stack) => [...stack.slice(-29), cloneData(currentData)]);
       }
       return replaceClassroom(currentData, updater(currentClassroom));
     });
@@ -559,7 +560,7 @@ export function App() {
     if (!file) return;
     try {
       const restored = await readBackup(file);
-      setUndoStack((stack) => [...stack.slice(-29), structuredClone(data)]);
+      setUndoStack((stack) => [...stack.slice(-29), cloneData(data)]);
       setData(restored);
       setActionIssue('');
     } catch (error) {
@@ -571,7 +572,7 @@ export function App() {
     const name = newClassName.trim();
     if (!name) return;
     const next = createBlankClassroom(name);
-    setUndoStack((stack) => [...stack.slice(-29), structuredClone(data)]);
+    setUndoStack((stack) => [...stack.slice(-29), cloneData(data)]);
     setData((current) => ({
       ...current,
       classrooms: [...current.classrooms, next],
@@ -597,7 +598,7 @@ export function App() {
   const renameActiveClass = () => {
     const name = renameClassName.trim();
     if (!name) return;
-    setUndoStack((stack) => [...stack.slice(-29), structuredClone(data)]);
+    setUndoStack((stack) => [...stack.slice(-29), cloneData(data)]);
     setData((current) => renameClassroomData(current, current.activeClassroomId, name));
     setRenameClassOpen(false);
   };
@@ -610,7 +611,7 @@ export function App() {
 
   const deleteActiveClass = () => {
     if (data.classrooms.length <= 1) return;
-    setUndoStack((stack) => [...stack.slice(-29), structuredClone(data)]);
+    setUndoStack((stack) => [...stack.slice(-29), cloneData(data)]);
     setData((current) => removeClassroomData(current, current.activeClassroomId));
     setDeleteClassOpen(false);
     setActionIssue('');
