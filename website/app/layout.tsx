@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://student-grouper.jkodesign.chatgpt.site'),
+  metadataBase: new URL('https://excodecowboy.github.io/StudentGrouper/'),
   title: 'Student Grouper — Simple classroom groups and station rotations',
   description:
     'Build student groups, continue station rotations across days, and print picture-friendly schedules. Local-first and made for teachers.',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: '/',
     images: [{
-      url: 'https://raw.githubusercontent.com/ExCodeCowboy/StudentGrouper/master/website/public/og.png',
+      url: 'https://excodecowboy.github.io/StudentGrouper/og.png',
       width: 1737,
       height: 909,
       alt: 'Student Grouper — classroom groups and station rotations, made simpler',
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Student Grouper',
     description: 'Classroom groups and station rotations, made simpler.',
-    images: ['https://raw.githubusercontent.com/ExCodeCowboy/StudentGrouper/master/website/public/og.png'],
+    images: ['https://excodecowboy.github.io/StudentGrouper/og.png'],
   },
   alternates: { canonical: '/' },
 };

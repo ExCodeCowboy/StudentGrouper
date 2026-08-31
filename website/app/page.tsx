@@ -74,7 +74,7 @@ export default function Home() {
               Download for Mac
               <ArrowRight size={18} aria-hidden="true" />
             </a>
-            <a className="secondary-action" href="https://excodecowboy.github.io/StudentGrouper/">
+            <a className="secondary-action" href="https://excodecowboy.github.io/StudentGrouper/app/">
               Try it in your browser
             </a>
           </div>
@@ -187,7 +187,7 @@ export default function Home() {
             together—or need space. Reuse yesterday’s station setup. See a plain-language
             warning only when the schedule truly needs attention.
           </p>
-          <a className="text-link" href="https://excodecowboy.github.io/StudentGrouper/">
+          <a className="text-link" href="https://excodecowboy.github.io/StudentGrouper/app/">
             Open the browser version <ArrowRight size={17} aria-hidden="true" />
           </a>
         </div>
@@ -225,7 +225,7 @@ export default function Home() {
           <a className="primary-action" href="https://github.com/ExCodeCowboy/StudentGrouper/releases/latest">
             <Apple size={19} aria-hidden="true" /> Download for Mac
           </a>
-          <a className="secondary-action" href="https://excodecowboy.github.io/StudentGrouper/">Use in a browser</a>
+          <a className="secondary-action" href="https://excodecowboy.github.io/StudentGrouper/app/">Use in a browser</a>
         </div>
       </section>
 

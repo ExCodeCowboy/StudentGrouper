@@ -28,10 +28,19 @@ jobs:
       - name: Build the browser app
         run: npm run build
         env:
-          VITE_BASE_PATH: /StudentGrouper/
+          VITE_BASE_PATH: /StudentGrouper/app/
+      - name: Assemble the public site
+        shell: bash
+        run: |
+          mkdir -p pages-dist/app
+          cp -R public-site/. pages-dist/
+          cp website/app/globals.css pages-dist/site.css
+          cp website/public/favicon.svg pages-dist/favicon.svg
+          cp website/public/og.png pages-dist/og.png
+          cp -R dist/. pages-dist/app/
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: pages-dist
 
   deploy:
     environment:

@@ -36,7 +36,7 @@ export default function HelpPage() {
             <li>Use it in the same browser on the same computer so its saved data is there.</li>
             <li>Export a backup before clearing browser data or moving to another device.</li>
           </ol>
-          <a className="text-link" href="https://excodecowboy.github.io/StudentGrouper/">Open the browser version <ExternalLink size={16} aria-hidden="true" /></a>
+          <a className="text-link" href="https://excodecowboy.github.io/StudentGrouper/app/">Open the browser version <ExternalLink size={16} aria-hidden="true" /></a>
         </section>
 
         <section>
