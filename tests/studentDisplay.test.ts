@@ -3,6 +3,30 @@ import { test } from 'node:test';
 import { studentDisplayGroups, studentDisplayRotations } from '../src/studentDisplay';
 import { assignment, blankSession, classroomFor, groupSet, stations, student } from './fixtures';
 
+void test('group and daily displays alphabetize names without changing shuffled memberships or starters', () => {
+  const set = groupSet(2);
+  set.recipe.sizeMode = 'pairs';
+  set.groups[0].studentIds = ['z', 'm', 'a'];
+  set.groups[0].starterStudentId = 'z';
+  const pupils = [student('z', { name: 'Zoe' }), student('m', { name: 'Mateo' }), student('a', { name: 'Ava' })];
+  const places = stations(1);
+  const day = blankSession(set, places, 2);
+  day.rounds[0].completed = true;
+  day.rounds[0].assignments = [{ ...assignment(set.groups[0].id, places[0].id), studentIds: ['m', 'z', 'a'] }];
+  const classroom = classroomFor(set, places, [day]);
+  classroom.students = pupils;
+  const before = JSON.stringify(classroom);
+
+  const groups = studentDisplayGroups(set, pupils);
+  assert.deepEqual(groups[0].students.map((pupil) => pupil.name), ['Ava', 'Mateo', 'Zoe']);
+  assert.equal(groups[0].starterStudentId, 'z');
+  const rotations = studentDisplayRotations(classroom, day);
+  for (const round of rotations.rounds) {
+    assert.deepEqual(round.entries[0].group.students.map((pupil) => pupil.name), ['Ava', 'Mateo', 'Zoe']);
+  }
+  assert.equal(JSON.stringify(classroom), before);
+});
+
 void test('student presentation only receives names and group visuals, never teacher attributes or locks', () => {
   const set = groupSet(2);
   set.name = 'Private ability arrangement';

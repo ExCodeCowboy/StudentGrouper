@@ -374,17 +374,19 @@ describe('generateGroups', () => {
     }
   });
 
-  test('returns the same grouping for the same inputs', () => {
+  test('returns the same grouping for the same inputs and random draws', () => {
     const classroom = sampleClassroom();
     const first = generateGroups(
       classroom.students,
       classroom.relationships,
       classroom.groupSets[0],
+      () => 0.42,
     );
     const second = generateGroups(
       classroom.students,
       classroom.relationships,
       classroom.groupSets[0],
+      () => 0.42,
     );
 
     assert.deepEqual(second, first);

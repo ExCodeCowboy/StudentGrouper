@@ -15,7 +15,7 @@ import {
   classroomFor,
   assignment,
 } from './fixtures';
-import type { Relationship } from '../src/model';
+import type { Relationship, SkillLevel } from '../src/model';
 
 function seeded(seed: number) {
   return () => {
@@ -27,6 +27,86 @@ const roster = (count: number) =>
   Array.from({ length: count }, (_, index) => student(`learner-${index}`));
 const members = (set: ReturnType<typeof groupSet>) =>
   set.groups.map((group) => [...group.studentIds].sort());
+
+// Ignore group labels, member order, and starter stars: variety must change
+// who works together, not just how the same groups are presented.
+const partnerships = (set: ReturnType<typeof groupSet>) =>
+  members(set).map((ids) => ids.join('|')).sort().join(';');
+
+for (const attribute of ['reading', 'math', 'writing'] as const) {
+  for (const mode of ['similar', 'mixed'] as const) {
+    for (const sizeMode of ['pairs', 'count'] as const) {
+      void test(`${mode} ${attribute} ${sizeMode} reshuffle within levels while preserving the skill distribution`, () => {
+        const pupils = Array.from({ length: 24 }, (_, index) => student(`learner-${index}`, {
+          reading: ((index % 3) + 1) as SkillLevel,
+          math: (((index + 1) % 3) + 1) as SkillLevel,
+          writing: (((index + 2) % 3) + 1) as SkillLevel,
+          [attribute]: (Math.floor(index / 8) + 1) as SkillLevel,
+        }));
+        const set = groupSet(6);
+        set.recipe = { ...set.recipe, mode, sizeMode, primaryAttribute: attribute };
+        const results = Array.from({ length: 6 }, (_, index) =>
+          generateGroups(pupils, [], set, seeded(index + 1)),
+        );
+        assert.ok(new Set(results.map(partnerships)).size > 1, 'partners must vary across random draws');
+        for (const result of results) {
+          assert.deepEqual(result.groups.flatMap((group) => group.studentIds).sort(), pupils.map((pupil) => pupil.id).sort());
+          for (const group of result.groups) {
+            const levels = group.studentIds.map((id) => pupils.find((pupil) => pupil.id === id)![attribute]);
+            assert.equal(levels.length, sizeMode === 'pairs' ? 2 : 4);
+            if (mode === 'similar') {
+              assert.equal(new Set(levels).size, 1, 'same-level partners should stay in the same skill band');
+            } else {
+              assert.equal(new Set(levels).size, Math.min(levels.length, 3), 'mixed groups should retain a spread of skill levels');
+            }
+            if (sizeMode === 'pairs') assert.ok(group.studentIds.includes(group.starterStudentId!));
+          }
+        }
+      });
+    }
+  }
+}
+
+void test('within-level draws do not depend on alphabetical student names', () => {
+  const pupils = roster(12);
+  const renamed = pupils.map((pupil, index) => ({ ...pupil, name: String.fromCharCode(90 - index) }));
+  for (const mode of ['similar', 'mixed'] as const) {
+    const set = groupSet(6);
+    set.recipe.mode = mode;
+    assert.deepEqual(
+      members(generateGroups(renamed, [], set, seeded(42))),
+      members(generateGroups(pupils, [], set, seeded(42))),
+    );
+  }
+});
+
+void test('within-level reshuffles preserve attendance, locks, and keep-apart rules', () => {
+  const pupils = roster(13);
+  pupils[12].absent = true;
+  const rules: Relationship[] = Array.from({ length: 6 }, (_, index) => ({
+    id: `apart-${index}`,
+    kind: 'apart',
+    studentAId: pupils[index].id,
+    studentBId: pupils[index + 6].id,
+  }));
+  for (const mode of ['similar', 'mixed'] as const) {
+    for (const sizeMode of ['pairs', 'count'] as const) {
+      const set = groupSet(3);
+      set.recipe = { ...set.recipe, mode, sizeMode };
+      set.groups[0].studentIds = [pupils[0].id, pupils[12].id];
+      set.groups[0].lockedStudentIds = [...set.groups[0].studentIds];
+      for (let seed = 1; seed <= 8; seed++) {
+        const result = generateGroups(pupils, rules, set, seeded(seed));
+        assert.deepEqual(groupingCautions(result, pupils, rules), []);
+        assert.equal(result.groups[0].id, set.groups[0].id);
+        assert.ok(result.groups[0].studentIds.includes(pupils[0].id));
+        assert.deepEqual(result.groups[0].lockedStudentIds, [pupils[0].id]);
+        assert.deepEqual(result.groups.flatMap((group) => group.studentIds).sort(), pupils.slice(0, 12).map((pupil) => pupil.id).sort());
+        assert.ok(result.groups.every((group) => group.studentIds.length === (sizeMode === 'pairs' ? 2 : 4)));
+      }
+    }
+  }
+});
 
 void test('pairs create twelve named groups for 24 learners and one trio for odd attendance', () => {
   const set = groupSet(5);

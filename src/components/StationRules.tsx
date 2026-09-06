@@ -57,6 +57,10 @@ export function StationRules({
         </select>
       </label>
       <StationPins station={station} groupSet={groupSet} onChange={onChange} />
+      <label className="station-priority-choice">
+        <span><input type="checkbox" aria-label={`Priority station: ${station.activityName || 'new station'}`} checked={station.priority === true} onChange={(event) => onChange({ priority: event.target.checked })} />Priority station</span>
+        <small>Aim for everyone’s first visit here early.</small>
+      </label>
       {station.visitRule === 'daily' && (
         <>
           <label>

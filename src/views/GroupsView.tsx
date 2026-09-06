@@ -33,6 +33,7 @@ import type {
   PrimaryAttribute,
   GroupingMode,
   SecondaryGoal,
+  Student,
 } from '../model';
 import { levelLabel } from '../model';
 import { GroupVisual } from '../components/GroupVisual';
@@ -235,6 +236,7 @@ export function GroupsView({
 
       {groupSet.recipe.sizeMode === 'pairs' && <p className="grouping-note">Pairs use the students who are here. With an odd number, one group has three. Existing locks are kept. <span className="starter-legend"><StarterStar /> marks the starter.</span> Making pairs draws starters at random.</p>}
       {groupSet.recipe.mode === 'random' && <p className="grouping-note">Make groups shuffles unlocked students. Keep-apart notes are respected; if a full arrangement cannot be found, some students stay unassigned.</p>}
+      {groupSet.recipe.mode !== 'random' && <p className="grouping-note">Make groups shuffles students within each skill level for fresh partners. Your grouping choices and locked placements still apply.</p>}
       {cautions.map((caution) => <p key={caution} className="dialog-issue">{caution}</p>)}
 
       {unassigned.length > 0 && (
@@ -264,7 +266,8 @@ export function GroupsView({
         {groupSet.groups.map((group) => {
           const students = group.studentIds
             .map((id) => classroom.students.find((student) => student.id === id))
-            .filter((student) => Boolean(student));
+            .filter((student): student is Student => Boolean(student))
+            .sort((left, right) => left.name.localeCompare(right.name));
           return (
             // This article is a native drag-and-drop destination, not a clickable control.
             // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions

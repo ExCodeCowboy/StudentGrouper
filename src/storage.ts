@@ -142,6 +142,7 @@ function migratedPlannedStations(
     return {
       id: sourceId,
       trackingId: typeof plan.trackingId === 'string' ? plan.trackingId : undefined,
+      priority: plan.priority === true ? true : undefined,
       visitRule: ['rotate', 'once-per-block', 'daily', 'repeatable'].includes(plan.visitRule ?? '') ? plan.visitRule : undefined,
       groupCapacity: Number.isSafeInteger(plan.groupCapacity) && plan.groupCapacity! >= 1 ? plan.groupCapacity : undefined,
       dailyGroupIds: Array.isArray(plan.dailyGroupIds) ? plan.dailyGroupIds.filter((id) => typeof id === 'string') : undefined,

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { ArrowLeft, ArrowRight, MapPin, Maximize, Minimize, Music2, Pause, Play, Plus, RotateCcw, Settings2, Sparkles, Star } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { ArrowRight, MapPin, Music2, Pause, Play, Plus, RotateCcw, Settings2, Sparkles, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RotationPresentationSettings } from '../components/RotationPresentationSettings';
@@ -14,6 +14,7 @@ import { StationVisual } from '../components/StationVisual';
 import { RevealCover, RevealEffectLayer, RevealEffectPicker } from '../revealEffects/RevealEffects';
 import { useRevealEffects } from '../revealEffects/useRevealEffects';
 import type { DisplayRotation, DisplayRotationDay } from '../studentDisplay';
+import { StudentViewHeader, type StudentNavigation } from '../components/StudentViewHeader';
 import './studentGroups.css';
 import './studentRotations.css';
 import './rotationTimer.css';
@@ -30,19 +31,20 @@ function Destination({ entry }: { entry?: DisplayRotation }) {
   </div>;
 }
 
-export function StudentRotationsView({ day, settings, onSettingsChange, initialTimer, onRememberTimer, onClose }: {
+export function StudentRotationsView({ day, settings, onSettingsChange, initialTimer, onRememberTimer, navigation, screen, revealed, onRevealedChange: setRevealed, showNames, onShowNamesChange: setShowNames }: {
   day: DisplayRotationDay;
   settings: PresentationSettings;
   onSettingsChange: (settings: PresentationSettings) => void;
   initialTimer?: RotationClock;
   onRememberTimer: (clock: RotationClock) => void;
-  onClose: () => void;
+  navigation: StudentNavigation;
+  screen: HTMLElement | null;
+  revealed: boolean;
+  onRevealedChange: (value: boolean) => void;
+  showNames: boolean;
+  onShowNamesChange: (value: boolean) => void;
 }) {
-  const [revealed, setRevealed] = useState(false);
-  const [showNames, setShowNames] = useState(true);
   const { selection, select, reducedMotion, animate, playback, play, stop } = useRevealEffects();
-  const [fullscreen, setFullscreen] = useState(false);
-  const [issue, setIssue] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -53,7 +55,6 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
   const finished = clock.status === 'finished';
   const melodyOpen = videoOpen && (settings.transitionSource !== 'youtube' || !settings.youtubeUrl || videoFailed);
   const highlightedRound = melodyOpen && finished && nextRound ? nextRound.id : clock.roundId;
-  const [screen, setScreen] = useState<HTMLElement | null>(null);
   const revealButton = useRef<HTMLButtonElement>(null);
   const hasPlan = day.groups.length > 0 && day.rounds.length > 0;
   const date = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(`${day.date}T12:00:00`));
@@ -68,30 +69,8 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
   }, [finished, visible, settingsOpen, clock.runId, settings.autoplay]);
 
   useEffect(() => {
-    revealButton.current?.focus();
-    const updateFullscreen = () => setFullscreen(!!screen && document.fullscreenElement === screen);
-    document.addEventListener('fullscreenchange', updateFullscreen);
-    return () => document.removeEventListener('fullscreenchange', updateFullscreen);
-  }, [screen]);
-
-  const close = async () => {
-    if (document.fullscreenElement === screen) {
-      try { await document.exitFullscreen(); } catch { /* Closing the screen still works. */ }
-    }
-    onClose();
-  };
-  const toggleFullscreen = async () => {
-    setIssue('');
-    try {
-      if (document.fullscreenElement === screen) await document.exitFullscreen();
-      else if (screen?.requestFullscreen) await screen.requestFullscreen();
-      else setIssue('Full screen is not available here. You can maximize the app window.');
-    } catch { setIssue('Full screen is not available here. You can maximize the app window.'); }
-  };
-  const handleKey = (event: KeyboardEvent) => {
-    if (event.defaultPrevented || settingsOpen || videoOpen) return;
-    if (event.key === 'Escape' && !document.fullscreenElement) { event.preventDefault(); void close(); }
-  };
+    revealButton.current?.focus({ preventScroll: true });
+  }, []);
   const hideOrReveal = () => {
     if (!hasPlan) return;
     if (revealed) { setRevealed(false); stop(); dispatch({ type: 'pause', now: Date.now() }); }
@@ -111,21 +90,12 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
   };
 
   return (
-    // Escape closes the presentation; arrow keys keep their normal scrolling behavior.
-    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-    <main className={`student-show student-rotations${animate ? ' with-effects' : ''}`} ref={setScreen} onKeyDown={handleKey}>
+    <main className={`student-show student-rotations${animate ? ' with-effects' : ''}`}>
       <div className="student-show-decor" aria-hidden="true"><Star className="show-star star-one" /><Star className="show-star star-two" /><span className="show-orbit orbit-one" /></div>
-      <header className="student-show-top">
-        <div className="student-day-heading"><span className="student-day-heading-icon" aria-hidden="true"><Sparkles /></span><div><h1>Our day together</h1><time dateTime={day.date}>{date}</time></div></div>
-        <div className="student-show-tools">
+      <StudentViewHeader navigation={navigation} title="Our day together" subtitle={<time dateTime={day.date}>{date}</time>}>
           <label className="show-effects"><input type="checkbox" checked={showNames} onChange={(event) => setShowNames(event.target.checked)} /> Student names</label>
-          <RevealEffectPicker selection={selection} onSelect={select} reducedMotion={reducedMotion} />
           <button type="button" onClick={() => setSettingsOpen(true)}><Settings2 />Timer &amp; transition</button>
-          <button type="button" onClick={toggleFullscreen}>{fullscreen ? <Minimize /> : <Maximize />}{fullscreen ? 'Exit full screen' : 'Full screen'}</button>
-          <button type="button" onClick={close}><ArrowLeft />Teacher view</button>
-        </div>
-      </header>
-      {issue && <output className="student-show-issue">{issue}</output>}
+      </StudentViewHeader>
       {hasPlan && !melodyOpen && <section className={`rotation-timer${finished ? ' is-finished' : ''}`} aria-label="Rotation timer">
         <div className="rotation-timer-round">
           <label>Our focus now<select aria-label="Current round" value={clock.roundId} onChange={(event) => dispatch({ type: 'round', roundId: event.target.value, durationSeconds: settings.durationSeconds, now: Date.now() })}>{day.rounds.map((round, index) => <option key={round.id} value={round.id}>Round {index + 1}</option>)}</select></label>
@@ -186,7 +156,10 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
       <footer className="student-show-controls">
         <div className="student-show-counter"><Sparkles /><span><strong>{day.groups.length} teams · {day.rounds.length} rounds</strong>One reveal for the whole day</span></div>
         <div className="student-show-buttons">
-          <button ref={revealButton} type="button" className="show-primary" disabled={!hasPlan} onClick={hideOrReveal}>{revealed ? <><RotateCcw />Hide again</> : <><Sparkles />Reveal the day</>}</button>
+          <div className="reveal-split-button">
+            <button ref={revealButton} type="button" className="show-primary" disabled={!hasPlan} onClick={hideOrReveal}>{revealed ? <><RotateCcw />Hide again</> : <><Sparkles />Reveal the day</>}</button>
+            <RevealEffectPicker compact selection={selection} onSelect={select} reducedMotion={reducedMotion} />
+          </div>
         </div>
       </footer>
       <output className="sr-only" aria-live="polite" aria-atomic="true">{revealed ? `All ${day.rounds.length} rounds for ${date} are revealed. Find your team and read from left to right.` : 'The day is ready to reveal.'}</output>

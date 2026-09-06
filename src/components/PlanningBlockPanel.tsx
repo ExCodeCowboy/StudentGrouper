@@ -20,6 +20,7 @@ import { shiftSchoolDay } from '../dateNavigation';
 import { scheduleIssues } from '../rotations';
 import { assignmentActivityKey } from '../rotations';
 import type { PlannerResult } from '../planner/optimizer';
+import { SCORE } from '../planner/problem';
 
 type Props = {
   classroom: Classroom;
@@ -164,9 +165,10 @@ export function PlanningBlockPanel({
               {report.after[2] > 0
                 ? `${report.after[2]} required daily visits are still missing. `
                 : ''}
-              {report.after[4] === 0
+              {report.after[SCORE.priorityMissing] > 0 ? `${report.after[SCORE.priorityMissing]} priority activity visits are still missing. ` : ''}
+              {report.after[SCORE.missing] === 0
                 ? 'Every student covers all available activities.'
-                : `${report.after[4]} activity visits are still missing across the students.`}{' '}
+                : `${report.after[SCORE.missing]} activity visits are still missing across the students.`}{' '}
               {adjacentRepeats === 0
                 ? 'No back-to-back group repeats.'
                 : `${adjacentRepeats} back-to-back group repeats.`}{' '}
@@ -180,8 +182,9 @@ export function PlanningBlockPanel({
           <>
             <p className="block-history-note">
               Planning favors stations students have not yet visited in this
-              block before repeating an activity. Once-only activities get extra
-              priority among new visits. Earlier planned and completed rounds
+              block before repeating an activity. Priority stations favor an
+              early first visit for every learner. Once-only activities also
+              get preference among new visits. Earlier planned and completed rounds
               count. Remove canceled rounds to free their activities. Station
               settings apply across the block; locks and completed rounds are
               kept.

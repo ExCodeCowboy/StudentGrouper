@@ -83,6 +83,7 @@ export type Location = {
 export type PlannedStation = {
   id: string;
   trackingId?: string;
+  priority?: boolean;
   visitRule?: 'rotate' | 'once-per-block' | 'daily' | 'repeatable';
   groupCapacity?: number;
   dailyGroupIds?: string[];

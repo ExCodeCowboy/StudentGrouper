@@ -21,7 +21,7 @@ export function studentDisplayGroups(groupSet: GroupSet, students: Student[]): D
       if (!student || seen.has(id)) return [];
       seen.add(id);
       return [{ id: student.id, name: student.name }];
-    }),
+    }).sort((left, right) => left.name.localeCompare(right.name)),
   })).filter((group) => group.students.length > 0).map((group) => {
     const starterStudentId = groupSet.groups.find((item) => item.id === group.id)?.starterStudentId;
     return groupSet.recipe.sizeMode === 'pairs' && starterStudentId && group.students.some((student) => student.id === starterStudentId)
@@ -67,7 +67,7 @@ export function studentDisplayRotations(classroom: Classroom, session: RotationS
           if (!student || (!round.completed && student.absent) || seen.has(id) || (historicalOwner && historicalOwner !== group.id)) return [];
           seen.add(id);
           return [{ id, name: student.name }];
-        });
+        }).sort((left, right) => left.name.localeCompare(right.name));
         if (!students.length) return [];
         const activityName = round.completed ? assignment?.activityName ?? source?.activityName : source?.activityName;
         const locationId = round.completed ? assignment?.locationId ?? source?.locationId : source?.locationId;

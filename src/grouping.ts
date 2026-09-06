@@ -508,16 +508,19 @@ export function generateGroups(
   }
 
   const attribute = groupSet.recipe.primaryAttribute;
-  const remaining = activeStudents
-    .filter((student) => !placedLocked.has(student.id))
-    .sort((left, right) => {
-      const primary =
-        groupSet.recipe.mode === 'mixed'
-          ? right[attribute] - left[attribute]
-          : left[attribute] - right[attribute];
-      if (primary !== 0) return primary;
-      return left.name.localeCompare(right.name);
-    });
+  const buckets = new Map<number, Student[]>();
+  for (const student of activeStudents) {
+    if (placedLocked.has(student.id)) continue;
+    const level = student[attribute];
+    const bucket = buckets.get(level) ?? [];
+    bucket.push(student);
+    buckets.set(level, bucket);
+  }
+  // Keep skill buckets in the same order, but draw a fresh order inside each
+  // bucket. Alphabetical ties otherwise give the same learners the same partners.
+  const remaining = [...buckets]
+    .sort(([left], [right]) => groupSet.recipe.mode === 'mixed' ? right - left : left - right)
+    .flatMap(([, bucket]) => shuffled(bucket, random));
   const hasLockedPlacements = groups.some(
     (group) => group.studentIds.length > 0,
   );

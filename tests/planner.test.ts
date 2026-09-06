@@ -13,6 +13,7 @@ import {
   createBlockProblem,
   greedyChoices,
   scoreChoices,
+  SCORE,
   validChoices,
 } from '../src/planner/problem';
 import {
@@ -58,7 +59,7 @@ void test('whole-block solver reserves a scarce Monday opportunity to avoid a Tu
   const result = optimizePlanningBlock(await engine, classroom, 'block');
   assert.equal(result.status, 'optimal', result.detail);
   assert.equal(result.after[1], 0);
-  assert.equal(result.after[4], 0);
+  assert.equal(result.after[SCORE.missing], 0);
   assert.deepEqual(
     result.classroom.sessions[1].rounds[0].assignments.find(
       (item) => item.groupId === set.groups[1].id,
@@ -136,7 +137,7 @@ void test('September 7–8 whole-block planning spreads shared work without sacr
   }
   const problem = createBlockProblem(classroom, 'block');
   const greedy = scoreChoices(problem, greedyChoices(problem));
-  assert.ok(greedy[7] > 0);
+  assert.ok(greedy[SCORE.consecutive] > 0);
   const result = optimizePlanningBlock(await engine, classroom, 'block', {
     timeLimitMs: 15_000,
   });
@@ -147,13 +148,13 @@ void test('September 7–8 whole-block planning spreads shared work without sacr
   );
   assert.ok(compareScores(result.after, greedy) < 0);
   assert.equal(result.after[1], 0);
-  assert.equal(result.after[4], 0);
+  assert.equal(result.after[SCORE.missing], 0);
   assert.ok(
-    result.after[7] < greedy[7],
+    result.after[SCORE.consecutive] < greedy[SCORE.consecutive],
     'the full block must improve consecutive repeats',
   );
   assert.equal(
-    result.after[7],
+    result.after[SCORE.consecutive],
     10,
     'first-visit priority and six teacher slots force two consecutive repeats, assigned to groups totaling ten learners',
   );
@@ -243,8 +244,8 @@ void test('current Clay Time setup fills the Tuesday gap and covers all five sta
   assert.equal(result.status, 'optimal', result.detail);
   assert.equal(result.before[1], 1);
   assert.equal(result.after[1], 0);
-  assert.equal(result.after[4], 0);
-  assert.equal(result.after[7], 0);
+  assert.equal(result.after[SCORE.missing], 0);
+  assert.equal(result.after[SCORE.consecutive], 0);
   const renamed = structuredClone(result.classroom);
   renamed.sessions.forEach((day) =>
     day.plannedStations.forEach((station, index) => {
@@ -295,7 +296,7 @@ void test('completed learner snapshots and future locks survive regrouping witho
     validChoices(problem, choicesFromClassroom(problem, result.classroom)),
   );
   assert.ok(
-    result.after[4] > 0,
+    result.after[SCORE.missing] > 0,
     'learner b cannot repeat the packet with learner a',
   );
 });

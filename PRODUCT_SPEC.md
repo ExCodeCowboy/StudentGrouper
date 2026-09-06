@@ -58,6 +58,8 @@ Required grouping behavior:
 - **Keep apart** carries a very large penalty and is respected whenever a valid placement exists.
 - **Prefer together**, mixed gender, and shared language are preferences rather than hard promises.
 - Similar-level grouping forms balanced skill bands. Mixed-level grouping distributes levels across groups.
+- **Make groups** shuffles unlocked students within each selected reading, math, or writing level before placement, for both pairs and larger groups in Similar or Mixed mode. Skill ordering, relationships, secondary goals, and locks still guide placement. Normal editing does not reshuffle; fresh draws may repeat partners when choices are limited or by chance.
+- Names within each group are displayed alphabetically in the teacher editor, student reveals, daily student charts, and printouts. Display sorting does not change memberships or the randomly selected starter.
 - Random grouping ignores skill levels and reshuffles unlocked students on **Make groups**. Keep-apart conflicts caused by existing manual locks are shown as cautions.
 - After the initial placement, deterministic multi-pass swaps continue while a swap improves the total score, up to a safety limit of 100 sweeps.
 - The numeric score is an implementation detail and is not shown as a teacher-facing dashboard.
@@ -66,7 +68,8 @@ Required grouping behavior:
 
 Student presentation:
 
-- **Student view** presents the current groups with large names and group visuals, starting with every group hidden. Teacher controls, skill levels, relationship notes, locks, and the saved arrangement name are excluded.
+- **Student view** presents the current groups with large names and group visuals, starting with every group hidden. Roster editing, skill levels, relationship notes, and lock editing stay in the teacher view.
+- Student view provides Groups / Today navigation, a compact saved-arrangement selector, and Rebuild groups using that arrangement's existing settings. These limited projection controls are allowed; recipe editing, skill values, and relationship details remain in the teacher editor. The selector may show saved arrangement names. Switching pages preserves the reveal and fullscreen; switching arrangements or rebuilding covers groups until the next reveal. Rebuild is saved and undoable from the teacher editor. Today always uses the selected day and its own arrangement. Leaving Today pauses its timer and stops music; returning restores the paused round, reveal, and name visibility.
 - **Reveal all teams** reveals every group together in one click. There are no individual-team reveal controls or countdown. **Hide again** resets only the presentation; it never changes group membership.
 - The shared, modular reveal system offers Balloon lift-off, Rainbow zipper, Dragon hiccup, Black-hole whoosh, Fairy dust, Ocean wave, and Confetti party. A Surprise me option avoids the preceding effect; each effect finishes within three seconds. Both student screens use the same registry and playback controls.
 - A teacher can turn off effects. The display also honors reduced-motion preferences, revealing immediately without motion.
@@ -102,6 +105,7 @@ Rules:
 - **By station** is the primary editing view. **By group** is a transpose of the same assignments, not a separate schedule.
 - The By group view includes stations with remaining capacity for every round. A station can be dragged or chosen from a menu.
 - Each station allows a chosen number of groups at the same time (one by default, supporting the full group count). At most one station is assigned to a group in a round.
+- **Priority station** is an optional checkbox, off for existing and imported stations unless explicitly saved. The planner first seeks fair first-visit coverage of priority activities, then brings those visits forward among equally good coverage plans. Existing pins, required daily visits, locks, completed rounds, capacity, and once-only limits still apply. Priority never rewards another visit for a child who has already been there in the current day/block. The setting shares across linked block stations and persists in exports. Enable it, then Build / Optimize to apply it to the schedule; a standalone priority day uses the full-day solver too.
 - **Build / Optimize** rebuilds only future, unlocked assignments. If cautions exist, its label becomes **Fix issues**.
 - **Unlock all** clears manual assignment locks only in editable rounds. Daily pins are changed in station settings; completed rounds remain unchanged.
 - A completed round snapshots its learner IDs, activity name, and location so later regrouping or renaming does not rewrite what happened.

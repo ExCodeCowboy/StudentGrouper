@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { GroupsView } from './views/GroupsView';
-import { StudentGroupsView } from './views/StudentGroupsView';
-import { StudentRotationsView } from './views/StudentRotationsView';
+import { StudentPresentation } from './views/StudentPresentation';
+import type { StudentPage } from './components/StudentViewHeader';
 import { studentDisplayGroups, studentDisplayRotations } from './studentDisplay';
 import { normalizePresentationSettings, type RotationClock } from './rotationTimer';
 import { applyGroupTheme } from './groupThemes';
@@ -43,7 +43,7 @@ import type {
 import { makeId } from './model';
 import { cloneData } from './platform';
 import { createGroupShells, createSampleData } from './sample';
-import { generateGroups, moveStudent } from './grouping';
+import { generateGroups, groupingCautions, moveStudent } from './grouping';
 import { ensurePairStarters } from './pairStarters';
 import {
   changeSessionGroupSet,
@@ -154,8 +154,7 @@ function createBlankClassroom(name: string): Classroom {
 export function App() {
   const [data, setData] = useState<AppData>(() => createSampleData());
   const [view, setView] = useState<View>('groups');
-  const [studentViewOpen, setStudentViewOpen] = useState(false);
-  const [rotationStudentViewOpen, setRotationStudentViewOpen] = useState(false);
+  const [studentView, setStudentView] = useState<StudentPage | null>(null);
   const [rotationClocks, setRotationClocks] = useState(new Map<string, RotationClock>());
   const [loaded, setLoaded] = useState(false);
   const [undoStack, setUndoStack] = useState<AppData[]>([]);
@@ -437,7 +436,7 @@ export function App() {
 
   const buildOptimizeSchedule = () => {
     if (!session) return;
-    if (session.blockId || session.plannedStations.some((station) => station.dailyPinGroupIds?.length)) { void planBlock(); return; }
+    if (session.blockId || session.plannedStations.some((station) => station.priority || station.dailyPinGroupIds?.length)) { void planBlock(); return; }
     updateClassroom((current) => updateActiveSession(current, (currentSession) => {
       const set = current.groupSets.find((item) => item.id === currentSession.groupSetId) ?? current.groupSets[0];
       return rebuildUnlocked(current, currentSession, set);
@@ -656,27 +655,29 @@ export function App() {
 
   if (!classroom || !groupSet) return null;
 
-  if (rotationStudentViewOpen && session) return (
-    <StudentRotationsView
-      key={`${classroom.id}:${session.id}`}
-      day={studentDisplayRotations(classroom, session)}
+  if (studentView) return (
+    <StudentPresentation
+      key={classroom.id}
+      page={studentView}
+      onNavigate={setStudentView}
+      groups={studentDisplayGroups(groupSet, classroom.students)}
+      groupOptions={classroom.groupSets.map(({ id, name }) => ({ id, name }))}
+      groupSetId={groupSet.id}
+      onSelectGroupSet={(id) => updateClassroom((current) => ({ ...current, activeGroupSetId: id }))}
+      onRebuild={generate}
+      canRebuild={classroom.students.some((student) => !student.absent)}
+      groupsNeedCheck={groupingCautions(groupSet, classroom.students, classroom.relationships).length > 0 || classroom.students.some((student) => !student.absent && !groupSet.groups.some((group) => group.studentIds.includes(student.id)))}
+      saveIssue={saveIssue}
+      day={session ? studentDisplayRotations(classroom, session) : undefined}
+      dayId={session?.id ?? ''}
       settings={normalizePresentationSettings(classroom.rotationPresentation)}
       onSettingsChange={(rotationPresentation) => updateClassroom((current) => ({ ...current, rotationPresentation }))}
-      initialTimer={rotationClocks.get(`${classroom.id}:${session.id}`)}
-      onRememberTimer={(clock) => setRotationClocks((current) => new Map(current).set(`${classroom.id}:${session.id}`, clock))}
+      initialTimer={rotationClocks.get(`${classroom.id}:${session?.id}`)}
+      onRememberTimer={(clock) => setRotationClocks((current) => new Map(current).set(`${classroom.id}:${session?.id}`, clock))}
       onClose={() => {
-        setRotationStudentViewOpen(false);
-        requestAnimationFrame(() => document.getElementById('open-rotation-student-view')?.focus());
-      }}
-    />
-  );
-
-  if (studentViewOpen) return (
-    <StudentGroupsView
-      groups={studentDisplayGroups(groupSet, classroom.students)}
-      onClose={() => {
-        setStudentViewOpen(false);
-        requestAnimationFrame(() => document.getElementById('open-student-view')?.focus());
+        setView(studentView);
+        setStudentView(null);
+        requestAnimationFrame(() => document.getElementById(studentView === 'today' ? 'open-rotation-student-view' : 'open-student-view')?.focus());
       }}
     />
   );
@@ -748,7 +749,7 @@ export function App() {
           groupSet={groupSet}
           canUndo={undoStack.length > 0}
           onSelectGroupSet={(id) => updateClassroom((current) => ({ ...current, activeGroupSetId: id }))}
-          onStudentView={() => { if (loaded) setStudentViewOpen(true); }}
+          onStudentView={() => { if (loaded) setStudentView('groups'); }}
           onApplyTheme={(themeId) => updateClassroom((current) => updateActiveGroupSet(current, (set) => applyGroupTheme(set, themeId)), true)}
           onNewGroupSet={createGroupSet}
           onResetGroupSet={resetCurrentGroupSet}
@@ -764,7 +765,7 @@ export function App() {
       {view === 'today' && session && (
         <TodayView
           classroom={classroom}
-          onStudentView={() => { if (loaded) setRotationStudentViewOpen(true); }}
+          onStudentView={() => { if (loaded) setStudentView('today'); }}
           groupSet={rotationGroupSet}
           session={session}
           issues={issues}

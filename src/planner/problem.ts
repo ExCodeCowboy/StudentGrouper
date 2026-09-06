@@ -58,6 +58,7 @@ export type BlockProblem = {
   slots: Slot[];
   learners: LearnerProfile[];
   onceOnly: Set<string>;
+  priorityActivities: Set<string>;
   dailyLimits: DailyRequirement[];
   dailyRequired: DailyRequirement[];
 };
@@ -80,6 +81,7 @@ export function createBlockProblem(
   const times: TimeSlot[] = [];
   const slots: Slot[] = [];
   const onceOnly = new Set<string>();
+  const priorityActivities = new Set<string>();
   const dailyLimits: DailyRequirement[] = [];
   const dailyRequired: DailyRequirement[] = [];
   const eligible = new Map<string, Set<string>>();
@@ -95,8 +97,10 @@ export function createBlockProblem(
           ),
       )
       .map((station) => ({ station, key: planKey(day, station) }));
-    for (const { station, key } of choices)
+    for (const { station, key } of choices) {
       if (station.visitRule === 'once-per-block') onceOnly.add(key);
+      if (station.priority) priorityActivities.add(key);
+    }
     const original = source.sessions.find((item) => item.id === day.id)!;
     if (!preserved.has(day.id)) {
       day.ignoredIssueIds = [];
@@ -223,6 +227,7 @@ export function createBlockProblem(
     slots,
     learners: [...profiles.values()],
     onceOnly,
+    priorityActivities,
     dailyLimits,
     dailyRequired,
   };
@@ -327,27 +332,37 @@ export const SCORE_LABELS = [
   'Pinned daily visits missing',
   'Empty places',
   'Required daily visits missing',
+  'Most priority activities missing for one learner',
+  'Priority learner visits missing',
   'Most activities missing for one learner',
   'Learner visits missing',
   'Once-only visits missing',
+  'Waiting for first priority visits',
   'Repeats before coverage',
   'Consecutive repeats',
   'Same-day repeat pairs',
   'Block repeat pairs',
   'Changed placements',
 ] as const;
+export const SCORE = {
+  pinned: 0, empty: 1, daily: 2,
+  priorityWorst: 3, priorityMissing: 4,
+  worstMissing: 5, missing: 6, onceMissing: 7,
+  priorityDelay: 8, prematureRepeats: 9, consecutive: 10,
+  dayRepeatPairs: 11, blockRepeatPairs: 12, changes: 13,
+} as const;
 export type PlannerScore = number[];
 export function scoreChoices(
   problem: BlockProblem,
   choices: number[],
 ): PlannerScore {
   const score = Array<number>(SCORE_LABELS.length).fill(0);
-  score[1] =
+  score[SCORE.empty] =
     choices.filter((choice) => choice < 0).length +
     problem.times.reduce((sum, time) => sum + time.missingFixed, 0);
   for (const requirement of problem.dailyRequired)
     if (groupVisits(problem, requirement, choices) === 0)
-      score[requirement.pinned ? 0 : 2]++;
+      score[requirement.pinned ? SCORE.pinned : SCORE.daily]++;
   for (const learner of problem.learners) {
     const counts = new Map<string, number>();
     const daily = new Map<string, number>();
@@ -355,12 +370,20 @@ export function scoreChoices(
     for (const [time, activities] of visits.entries()) {
       const missing = learner.eligible.filter((key) => !counts.has(key)).length;
       const first = new Set(activities.filter((key) => !counts.has(key))).size;
-      score[6] += (activities.length - first) * missing * learner.weight;
+      score[SCORE.prematureRepeats] += (activities.length - first) * missing * learner.weight;
+      // Count only participating rounds where this activity is offered, after
+      // this round's visit. A visit now removes the current and future wait.
+      if (learner.slots[time].length || learner.fixed[time].length) {
+        score[SCORE.priorityDelay] += learner.eligible.filter((key) =>
+          problem.priorityActivities.has(key) && !counts.has(key) && !activities.includes(key) &&
+          problem.times[time].choices.some((choice) => choice.key === key),
+        ).length * learner.weight;
+      }
       if (
         time > 0 &&
         problem.times[time - 1].day.id === problem.times[time].day.id
       ) {
-        score[7] +=
+        score[SCORE.consecutive] +=
           activities.reduce(
             (sum, key) =>
               sum +
@@ -370,20 +393,23 @@ export function scoreChoices(
       }
       for (const key of activities) {
         const dayKey = `${problem.times[time].day.id}:${key}`;
-        score[8] += (daily.get(dayKey) ?? 0) * learner.weight;
-        score[9] += (counts.get(key) ?? 0) * learner.weight;
+        score[SCORE.dayRepeatPairs] += (daily.get(dayKey) ?? 0) * learner.weight;
+        score[SCORE.blockRepeatPairs] += (counts.get(key) ?? 0) * learner.weight;
         daily.set(dayKey, (daily.get(dayKey) ?? 0) + 1);
         counts.set(key, (counts.get(key) ?? 0) + 1);
       }
     }
     const missing = learner.eligible.filter((key) => !counts.has(key));
-    score[3] = Math.max(score[3], missing.length);
-    score[4] += missing.length * learner.weight;
-    score[5] +=
+    const priorityMissing = missing.filter((key) => problem.priorityActivities.has(key)).length;
+    score[SCORE.priorityWorst] = Math.max(score[SCORE.priorityWorst], priorityMissing);
+    score[SCORE.priorityMissing] += priorityMissing * learner.weight;
+    score[SCORE.worstMissing] = Math.max(score[SCORE.worstMissing], missing.length);
+    score[SCORE.missing] += missing.length * learner.weight;
+    score[SCORE.onceMissing] +=
       missing.filter((key) => problem.onceOnly.has(key)).length *
       learner.weight;
   }
-  score[10] = problem.slots.filter(
+  score[SCORE.changes] = problem.slots.filter(
     (slot) =>
       slot.choices[choices[slot.index]]?.station.id !== slot.originalStationId,
   ).length;

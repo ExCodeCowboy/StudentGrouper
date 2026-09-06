@@ -1,17 +1,20 @@
 import { useLayoutEffect, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { revealEffects } from './registry';
 import type { RevealEffect, RevealPlayback } from './types';
 import './revealEffects.css';
 
-export function RevealEffectPicker({ selection, onSelect, reducedMotion }: { selection: string; onSelect: (id: string) => void; reducedMotion: boolean }) {
-  return <label className="reveal-effect-picker">
-    <span>Reveal effect</span>
+export function RevealEffectPicker({ selection, onSelect, reducedMotion, compact = false }: { selection: string; onSelect: (id: string) => void; reducedMotion: boolean; compact?: boolean }) {
+  const name = selection === 'surprise' ? 'Surprise me!' : revealEffects.find((effect) => effect.id === selection)?.name ?? 'None · reveal instantly';
+  return <label className={`reveal-effect-picker${compact ? ' is-compact' : ''}`} title={`Reveal effect: ${name}${reducedMotion ? ' (reduced motion: instant)' : ''}`}>
+    <span className={compact ? 'sr-only' : undefined}>Reveal effect</span>
+    {compact && <ChevronDown aria-hidden="true" />}
     <select value={selection} onChange={(event) => onSelect(event.target.value)}>
       <option value="surprise">Surprise me!</option>
       {revealEffects.map((effect) => <option key={effect.id} value={effect.id}>{effect.name}</option>)}
       <option value="none">None · reveal instantly</option>
     </select>
-    {reducedMotion && <small>Reduced motion: instant reveals</small>}
+    {reducedMotion && <small className={compact ? 'sr-only' : undefined}>Reduced motion: instant reveals</small>}
   </label>;
 }
 

@@ -1115,7 +1115,8 @@ function RotationPrintSheet({
         {groupSet.groups.flatMap((group) => {
           const members = group.studentIds
             .map((id) => classroom.students.find((student) => student.id === id)?.name)
-            .filter(Boolean)
+            .filter((name): name is string => Boolean(name))
+            .sort((left, right) => left.localeCompare(right))
             .join(', ');
           return [
             <div className="print-group" key={`${group.id}-name`}>

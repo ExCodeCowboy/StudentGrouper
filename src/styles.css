@@ -753,6 +753,11 @@ button { font: inherit; }
 .station-rules { grid-column: 1 / -1; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px 20px; padding: 12px 0 2px; border-top: 1px solid #e3e9e4; }
 .station-rules > label { display: grid; gap: 5px; color: #53695f; font-size: 11px; font-weight: 600; }
 .station-rules small { align-self: center; color: #61756b; font-size: 11px; }
+.station-rules .station-priority-choice { align-self: center; gap: 6px; }
+.station-priority-choice > span { display: flex; align-items: center; gap: 8px; min-height: 24px; color: #304844; font-size: 12px; }
+.station-priority-choice input { width: 17px; height: 17px; accent-color: #267568; cursor: pointer; }
+.station-priority-choice input:focus-visible { outline: 3px solid #267568; outline-offset: 3px; }
+.station-priority-choice small { max-width: 230px; line-height: 1.4; font-weight: 400; }
 .daily-group-choices { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%; padding: 9px; border: 1px solid #dbe5de; border-radius: 8px; }
 .daily-group-choices legend { font-size: 11px; color: #53695f; }
 .daily-group-choices label { display: flex; align-items: center; gap: 5px; font-size: 12px; }

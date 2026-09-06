@@ -395,6 +395,10 @@ function fillRound(
           // The whole-day/block search can then improve which round it uses.
           dailyPinned && today === 0 ? -(missingGroups.length + 1) : 0,
           dailyRequired && today === 0 ? -1 : 0,
+          // Priority rewards first visits, never another turn for learners
+          // who have already visited. The full planner also reserves capacity.
+          plan.priority && firstVisitCount > 0 ? -1 : 0,
+          plan.priority ? -firstVisitCount : 0,
           // First visits at ANY eligible station outrank repeats. Count each
           // learner: one prior visitor does not mean the whole group is done.
           session.blockId && firstVisitCount > 0 ? -1 : 0,

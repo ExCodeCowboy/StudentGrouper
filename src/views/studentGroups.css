@@ -18,6 +18,8 @@
   scrollbar-gutter: stable;
 }
 .student-show button { cursor: pointer; }
+.student-presentation { position: fixed; inset: 0; z-index: 40; background: #fffaf0; }
+.student-presentation:fullscreen { width: 100%; height: 100%; }
 .student-show button:disabled { cursor: default; }
 .student-show button:focus-visible, .student-show input:focus-visible { outline: 3px solid #17586a; outline-offset: 5px; }
 .student-show-decor { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
@@ -139,4 +141,61 @@
   .student-show-top, .student-show-decor, .student-show-controls, .student-confetti { display: none; }
   .student-show-grid { grid-template-columns: repeat(3, 1fr); }
   .student-team { break-inside: avoid; box-shadow: none; }
+}
+
+/* Projector controls stay compact; the team cards own the remaining space. */
+.student-show .student-compact-header { flex: 0 0 auto; gap: 12px; padding: 12px 22px; flex-wrap: wrap; }
+.student-display-heading { display: flex; align-items: center; gap: 9px; margin-right: auto; }
+.student-display-heading > span { display: grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0; border-radius: 11px; background: #267568; color: #fffaf0; transform: rotate(-7deg); }
+.student-display-heading svg { width: 20px; height: 20px; }
+.student-display-heading h1 { margin: 0; font-size: clamp(18px, 1.8vw, 24px); font-weight: 850; line-height: 1.2; letter-spacing: -.035em; }
+.student-display-heading time { display: block; margin-top: 3px; color: #637168; font-size: 12px; }
+.student-page-nav { display: inline-flex; padding: 3px; border: 1px solid #e0dfd0; border-radius: 12px; background: #eeeddf; }
+.student-page-nav button { display: inline-flex; gap: 6px; align-items: center; justify-content: center; min-height: 34px; padding: 6px 11px; border: 0; border-radius: 9px; background: transparent; color: #637168; font: inherit; font-size: 12px; font-weight: 750; }
+.student-page-nav button[aria-current="page"] { background: #fffdf6; color: #21675c; box-shadow: 0 1px 4px #334a3520; }
+.student-page-nav button:hover:not(:disabled) { color: #184f47; background: #fffdf6; }
+.student-page-nav button:disabled { opacity: .45; }
+.student-page-nav svg { width: 16px; height: 16px; }
+.student-show .student-compact-tools { flex-wrap: wrap; gap: 7px; margin-left: 0; }
+.student-compact-tools button { min-height: 38px; }
+.student-compact-tools .student-icon-button { justify-content: center; width: 38px; height: 38px; padding: 0; }
+.student-compact-tools .student-icon-button svg { width: 18px; height: 18px; }
+.student-arrangement-picker { min-width: 0; max-width: 160px; padding: 8px 22px 8px 9px; min-height: 38px; border: 1px solid #e3dece; border-radius: 10px; color: #52645e; background-color: #fffdf8; font: inherit; font-size: 12px; text-overflow: ellipsis; }
+.student-groups .student-show-grid { flex: 1 0 auto; grid-template-columns: repeat(var(--student-columns), minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 16px; max-width: none; padding: 6px 22px 20px; }
+.student-groups .student-team-revealed { padding: 18px 16px 12px; }
+.student-groups .student-team-heading { gap: 10px; padding-bottom: 12px; }
+.student-groups .student-team-heading .group-symbol { flex-basis: 44px; width: 44px; height: 44px; border-radius: 15px; font-size: 27px; }
+.student-groups .student-team-heading h2 { font-size: clamp(18px, 1.65vw, 26px); }
+.student-groups .student-team ul { margin: 14px 0 4px; gap: 9px; }
+.student-groups .student-team li { font-size: clamp(24px, 2.25vw, 36px); padding-left: 10px; }
+.student-groups .show-many-groups { --reveal-question-size: 48px; }
+.student-groups .show-many-groups .student-team-cover { min-height: 158px; padding: 10px; }
+.student-groups .show-many-groups .student-mystery-symbol { width: 64px; height: 64px; margin: 10px 0; border-radius: 21px; }
+.student-groups .show-many-groups .student-team-cover strong { font-size: 16px; }
+.student-groups .show-many-groups .student-mystery-hint { display: none; }
+.student-groups .show-many-groups .student-team-revealed { padding: 12px; }
+.student-groups .show-many-groups .student-team-heading { padding-bottom: 8px; }
+.student-groups .show-many-groups .student-team-heading .group-symbol { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; font-size: 23px; }
+.student-groups .show-many-groups .student-team-heading h2 { font-size: clamp(17px, 1.45vw, 23px); }
+.student-groups .show-many-groups .student-team ul { margin: 10px 0 2px; gap: 6px; }
+.student-groups .show-many-groups .student-team li { font-size: clamp(23px, 2vw, 30px); }
+.student-show .student-show-controls { flex-shrink: 0; padding: 10px 22px; gap: 10px; }
+.student-show-counter .starter-legend { margin-left: 16px; color: #52645e; font-size: 13px; }
+.reveal-split-button { display: inline-flex; align-items: stretch; }
+.student-show-buttons .reveal-split-button .show-primary { border-radius: 12px 0 0 12px; min-width: 190px; }
+@media (min-width: 1600px) {
+  .student-groups .student-show-grid { grid-template-columns: repeat(var(--student-wide-columns), minmax(0, 1fr)); }
+}
+@media (max-width: 1000px) {
+  .student-groups .student-show-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .student-show .student-compact-header { gap: 8px; }
+  .student-compact-tools { flex: 1; justify-content: flex-end; }
+}
+@media (max-width: 600px) {
+  .student-show .student-compact-header { padding: 10px 12px; }
+  .student-groups .student-show-grid { padding-inline: 12px; }
+  .student-compact-tools { justify-content: flex-start; }
+  .student-arrangement-picker { flex: 1; max-width: none; }
+  .student-groups .student-show-counter { display: block; }
+  .student-show-counter .starter-legend { margin-left: 8px; }
 }

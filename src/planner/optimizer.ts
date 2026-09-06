@@ -16,6 +16,7 @@ import {
   createBlockProblem,
   greedyChoices,
   SCORE_LABELS,
+  SCORE,
   scoreChoices,
   validChoices,
   type BlockProblem,
@@ -58,12 +59,12 @@ function buildModel(problem: BlockProblem) {
   for (const slot of problem.slots) {
     const assigned = plus(...x[slot.index]);
     model.constrain(assigned, '<=', 1);
-    addCost(1, plus(constant(1), scale(assigned, -1)));
+    addCost(SCORE.empty, plus(constant(1), scale(assigned, -1)));
     const previous = slot.choices.findIndex(
       (choice) => choice.station.id === slot.originalStationId,
     );
     addCost(
-      10,
+      SCORE.changes,
       previous < 0
         ? slot.originalStationId
           ? constant(1)
@@ -72,7 +73,7 @@ function buildModel(problem: BlockProblem) {
     );
   }
   for (const time of problem.times) {
-    addCost(1, constant(time.missingFixed));
+    addCost(SCORE.empty, constant(time.missingFixed));
     for (const { station } of time.choices) {
       const fixed = time.fixed.filter(
         (visit) => visit.assignment.stationId === station.id,
@@ -111,7 +112,7 @@ function buildModel(problem: BlockProblem) {
   }
   for (const requirement of problem.dailyRequired) {
     addCost(
-      requirement.pinned ? 0 : 2,
+      requirement.pinned ? SCORE.pinned : SCORE.daily,
       model.positive(
         plus(constant(1), scale(requiredCount(requirement), -1)),
         1,
@@ -122,7 +123,11 @@ function buildModel(problem: BlockProblem) {
     false,
     Math.max(0, ...problem.learners.map((learner) => learner.eligible.length)),
   );
-  objectives[3] = worstMissing;
+  objectives[SCORE.worstMissing] = worstMissing;
+  const worstPriorityMissing = problem.priorityActivities.size
+    ? model.variable(false, problem.priorityActivities.size)
+    : constant(0);
+  objectives[SCORE.priorityWorst] = worstPriorityMissing;
   for (const learner of problem.learners) {
     const keys = [...new Set([...learner.eligible, ...learner.fixed.flat()])];
     const visits = problem.times.map(
@@ -166,10 +171,17 @@ function buildModel(problem: BlockProblem) {
       );
       const repeats = plus(...activities.values(), scale(newVisits, -1));
       const maxRepeats = Math.max(1, learner.fixed[time].length);
+      if (learner.slots[time].length || learner.fixed[time].length) {
+        for (const key of learner.eligible) {
+          if (problem.priorityActivities.has(key) && problem.times[time].choices.some((choice) => choice.key === key)) {
+            addCost(SCORE.priorityDelay, scale(plus(constant(1), scale(next.get(key)!, -1)), learner.weight));
+          }
+        }
+      }
       for (const key of learner.eligible) {
         // Repeats * (1 - previously seen), linearized using a bounded repeat count.
         addCost(
-          6,
+          SCORE.prematureRepeats,
           scale(
             model.positive(
               plus(repeats, scale(seen.get(key)!, -maxRepeats)),
@@ -194,7 +206,7 @@ function buildModel(problem: BlockProblem) {
               : previous.terms.size === 0
                 ? scale(current, previous.constant)
                 : model.positive(plus(current, previous, constant(-1)), 1);
-          addCost(7, scale(adjacent, learner.weight));
+          addCost(SCORE.consecutive, scale(adjacent, learner.weight));
         }
       }
       seen = next;
@@ -204,9 +216,14 @@ function buildModel(problem: BlockProblem) {
       ...learner.eligible.map((key) => scale(seen.get(key)!, -1)),
     );
     model.constrain(plus(worstMissing, scale(missing, -1)), '>=', 0);
-    addCost(4, scale(missing, learner.weight));
+    const priorityMissing = plus(...learner.eligible
+      .filter((key) => problem.priorityActivities.has(key))
+      .map((key) => plus(constant(1), scale(seen.get(key)!, -1))));
+    model.constrain(plus(worstPriorityMissing, scale(priorityMissing, -1)), '>=', 0);
+    addCost(SCORE.priorityMissing, scale(priorityMissing, learner.weight));
+    addCost(SCORE.missing, scale(missing, learner.weight));
     addCost(
-      5,
+      SCORE.onceMissing,
       scale(
         plus(
           ...learner.eligible
@@ -231,7 +248,7 @@ function buildModel(problem: BlockProblem) {
         );
       };
       addCost(
-        9,
+        SCORE.blockRepeatPairs,
         scale(
           pairCost(visits.map((activities) => activities.get(key)!)),
           learner.weight,
@@ -239,7 +256,7 @@ function buildModel(problem: BlockProblem) {
       );
       for (const dayId of dayIds) {
         addCost(
-          8,
+          SCORE.dayRepeatPairs,
           scale(
             pairCost(
               visits.flatMap((activities, time) =>

@@ -14,5 +14,6 @@ import './groupThemes.test';
 import './revealEffects.test';
 import './planner.test';
 import './stationPins.test';
+import './priorityStations.test';
 import './rotationTimer.test';
 import './transitionPlayback.test';
