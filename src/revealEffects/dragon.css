@@ -1,0 +1,21 @@
+.dragon-reveal-scene { position: absolute; inset: 0; --dragon-size: clamp(190px, 23vw, 320px); --dragon-left: 12px; --dragon-bottom: 82px; }
+.dragon-reveal-pal { position: absolute; left: var(--dragon-left); bottom: var(--dragon-bottom); width: var(--dragon-size); animation: dragon-peek 2750ms ease both; }
+.dragon-reveal-pal svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 4px 5px #47735b26) drop-shadow(0 0 14px #fff9d6); }
+.dragon-mouth { transform-box: fill-box; transform-origin: center; animation: dragon-hiccup 600ms 450ms ease-in-out 2; }
+.dragon-wing-near { transform-origin: 125px 222px; animation: dragon-wing-flutter 680ms 300ms ease-in-out 3; }
+.dragon-wing-far { transform-origin: 207px 218px; animation: dragon-wing-flutter 680ms 380ms ease-in-out 3 reverse; }
+.dragon-hiccup { position: absolute; top: 3%; right: -3%; background: #fff9e8; border: 2px solid #d7dfbd; border-radius: 50%; padding: 7px 13px; font-size: clamp(20px, 2vw, 26px); font-weight: 800; color: #638270; transform: rotate(10deg); animation: dragon-hic-label 1800ms 400ms ease both; }
+/* The mouth is at (282, 179) in a 320 × 340 drawing. Keep the
+   bubble source attached to it at every viewport size. */
+.dragon-bubble { position: absolute; left: calc(var(--dragon-left) + var(--dragon-size) * .88125); bottom: calc(var(--dragon-bottom) + var(--dragon-size) * .503125); width: var(--bubble-size); height: var(--bubble-size); margin-left: calc(var(--bubble-size) * -.5); margin-bottom: calc(var(--bubble-size) * -.5); border: 3px solid var(--bubble-color); border-radius: 50%; background: radial-gradient(ellipse at 30% 25%, #ffffffec 0 5%, transparent 10%), radial-gradient(ellipse at 70% 80%, var(--bubble-color), #ffffff30 65%); animation: dragon-bubble-flight 1700ms calc(450ms + var(--bubble-delay)) ease-out both; }
+.dragon-bubble-cover { position: absolute; inset: 0; border-radius: inherit; display: grid; place-items: center; background: #ecf5d9; border: 2px dotted #a5c497; animation: dragon-cover-pop 1500ms calc(var(--reveal-left) * 450ms) ease-in both; }
+.dragon-bubble-cover > span { font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; color: #789c71; }
+.dragon-bubble-cover > i { position: absolute; width: 55px; height: 55px; border: 3px solid #afcfa4; border-radius: 50%; top: 15%; left: 15%; background: radial-gradient(ellipse at 30% 25%, #fff 0 4%, transparent 12%); }
+.dragon-bubble-cover > i:nth-last-child(2) { left: auto; right: 9%; top: auto; bottom: 13%; width: 75px; height: 75px; border-color: #c6b5d9; }
+.dragon-bubble-cover > i:last-child { top: 17%; left: auto; right: 16%; width: 35px; height: 35px; border-color: #e7ca89; }
+@keyframes dragon-peek { 0% { transform: translate(-110%, 35%) rotate(-12deg); } 18% { transform: translate(0) rotate(0); } 32% { transform: translateY(3px) rotate(-1deg); } 40%, 78% { transform: translate(0) rotate(0); } 100% { transform: translate(-110%, 35%) rotate(-12deg); } }
+@keyframes dragon-hiccup { 50% { transform: scale(1.15, 1.35); } }
+@keyframes dragon-wing-flutter { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-7deg); } }
+@keyframes dragon-hic-label { 0%, 100% { opacity: 0; transform: rotate(10deg) scale(.3); } 20%, 75% { opacity: 1; transform: rotate(10deg) scale(1); } }
+@keyframes dragon-bubble-flight { 0% { opacity: 0; transform: translate(0) scale(.2); } 15% { opacity: .95; } 80% { opacity: .8; transform: translate(var(--bubble-x), var(--bubble-y)) scale(1); } 100% { opacity: 0; transform: translate(var(--bubble-x), calc(var(--bubble-y) - 6vh)) scale(1.5); } }
+@keyframes dragon-cover-pop { 0%, 25% { transform: scale(1); opacity: 1; } 55% { transform: scale(1.03, 1.08); border-radius: 40%; opacity: 1; } 70% { transform: scale(.95, 1.12); border-radius: 50%; opacity: 1; } 100% { transform: scale(1.22); border-radius: 50%; opacity: 0; } }

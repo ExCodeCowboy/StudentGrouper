@@ -7,6 +7,7 @@ export default defineConfig({
   base: process.env.VITE_BASE_PATH || '/',
   css: { postcss: { plugins: [tailwindcss()] } },
   plugins: [react()],
+  optimizeDeps: { include: ['highs'] },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('.', import.meta.url)),

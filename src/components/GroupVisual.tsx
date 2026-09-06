@@ -4,7 +4,7 @@ export function GroupVisual({
   group,
   small = false,
 }: {
-  group: Group;
+  group: Pick<Group, 'name' | 'color' | 'symbol' | 'imageDataUrl'>;
   small?: boolean;
 }) {
   return (

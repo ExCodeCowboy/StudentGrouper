@@ -12,6 +12,7 @@ import {
   LockOpen,
   Plus,
   Printer,
+  Presentation,
   RefreshCcw,
   RotateCcw,
   Settings2,
@@ -30,6 +31,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { StationVisual } from '../components/StationVisual';
 import { GroupVisual } from '../components/GroupVisual';
+import { PlanningBlockPanel } from '../components/PlanningBlockPanel';
+import { StationRules } from '../components/StationRules';
+import type { NewBlockPlan } from '../planningBlocks';
+import { stationHasCompletedWork } from '../planningBlocks';
+import { stationCapacity } from '../rotations';
+import type { PlannerResult } from '../planner/optimizer';
+import { readDrag, writeDrag } from '../dragDrop';
 import type {
   Classroom,
   GroupSet,
@@ -49,11 +57,15 @@ import {
 
 type Props = {
   classroom: Classroom;
+  onStudentView: () => void;
   groupSet: GroupSet;
   session: RotationSession;
   issues: ScheduleIssue[];
   ignoredIssueCount: number;
   actionIssue?: string;
+  planning?: string;
+  plannerReport?: PlannerResult;
+  onCancelPlanning: () => void;
   onSelectSession: (id: string) => void;
   onSelectGroupSet: (id: string) => void;
   onBuildOptimize: () => void;
@@ -81,6 +93,8 @@ type Props = {
   onAddLocation: () => void;
   onDeleteLocation: (locationId: string) => void;
   onPrint: () => void;
+  onCreateBlock: (plan: NewBlockPlan) => void;
+  onBuildBlock: () => void;
 };
 
 const iconOptions: { value: StationIconKey; label: string }[] = [
@@ -145,11 +159,15 @@ function StationAndLocation({
 
 export function TodayView({
   classroom,
+  onStudentView,
   groupSet,
   session,
   issues,
   ignoredIssueCount,
   actionIssue,
+  planning,
+  plannerReport,
+  onCancelPlanning,
   onSelectSession,
   onSelectGroupSet,
   onBuildOptimize,
@@ -172,6 +190,8 @@ export function TodayView({
   onAddLocation,
   onDeleteLocation,
   onPrint,
+  onCreateBlock,
+  onBuildBlock,
 }: Props) {
   const [view, setView] = useState<'station' | 'group'>('station');
   const [dayStep, setDayStep] = useState<'stations' | 'assignments'>('assignments');
@@ -193,7 +213,10 @@ export function TodayView({
   const editingGroupSet = draftDate
     ? classroom.groupSets.find((item) => item.id === draftGroupSetId) ?? groupSet
     : groupSet;
-  const plannedStationCount = editingStations.length;
+  const plannedStationCount = editingStations.filter(
+    (station) => station.activityName.trim(),
+  ).length;
+  const unfinishedStationCount = editingStations.length - plannedStationCount;
   const visibleIssues = actionIssue
     ? [{ id: 'action', severity: 'attention' as const, message: actionIssue }, ...issues]
     : issues;
@@ -202,7 +225,7 @@ export function TodayView({
     (round) => round.id === pendingRemoveRoundId,
   );
   const canUnlock = session.rounds.some(
-    (round) => !round.completed && round.assignments.some((assignment) => assignment.locked),
+      (round) => !round.completed && round.assignments.some((assignment) => assignment.locked && !assignment.pinned),
   );
   const locationForStation = (
     stationId: string,
@@ -335,7 +358,8 @@ export function TodayView({
       setDraftDate('');
       setDraftStations([]);
     } else {
-      onBuildOptimize();
+      if (session.blockId) onBuildBlock();
+      else onBuildOptimize();
     }
     setDayStep('assignments');
   };
@@ -371,21 +395,19 @@ export function TodayView({
   };
 
   const dragGroup = (event: DragEvent, groupId: string) => {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('application/x-group-id', groupId);
+    writeDrag(event.dataTransfer, 'group', groupId);
   };
   const dragStation = (event: DragEvent, stationId: string) => {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('application/x-station-id', stationId);
+    writeDrag(event.dataTransfer, 'station', stationId);
   };
   const dropGroupAtStation = (event: DragEvent, roundId: string, stationId: string) => {
     event.preventDefault();
-    const groupId = event.dataTransfer.getData('application/x-group-id');
+    const groupId = readDrag(event.dataTransfer, 'group');
     if (groupId) onMove(roundId, groupId, stationId);
   };
   const dropStationAtGroup = (event: DragEvent, roundId: string, groupId: string) => {
     event.preventDefault();
-    const stationId = event.dataTransfer.getData('application/x-station-id');
+    const stationId = readDrag(event.dataTransfer, 'station');
     if (stationId) onMoveStation(roundId, groupId, stationId);
   };
 
@@ -451,24 +473,34 @@ export function TodayView({
                 {classroom.groupSets.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
               </select>
             </label>
-            <span>{editingGroupSet.groups.length} groups · {plannedStationCount} activities</span>
+            <span>
+              {editingGroupSet.groups.length} groups · {plannedStationCount} activities
+              {unfinishedStationCount > 0
+                ? ` · ${unfinishedStationCount} unfinished ${unfinishedStationCount === 1 ? 'station' : 'stations'}`
+                : ''}
+            </span>
           </div>
         </div>
         <div className="heading-actions rotation-actions">
+          <Button id="open-rotation-student-view" variant="outline" size="lg" disabled={Boolean(draftDate) || !session.rounds.length} onClick={onStudentView}>
+            <Presentation /> Student view
+          </Button>
           {draftDate ? (
             <Button variant="outline" size="lg" onClick={cancelDraft}>
               <RotateCcw /> Cancel new day
             </Button>
           ) : (
-            <Button variant="outline" size="lg" onClick={() => startDayDraft()}>
-              <CalendarPlus /> Plan next day
+            <Button variant="outline" size="lg" onClick={() => chooseDate(shiftSchoolDay(displayDate, 1))}>
+              <CalendarPlus /> {classroom.sessions.some((day) => day.date === shiftSchoolDay(displayDate, 1)) ? 'Next day' : 'Plan next day'}
             </Button>
           )}
           <Button variant="outline" size="lg" disabled={Boolean(draftDate)} onClick={onPrint}>
-            <Printer /> Print
+            <Printer /> {session.blockId ? 'Print block' : 'Print'}
           </Button>
         </div>
       </section>
+
+      {!draftDate && <PlanningBlockPanel classroom={classroom} session={session} planning={planning} report={plannerReport} onCancel={onCancelPlanning} onCreate={onCreateBlock} onBuild={onBuildBlock} onSelect={(id) => { onSelectSession(id); setDayStep('assignments'); }} />}
 
       <div className="day-steps" aria-label="Day setup" role="tablist">
         <button
@@ -561,10 +593,7 @@ export function TodayView({
               </div>
               <div className="station-editor-list">
                 {editingStations.map((station) => {
-                  const usedInCompletedRound = !draftDate && session.rounds.some(
-                    (round) => round.completed &&
-                      round.assignments.some((assignment) => assignment.stationId === station.id),
-                  );
+                  const usedInCompletedRound = !draftDate && stationHasCompletedWork(classroom, session, station);
                   const hasRepeatedActivityLocation = repeatedActivityKeys.has(
                     station.activityName.trim().toLocaleLowerCase(),
                   );
@@ -636,6 +665,7 @@ export function TodayView({
                       >
                         <Trash2 />
                       </Button>
+                      <StationRules station={station} groupSet={editingGroupSet} onChange={(patch) => updateEditingStation(station.id, patch)} />
                     </div>
                   );
                 })}
@@ -672,6 +702,7 @@ export function TodayView({
             ? 'Rebuild unlocked assignments to resolve schedule cautions'
             : 'Build the schedule or improve every unlocked assignment using learner activity history and earlier plans'}
           onClick={onBuildOptimize}
+          disabled={Boolean(planning)}
         >
           <Sparkles /> {issues.length > 0 ? 'Fix issues' : 'Build / Optimize'}
         </Button>
@@ -737,13 +768,13 @@ export function TodayView({
               )}
             </div>
           ))}
-          {view === 'group' && <div className="rotation-column-heading unused-heading">Unused stations</div>}
+          {view === 'group' && <div className="rotation-column-heading unused-heading">Stations with room</div>}
           <div className="done-heading">Done</div>
         </div>
 
         {session.rounds.map((round, roundIndex) => {
           const unusedStations = activeStations.filter(
-            (station) => !round.assignments.some((assignment) => assignment.stationId === station.id),
+            (station) => round.assignments.filter((assignment) => assignment.stationId === station.id).length < stationCapacity(station, groupSet.groups.length),
           );
           const roundIssues = issues.filter((issue) => issueTouchesRound(issue, round.id));
           return (
@@ -767,29 +798,31 @@ export function TodayView({
             </div>
               {view === 'station'
               ? activeStations.map((station) => {
-                  const assignment = round.assignments.find((item) => item.stationId === station.id);
-                  const group = groupSet.groups.find((item) => item.id === assignment?.groupId);
+                  const assignments = round.assignments.filter((item) => item.stationId === station.id);
                   const hasCaution = issues.some((issue) =>
-                    issueTouchesCell(issue, round.id, group?.id, station.id));
+                    assignments.some((assignment) => issueTouchesCell(issue, round.id, assignment.groupId, station.id)));
                   return (
                     <div
-                      className={`rotation-cell${assignment?.locked ? ' is-locked' : ''}${hasCaution ? ' has-caution' : ''}`}
+                      className={`rotation-cell shared-rotation-cell${hasCaution ? ' has-caution' : ''}`}
                       key={station.id}
                       onDragOver={(event) => event.preventDefault()}
                       onDrop={(event) => dropGroupAtStation(event, round.id, station.id)}
                     >
                       {hasCaution && <AlertTriangle className="cell-caution" aria-hidden="true" />}
-                      {group && assignment ? (
-                        <div className="group-assignment" draggable={!round.completed} onDragStart={(event) => dragGroup(event, group.id)}>
+                      {assignments.map((assignment) => {
+                        const group = groupSet.groups.find((item) => item.id === assignment.groupId);
+                        return group ? <div key={group.id} className={`group-assignment${assignment.locked ? ' is-locked' : ''}`} draggable={!round.completed && !assignment.pinned} onDragStart={(event) => dragGroup(event, group.id)}>
                           <GroupVisual group={group} />
                           <strong>{group.name}</strong>
-                          <button type="button" aria-label={assignment.locked ? 'Unlock placement' : 'Lock placement'} onClick={() => onToggleLock(round.id, group.id)}>
+                          <button type="button" disabled={round.completed || assignment.pinned} title={assignment.pinned ? 'Daily pin — change in Stations' : undefined} aria-label={assignment.pinned ? 'Pinned each day' : assignment.locked ? 'Unlock placement' : 'Lock placement'} onClick={() => onToggleLock(round.id, group.id)}>
                             {assignment.locked ? <Lock /> : <LockKeyholeOpen />}
                           </button>
-                        </div>
-                      ) : (
+                        </div> : null;
+                      })}
+                      {assignments.length === 0 && (
                         <span className="empty-cell">Open</span>
                       )}
+                      {stationCapacity(station, groupSet.groups.length) > 1 && <small className="capacity-label">{assignments.length} / {stationCapacity(station, groupSet.groups.length)} groups</small>}
                     </div>
                   );
                 })
@@ -810,25 +843,29 @@ export function TodayView({
                     >
                       {hasCaution && <AlertTriangle className="cell-caution" aria-hidden="true" />}
                       {station && assignment ? (
-                        <div draggable={!round.completed} onDragStart={(event) => dragStation(event, station.id)}>
+                        <div draggable={!round.completed && !assignment.pinned} onDragStart={(event) => dragStation(event, station.id)}>
                           <StationAndLocation
                             station={station}
                             location={locationForStation(station.id)}
                             compact
                           />
-                          <button type="button" aria-label={assignment.locked ? 'Unlock placement' : 'Lock placement'} onClick={() => onToggleLock(round.id, group.id)}>
+                          <button type="button" disabled={round.completed || assignment.pinned} title={assignment.pinned ? 'Daily pin — change in Stations' : undefined} aria-label={assignment.pinned ? 'Pinned each day' : assignment.locked ? 'Unlock placement' : 'Lock placement'} onClick={() => onToggleLock(round.id, group.id)}>
                             {assignment.locked ? <Lock /> : <LockKeyholeOpen />}
                           </button>
                         </div>
                       ) : (
                         <span className="empty-cell">Open</span>
                       )}
+                      {!round.completed && <select className="assignment-select" disabled={assignment?.pinned} aria-label={`Station for ${group.name} in Round ${roundIndex + 1}`} value={station?.id ?? ''} onChange={(event) => { if (event.target.value) onMove(round.id, group.id, event.target.value); }}>
+                        <option value="" disabled>Choose station</option>
+                        {activeStations.map((plan) => <option key={plan.id} value={plan.id}>{plan.activityName}</option>)}
+                      </select>}
                     </div>
                   );
                 })}
                 <div className="rotation-cell unused-stations">
                   {unusedStations.length > 0 ? (
-                    <div className="unused-station-list" aria-label={`Unused stations for Round ${roundIndex + 1}`}>
+                    <div className="unused-station-list" aria-label={`Stations with room for Round ${roundIndex + 1}`}>
                       {unusedStations.map((station) => (
                         <div
                           className="unused-station"
@@ -846,7 +883,7 @@ export function TodayView({
                       ))}
                     </div>
                   ) : (
-                    <span className="empty-cell">All in use</span>
+                    <span className="empty-cell">All stations full</span>
                   )}
                 </div>
               </>}
@@ -867,7 +904,9 @@ export function TodayView({
       </div>
       )}
 
-      <RotationPrintSheet classroom={classroom} groupSet={groupSet} session={session} />
+      {(session.blockId ? classroom.sessions.filter((item) => item.blockId === session.blockId).sort((a, b) => a.date.localeCompare(b.date)) : [session]).map((day) => (
+        <RotationPrintSheet key={day.id} classroom={classroom} groupSet={classroom.groupSets.find((set) => set.id === day.groupSetId) ?? groupSet} session={day} />
+      ))}
       <datalist id="recent-activities">
         {recentActivityNames.map((name) => <option key={name} value={name}>{name}</option>)}
       </datalist>

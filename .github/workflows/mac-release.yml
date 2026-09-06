@@ -41,10 +41,19 @@ jobs:
           tagName: v__VERSION__
           releaseName: Student Grouper v__VERSION__
           releaseBody: |
-            First public Mac release of Student Grouper.
+            Classroom planning and student displays for Student Grouper 0.2.0.
 
-            - Choose `x86_64` for an older Intel MacBook Air.
-            - Choose `aarch64` for an M1 or newer Mac.
+            - Plan a whole block of days with history-aware station coverage, once-only activities, and shared station capacity.
+            - Pin several groups for one daily station visit while the planner chooses their rounds.
+            - Create pairs or larger group counts, with random grouping that respects keep-apart rules.
+            - Show daily rotations or reveal all teams together with seven animated effects and eight group-name themes.
+            - Enable browser drag-and-drop handling in the Mac app.
+            - Import existing 0.1.0 backups, including saved groups and rotation history.
+
+            Mac downloads:
+
+            - Choose `Student-Grouper-x64.dmg` for an older Intel MacBook Air.
+            - Choose `Student-Grouper-aarch64.dmg` for an M1 or newer Mac.
             - This early build is ad-hoc signed rather than Apple-notarized. On first launch, Control-click the app, choose Open, and confirm.
 
             Student data stays on the device. Export a backup before moving classroom data between devices.

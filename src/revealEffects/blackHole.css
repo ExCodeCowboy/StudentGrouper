@@ -1,0 +1,32 @@
+.black-hole-scene { position: absolute; inset: 0; animation: black-hole-scene 2450ms ease both; }
+.black-hole-halo { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, #9a73ef38 0%, #5954cd16 28%, transparent 65%); }
+.black-hole-core { position: absolute; left: 50%; top: 46%; width: min(38vw, 340px); height: min(38vw, 340px); transform: translate(-50%, -50%); filter: drop-shadow(0 0 25px #a798f7); animation: black-hole-grow 2450ms ease-in-out both; }
+.black-hole-core i { position: absolute; inset: 5%; border: 9px solid transparent; border-top-color: #a297fc; border-bottom-color: #d9cdff; border-radius: 50%; box-shadow: 0 0 18px #b19cf7, inset 0 0 18px #7d65c6; animation: black-hole-spin 650ms linear infinite; }
+.black-hole-core i:nth-child(2) { inset: 17%; border-width: 11px; border-top-color: #f7d488; border-bottom-color: #ffe9b3; animation-direction: reverse; animation-duration: 900ms; }
+.black-hole-core i:nth-child(3) { inset: 27%; border-width: 6px; border-top-color: #fff9dc; border-bottom-color: #bcb9ff; animation-duration: 500ms; }
+.black-hole-core > span { position: absolute; inset: 35%; background: #241c44; border-radius: 50%; box-shadow: 0 0 24px #593b83; }
+.black-hole-stardust { position: absolute; left: 50%; top: 46%; width: 8px; height: 8px; border-radius: 50%; background: #d4b7ff; box-shadow: 0 0 8px #a085e1; animation: black-hole-dust 1200ms var(--dust-delay) ease-in both; }
+/* Fixed covers can orbit outside the daily chart's scrolling boundary. */
+.black-hole-paper { position: fixed; left: var(--reveal-cover-left); top: var(--reveal-cover-top); width: var(--reveal-cover-width); height: var(--reveal-cover-height); }
+/* Rotate and shrink about the shared portal, not each ribbon's own center. */
+.black-hole-paper-orbit { position: absolute; inset: 0; transform-origin: calc(50% + var(--reveal-target-x)) calc(50% + var(--reveal-target-y)); --orbit-delay: calc(140ms + var(--slice) * 40ms + var(--reveal-left) * 100ms); animation: black-hole-orbit 1900ms var(--orbit-delay) linear both; }
+.black-hole-paper-orbit > i { position: absolute; left: calc(var(--slice) * 16.6667%); top: 0; bottom: 0; width: 17%; display: grid; place-items: center; background: repeating-linear-gradient(25deg, #f1eaff 0 16px, #e6dcf9 16px 18px); border-inline: 1px dashed #b5a2d4; color: #997ac5; animation: black-hole-tumble 1900ms var(--orbit-delay) ease-in both; }
+.black-hole-paper-orbit > i > span { font-size: 35px; font-style: normal; }
+@keyframes black-hole-spin { to { transform: rotate(360deg) scaleY(.7); } }
+@keyframes black-hole-grow { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 18% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 86% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; } }
+@keyframes black-hole-scene { 0%, 100% { opacity: 0; } 12%, 85% { opacity: 1; } }
+@keyframes black-hole-dust { 0% { opacity: 0; transform: rotate(var(--dust-angle)) translateX(var(--dust-distance)) scale(1); } 12% { opacity: 1; } 100% { opacity: 0; transform: rotate(calc(var(--dust-angle) + 80deg)) translateX(0) scale(.1); } }
+@keyframes black-hole-orbit {
+  0% { transform: rotate(0deg) scale(1); opacity: 1; }
+  12% { transform: rotate(12deg) scale(.88); opacity: 1; }
+  32% { transform: rotate(90deg) scale(.68); }
+  54% { transform: rotate(205deg) scale(.43); }
+  76% { transform: rotate(355deg) scale(.2); opacity: 1; }
+  92% { transform: rotate(495deg) scale(.065); opacity: 1; }
+  100% { transform: rotate(585deg) scale(0); opacity: 0; }
+}
+@keyframes black-hole-tumble {
+  0% { transform: none; }
+  16% { transform: translateY(calc((var(--slice) - 2.5) * 6px)) rotate(var(--slice-turn)); }
+  100% { transform: rotate(calc(var(--slice-turn) + 190deg)); }
+}

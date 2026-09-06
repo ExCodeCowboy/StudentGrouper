@@ -6,18 +6,29 @@ Student Grouper is a local-first classroom tool for making student groups, conti
 
 ![Student Grouper: classroom groups and station rotations, made simpler](website/public/og.png)
 
+## Project status
+
+Version 0.2.0 adds whole-block rotation planning, flexible daily station pins, random groups and pairs, and animated student displays with eight team themes. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 165 tests, including legacy backup imports and planner validation.
+
+For follow-up work, start with [the project handoff](docs/PROJECT_HANDOFF.md). The product rules that should not change accidentally are in [the product contract](PRODUCT_SPEC.md), and the build and release details are in [the development guide](docs/DEVELOPMENT.md).
+
 ## Why it exists
 
 This was made for the small, repetitive planning decisions that consume a surprising amount of a teacher’s morning. The app can make a useful first draft, but the teacher stays in control:
 
 - Build mixed or similar reading, math, or writing groups.
+- Create random groups, pairs, or more than eight groups while respecting keep-apart notes.
 - Add one clear secondary preference, such as mixed gender or shared language.
 - Note students who work well together or should have space.
 - Drag one student without causing other students to jump between groups.
 - Lock deliberate choices and rebuild only what remains unlocked.
 - Continue activity history across dates, even after regrouping.
+- Plan a block of days together, limit activities to once per block, and share a station between groups.
+- Pin multiple groups for a daily station visit and let the planner choose their rounds.
 - Plan activities and reusable classroom locations separately.
 - Print group routes with activity pictures, words, colors, and symbols.
+- Project daily rotations or reveal all teams together with seven playful visual effects.
+- Choose woodland, space, ocean, garden, dinosaur, weather, storybook, or builder names and symbols for groups.
 - Export and restore a complete local backup.
 
 ## Privacy
@@ -39,7 +50,7 @@ The desktop shell is Tauri. It uses the Mac’s built-in webview instead of ship
 
 ## Development
 
-Install and run the classroom app:
+Use Node.js 22.13 or newer. Install and run the classroom app:
 
 ```text
 npm install
@@ -61,6 +72,8 @@ npm run tauri:dev
 ```
 
 The public information site lives in `website/` and has its own lockfile and scripts. A static copy in `public-site/` is published with the browser app on GitHub Pages.
+
+The application is intentionally split into pure domain modules in `src/` and React views in `src/views/`. Read [the development guide](docs/DEVELOPMENT.md) before changing persistence, deployment, or release packaging.
 
 ## Product boundaries
 

@@ -8,6 +8,9 @@ import {
   recoverSavedData,
 } from '../src/storage';
 import type { AppData, PlannedStation } from '../src/model';
+import previousReleaseBackup from './fixtures/backup-v0.1.0.json';
+import { createPlanningBlock } from '../src/planningBlocks';
+import { studentDisplayGroups } from '../src/studentDisplay';
 
 function test(name: string, body: () => void | Promise<void>) {
   void nodeTest(name, body);
@@ -16,6 +19,38 @@ function test(name: string, body: () => void | Promise<void>) {
 function textFile(contents: string) {
   return { text: async () => contents };
 }
+
+test('the previous release export imports without losing any saved field and can be exported again', async () => {
+  const restored = await readBackup(textFile(JSON.stringify(previousReleaseBackup)));
+  assert.deepEqual(JSON.parse(JSON.stringify(restored)), previousReleaseBackup);
+  const classroom = restored.classrooms[0];
+  assert.equal(classroom.planningBlocks, undefined);
+  assert.ok(classroom.sessions.every((session) => session.blockId === undefined));
+  assert.ok(classroom.sessions.flatMap((session) => session.plannedStations).every((station) =>
+    station.visitRule === undefined && station.groupCapacity === undefined && station.dailyPinGroupIds === undefined));
+
+  const reimported = await readBackup(textFile(createBackupFile(restored).contents));
+  assert.deepEqual(reimported, restored);
+});
+
+test('an imported old export works with student view and new blocks while retaining its original plans', async () => {
+  const restored = await readBackup(textFile(JSON.stringify(previousReleaseBackup)));
+  const classroom = restored.classrooms[0];
+  const display = studentDisplayGroups(classroom.groupSets[0], classroom.students);
+  assert.equal(display.length, 5);
+  assert.equal(display.flatMap((group) => group.students).length, 23);
+  assert.equal(display[0].imageDataUrl, classroom.groupSets[0].groups[0].imageDataUrl);
+
+  const planned = createPlanningBlock(classroom, classroom.sessions[0], {
+    name: 'First new block', startDate: '2026-09-07', endDate: '2026-09-08', roundCount: 3,
+  });
+  assert.equal(planned.planningBlocks?.length, 1);
+  const newDays = planned.sessions.filter((session) => session.blockId);
+  assert.equal(newDays.length, 2);
+  assert.ok(newDays.every((session) => session.rounds.every((round) => round.assignments.length === 5)));
+  assert.deepEqual(planned.sessions.filter((session) => !session.blockId), classroom.sessions);
+  assert.equal(classroom.planningBlocks, undefined, 'creating a block does not mutate the imported backup');
+});
 
 test('exported backup round-trips every current data field through import', async () => {
   const source = normalizeAppData(createSampleData());
@@ -122,7 +157,7 @@ test('saved completed rounds gain a stable learner snapshot during migration', (
   assert.deepEqual(migrated.studentIds, expected, 'later edits cannot rewrite completed history');
 });
 
-test('legacy station data becomes dated daily stations with reusable locations', () => {
+test('legacy station backups import as dated daily stations with reusable locations', async () => {
   const data = createSampleData();
   const classroom = data.classrooms[0];
   const session = classroom.sessions[0];
@@ -141,7 +176,7 @@ test('legacy station data becomes dated daily stations with reusable locations',
   delete rawSession.date;
   delete rawSession.plannedStations;
 
-  const normalized = normalizeAppData(data as AppData);
+  const normalized = await readBackup(textFile(JSON.stringify(data as AppData)));
   const migratedClassroom = normalized.classrooms[0];
   const migratedSession = migratedClassroom.sessions[0];
 

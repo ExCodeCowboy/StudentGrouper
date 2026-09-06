@@ -1,0 +1,46 @@
+.student-rotations { --reveal-question-size: 44px; }
+.student-rotations .student-show-intro { padding: 4px 24px 22px; }
+.student-rotations .student-show-intro h1 { font-size: clamp(32px, 3.5vw, 50px); }
+.student-rotations .student-show-kicker { font-size: 13px; letter-spacing: .08em; }
+.student-rotations .student-show-intro > p:last-of-type { margin: 10px 0 0; }
+.student-day-table-wrap { flex-shrink: 0; margin: 0 34px 30px; overflow: auto; border: 2px solid #dddcca; border-radius: 20px; background: #fffefa; }
+.student-day-table-wrap:focus-visible { outline: 3px solid #267568; outline-offset: 4px; }
+.student-day-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.student-day-table th, .student-day-table td { padding: 14px 18px; text-align: left; vertical-align: middle; border-right: 1px solid #e3e4d8; border-bottom: 1px solid #e3e4d8; }
+.student-day-table th:last-child, .student-day-table td:last-child { border-right: 0; }
+.student-day-table tbody tr:last-child > * { border-bottom: 0; }
+.student-day-table thead th { min-width: 205px; background: #edf2e6; color: #496156; font-size: 19px; font-weight: 800; }
+.student-day-table thead th:first-child { width: 25%; }
+.student-day-table tbody th { border-left: 5px solid var(--team-color); background: #fffdf5; }
+.student-day-team { display: flex; align-items: center; gap: 12px; }
+.student-day-team .group-symbol { flex-shrink: 0; width: 46px; height: 46px; border-radius: 15px; font-size: 27px; }
+.student-day-team strong { font-size: clamp(20px, 1.7vw, 27px); line-height: 1.2; overflow-wrap: anywhere; }
+.student-day-round-number { display: inline-grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: #fffdf7; color: #59705d; font-size: 14px; margin-right: 9px; }
+.student-day-destination { position: relative; min-height: 90px; display: flex; flex-direction: column; justify-content: center; border-radius: 13px; }
+.rotation-student-destination .station-visual { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; text-align: left; }
+.rotation-student-destination .station-picture { flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; background: #edf3eb; color: #267568; }
+.rotation-student-destination .station-picture svg { width: 27px; height: 27px; }
+.rotation-student-destination .station-picture img { width: 100%; height: 100%; object-fit: contain; }
+.rotation-student-destination .station-name { font-size: clamp(21px, 1.8vw, 28px); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.rotation-student-location { display: flex; align-items: flex-start; gap: 6px; font-size: 17px; font-weight: 650; line-height: 1.35; margin-top: 9px; color: #53695e; overflow-wrap: anywhere; }
+.rotation-student-location svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; }
+.student-route-names { font-size: 15px; font-weight: 500; color: #4a5f5a; line-height: 1.5; margin: 8px 0 0; overflow-wrap: anywhere; }
+.rotation-student-check { display: block; padding: 8px; color: #6c5b3c; font-size: 21px; line-height: 1.3; }
+.rotation-student-empty { color: #7a877b; font-size: 26px; }
+.student-day-mystery { display: grid; place-items: center; min-height: 90px; border: 2px dashed #e5d9b6; border-radius: 13px; background: repeating-linear-gradient(-45deg, #fff8e8 0 10px, #fff4d9 10px 12px); }
+.student-day-mystery > span:first-child { font-size: var(--reveal-question-size); font-weight: 850; color: #b3955e; line-height: 1; }
+@media (max-width: 900px) { .student-day-table-wrap { margin-inline: 20px; } }
+@media (min-width: 1000px) and (max-height: 850px) {
+  .student-rotations .student-show-top { padding: 12px 24px; }
+  .student-rotations .student-show-intro { padding: 0 24px 16px; }
+  .student-rotations .student-show-intro h1 { font-size: 38px; }
+  .student-rotations .student-show-kicker { margin-bottom: 6px; }
+  .student-rotations .student-show-intro > p:last-of-type { margin: 6px 0 0; font-size: 15px; }
+  .student-day-table th, .student-day-table td { padding: 8px 14px; }
+  .student-day-destination, .student-day-mystery { min-height: 76px; }
+  .student-day-team .group-symbol { width: 40px; height: 40px; font-size: 25px; }
+  .student-day-team strong { font-size: 21px; }
+  .student-day-table .station-name { font-size: 22px; }
+  .student-day-table .student-route-names { font-size: 14px; }
+}
+@media print { .student-day-table-wrap { overflow: visible; margin: 0; } .student-day-table tr { break-inside: avoid; } }

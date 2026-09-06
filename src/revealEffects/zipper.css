@@ -1,0 +1,16 @@
+.reveal-effects-layer[data-reveal-effect="zipper"] { z-index: 7; }
+.rainbow-zip-stage { position: absolute; inset: 0; }
+.rainbow-zip-slider { position: absolute; left: calc(50% - 44px); top: -180px; width: 88px; height: 130px; border: 5px solid #fff8e8; border-radius: 30px; background: #f3c861; box-shadow: 0 6px 0 #ce9c38, 0 0 28px #ffe5a9; display: grid; place-items: center; animation: rainbow-zip-down 1700ms cubic-bezier(.4,.1,.35,1) both; }
+.rainbow-zip-slider > span { font-size: 55px; line-height: 1; color: #fffbed; text-shadow: 0 3px 0 #d6a243; }
+.rainbow-zip-slider > i { position: absolute; top: 95px; left: 21px; width: 36px; height: 70px; border: 9px solid #edd18a; border-radius: 20px; background: transparent; }
+.rainbow-zip-trail { position: absolute; top: 0; bottom: 0; left: calc(50% - 42px); width: 84px; background: linear-gradient(90deg,#df8692 0 16%,#ecc46e 16% 32%,#a8c984 32% 48%,#84c2c8 48% 64%,#a499cc 64% 80%,#d8a5ce 80%); animation: rainbow-zip-trail 2100ms ease both; }
+.rainbow-screen-curtain, .rainbow-zip-half { position: absolute; inset: 0; }
+.rainbow-zip-half { width: 50%; display: grid; place-items: center; border: 2px solid #fff9ec; background: repeating-linear-gradient(135deg,#f4b4bb 0 80px,#f9dc98 80px 160px,#c4deac 160px 240px,#b3dce4 240px 320px,#c5b9e4 320px 400px); animation: rainbow-unzip-left 1800ms ease-in-out both; transform-origin: top right; }
+.rainbow-zip-half > span { font-size: clamp(80px, 11vw, 160px); color: #fffdf4; text-shadow: 0 2px 5px #a9997780; }
+.rainbow-zip-half.zip-right { left: 50%; transform-origin: top left; animation-name: rainbow-unzip-right; }
+.rainbow-zip-teeth { position: absolute; top: 0; bottom: 0; left: calc(50% - 9px); width: 18px; background: repeating-linear-gradient(#fff9e8 0 7px,#cda94e 7px 13px); animation: rainbow-zip-teeth 1100ms 180ms ease-in both; }
+@keyframes rainbow-zip-down { 0% { transform: translateY(0) rotate(-5deg); } 100% { transform: translateY(calc(100vh + 380px)) rotate(7deg); } }
+@keyframes rainbow-zip-trail { 0% { clip-path: inset(0 0 100%); opacity: .8; } 70% { clip-path: inset(0); opacity: .8; transform: scaleX(1); } 100% { clip-path: inset(0); opacity: 0; transform: scaleX(3); } }
+@keyframes rainbow-unzip-left { 0%, 12% { transform: none; opacity: 1; } 45% { transform: perspective(600px) rotateY(-12deg) rotate(4deg); } 100% { transform: translateX(-110%) rotate(-18deg); opacity: 0; } }
+@keyframes rainbow-unzip-right { 0%, 12% { transform: none; opacity: 1; } 45% { transform: perspective(600px) rotateY(12deg) rotate(-4deg); } 100% { transform: translateX(110%) rotate(18deg); opacity: 0; } }
+@keyframes rainbow-zip-teeth { to { clip-path: inset(100% 0 0); opacity: 0; } }

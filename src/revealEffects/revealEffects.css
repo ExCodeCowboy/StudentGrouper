@@ -1,0 +1,12 @@
+.reveal-effect-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: #52645e; font-size: 12px; font-weight: 700; }
+.reveal-effect-picker select { max-width: 210px; border: 1px solid #dedbcc; background: #fffdf8; border-radius: 10px; padding: 8px 10px; font: inherit; color: #365f53; }
+.reveal-effect-picker small { flex-basis: 100%; font-weight: 500; }
+.student-show select:focus-visible { outline: 3px solid #17586a; outline-offset: 3px; }
+.reveal-effects-layer { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+.student-show { overflow-x: hidden; }
+.reveal-cover { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; --reveal-target-x: 0px; --reveal-target-y: -100px; --reveal-left: .5; }
+.student-destination-reveal { position: relative; display: flex; flex: 1; flex-direction: column; margin-top: 14px; border-radius: 15px; min-height: 225px; }
+.student-show-controls, .student-show-top { z-index: 6; }
+.student-show-top { position: relative; }
+@media (prefers-reduced-motion: reduce) { .reveal-effects-layer, .reveal-cover { display: none !important; } }
+@media print { .reveal-effects-layer, .reveal-cover { display: none; } }

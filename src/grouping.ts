@@ -1,9 +1,4 @@
-import type {
-  Group,
-  GroupSet,
-  Relationship,
-  Student,
-} from './model';
+import type { Group, GroupSet, Relationship, Student } from './model';
 import { createGroupShells } from './sample';
 
 function relationshipBetween(
@@ -13,8 +8,10 @@ function relationshipBetween(
 ) {
   return relationships.find(
     (relationship) =>
-      (relationship.studentAId === leftId && relationship.studentBId === rightId) ||
-      (relationship.studentAId === rightId && relationship.studentBId === leftId),
+      (relationship.studentAId === leftId &&
+        relationship.studentBId === rightId) ||
+      (relationship.studentAId === rightId &&
+        relationship.studentBId === leftId),
   );
 }
 
@@ -31,26 +28,36 @@ function candidateScore(
   let score = members.length * 2;
 
   for (const member of members) {
-    const relationship = relationshipBetween(relationships, student.id, member.id);
+    const relationship = relationshipBetween(
+      relationships,
+      student.id,
+      member.id,
+    );
     if (relationship?.kind === 'apart') score += 10_000;
     if (relationship?.kind === 'together') score -= 60;
   }
 
   const attribute = groupSet.recipe.primaryAttribute;
   if (groupSet.recipe.mode === 'mixed') {
-    const sameLevel = members.filter((member) => member[attribute] === student[attribute]).length;
+    const sameLevel = members.filter(
+      (member) => member[attribute] === student[attribute],
+    ).length;
     score += sameLevel * 18;
-  } else if (members.length) {
-    const average = members.reduce((sum, member) => sum + member[attribute], 0) / members.length;
+  } else if (groupSet.recipe.mode === 'similar' && members.length) {
+    const average =
+      members.reduce((sum, member) => sum + member[attribute], 0) /
+      members.length;
     score += Math.abs(average - student[attribute]) * 20;
   }
 
   if (groupSet.recipe.secondaryGoal === 'mix-gender' && student.gender) {
-    score += members.filter((member) => member.gender === student.gender).length * 4;
+    score +=
+      members.filter((member) => member.gender === student.gender).length * 4;
   }
   if (groupSet.recipe.secondaryGoal === 'share-language' && student.language) {
     const sharesLanguage = members.some(
-      (member) => member.language.toLowerCase() === student.language.toLowerCase(),
+      (member) =>
+        member.language.toLowerCase() === student.language.toLowerCase(),
     );
     if (sharesLanguage) score -= 7;
   }
@@ -59,7 +66,8 @@ function candidateScore(
 
 function balancedCapacities(groups: Group[], studentCount: number) {
   const capacities = groups.map((group) => group.studentIds.length);
-  let seatsLeft = studentCount - capacities.reduce((sum, count) => sum + count, 0);
+  let seatsLeft =
+    studentCount - capacities.reduce((sum, count) => sum + count, 0);
   while (seatsLeft > 0) {
     let smallestIndex = 0;
     for (let index = 1; index < capacities.length; index += 1) {
@@ -76,7 +84,9 @@ function optimalSimilarCapacities(
   attribute: GroupSet['recipe']['primaryAttribute'],
   groupCount: number,
 ) {
-  const levels = students.map((student) => student[attribute]).sort((left, right) => left - right);
+  const levels = students
+    .map((student) => student[attribute])
+    .sort((left, right) => left - right);
   const smallerSize = Math.floor(levels.length / groupCount);
   const largerGroups = levels.length % groupCount;
   const bandPenalty = (offset: number, size: number) => {
@@ -134,7 +144,9 @@ function similarLevelSlots(
   attribute: GroupSet['recipe']['primaryAttribute'],
   capacities: number[],
 ) {
-  const levels = students.map((student) => student[attribute]).sort((left, right) => left - right);
+  const levels = students
+    .map((student) => student[attribute])
+    .sort((left, right) => left - right);
   let offset = 0;
   return capacities.map((capacity) => {
     const slots = levels.slice(offset, offset + capacity);
@@ -146,7 +158,9 @@ function similarLevelSlots(
 function closestLevelSlot(slots: number[], level: number) {
   let closestIndex = 0;
   for (let index = 1; index < slots.length; index += 1) {
-    if (Math.abs(slots[index] - level) < Math.abs(slots[closestIndex] - level)) {
+    if (
+      Math.abs(slots[index] - level) < Math.abs(slots[closestIndex] - level)
+    ) {
       closestIndex = index;
     }
   }
@@ -179,7 +193,10 @@ function groupPenalty(
       if (groupSet.recipe.mode === 'similar') {
         const difference = leftStudent[attribute] - rightStudent[attribute];
         penalty += difference * difference * 500;
-      } else if (leftStudent[attribute] === rightStudent[attribute]) {
+      } else if (
+        groupSet.recipe.mode === 'mixed' &&
+        leftStudent[attribute] === rightStudent[attribute]
+      ) {
         penalty += 18;
       }
 
@@ -193,7 +210,8 @@ function groupPenalty(
       if (
         groupSet.recipe.secondaryGoal === 'share-language' &&
         leftStudent.language &&
-        leftStudent.language.toLowerCase() === rightStudent.language.toLowerCase()
+        leftStudent.language.toLowerCase() ===
+          rightStudent.language.toLowerCase()
       ) {
         penalty -= 7;
       }
@@ -208,7 +226,8 @@ export function groupingPenalty(
   relationships: Relationship[],
 ) {
   return groupSet.groups.reduce(
-    (total, group) => total + groupPenalty(group, students, relationships, groupSet),
+    (total, group) =>
+      total + groupPenalty(group, students, relationships, groupSet),
     0,
   );
 }
@@ -231,12 +250,28 @@ export function optimizeGroups(
   while (improved && sweep < 100) {
     improved = false;
     sweep += 1;
-    for (let leftGroupIndex = 0; leftGroupIndex < groups.length; leftGroupIndex += 1) {
+    for (
+      let leftGroupIndex = 0;
+      leftGroupIndex < groups.length;
+      leftGroupIndex += 1
+    ) {
       const leftGroup = groups[leftGroupIndex];
-      for (let rightGroupIndex = leftGroupIndex + 1; rightGroupIndex < groups.length; rightGroupIndex += 1) {
+      for (
+        let rightGroupIndex = leftGroupIndex + 1;
+        rightGroupIndex < groups.length;
+        rightGroupIndex += 1
+      ) {
         const rightGroup = groups[rightGroupIndex];
-        for (let leftIndex = 0; leftIndex < leftGroup.studentIds.length; leftIndex += 1) {
-          for (let rightIndex = 0; rightIndex < rightGroup.studentIds.length; rightIndex += 1) {
+        for (
+          let leftIndex = 0;
+          leftIndex < leftGroup.studentIds.length;
+          leftIndex += 1
+        ) {
+          for (
+            let rightIndex = 0;
+            rightIndex < rightGroup.studentIds.length;
+            rightIndex += 1
+          ) {
             // A prior accepted swap can change either position. Always read the
             // current learners so a later swap cannot duplicate a stale ID.
             const leftId = leftGroup.studentIds[leftIndex];
@@ -272,15 +307,168 @@ export function optimizeGroups(
   return { ...groupSet, groups };
 }
 
+function shuffled<T>(items: T[], random: () => number): T[] {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index--) {
+    const other = Math.floor(random() * (index + 1));
+    [result[index], result[other]] = [result[other], result[index]];
+  }
+  return result;
+}
+
+function randomGroups(
+  students: Student[],
+  relationships: Relationship[],
+  groupSet: GroupSet,
+  random: () => number,
+): GroupSet {
+  const groups = groupSet.groups;
+  const locked = new Set(groups.flatMap((group) => group.studentIds));
+  const remaining = shuffled(
+    students.filter((student) => !locked.has(student.id)),
+    random,
+  );
+  const order = shuffled(
+    groups.map((_, index) => index),
+    random,
+  );
+  const capacities = balancedCapacities(groups, students.length);
+  const apart = new Map<string, Set<string>>();
+  for (const relationship of relationships.filter(
+    (item) => item.kind === 'apart',
+  )) {
+    for (const [left, right] of [
+      [relationship.studentAId, relationship.studentBId],
+      [relationship.studentBId, relationship.studentAId],
+    ]) {
+      if (!apart.has(left)) apart.set(left, new Set());
+      apart.get(left)!.add(right);
+    }
+  }
+  let best = groups.map((group) => [...group.studentIds]);
+  let bestCount = locked.size;
+  let attempts = 0;
+  const choicesFor = (student: Student) =>
+    order.filter(
+      (index) =>
+        groups[index].studentIds.length < capacities[index] &&
+        groups[index].studentIds.every((id) => !apart.get(student.id)?.has(id)),
+    );
+  const place = (unplaced: Student[]): boolean => {
+    if (++attempts > 50_000) return false;
+    const count = students.length - unplaced.length;
+    if (count > bestCount) {
+      bestCount = count;
+      best = groups.map((group) => [...group.studentIds]);
+    }
+    if (unplaced.length === 0) return true;
+    // Place the most constrained learner first; randomized ties and group order
+    // give fresh arrangements without treating keep-apart as a soft score.
+    const ranked = unplaced
+      .map((student) => ({ student, choices: choicesFor(student) }))
+      .sort((left, right) => left.choices.length - right.choices.length);
+    const { student, choices } = ranked[0];
+    const rest = unplaced.filter((item) => item.id !== student.id);
+    const equivalentEmptySizes = new Set<number>();
+    choices.sort(
+      (left, right) =>
+        candidateScore(
+          student,
+          groups[left],
+          students,
+          groupSet,
+          relationships,
+        ) -
+        candidateScore(
+          student,
+          groups[right],
+          students,
+          groupSet,
+          relationships,
+        ),
+    );
+    for (const index of choices) {
+      const group = groups[index];
+      if (group.studentIds.length === 0) {
+        if (equivalentEmptySizes.has(capacities[index])) continue;
+        equivalentEmptySizes.add(capacities[index]);
+      }
+      group.studentIds.push(student.id);
+      if (place(rest)) return true;
+      group.studentIds.pop();
+      if (attempts > 50_000) break;
+    }
+    return false;
+  };
+  const complete = place(remaining);
+  if (!complete) {
+    groups.forEach((group, index) => {
+      group.studentIds = [...best[index]];
+    });
+    for (const student of remaining) {
+      if (groups.some((group) => group.studentIds.includes(student.id)))
+        continue;
+      const index = choicesFor(student)[0];
+      if (index !== undefined) groups[index].studentIds.push(student.id);
+    }
+    best = groups.map((group) => [...group.studentIds]);
+  }
+  return {
+    ...groupSet,
+    groups: groups.map((group, index) => ({
+      ...group,
+      studentIds: best[index],
+    })),
+  };
+}
+
+export function groupingCautions(
+  groupSet: GroupSet,
+  students: Student[],
+  relationships: Relationship[],
+): string[] {
+  const issues: string[] = [];
+  for (const rule of relationships.filter((item) => item.kind === 'apart')) {
+    if (
+      groupSet.groups.some(
+        (group) =>
+          group.studentIds.includes(rule.studentAId) &&
+          group.studentIds.includes(rule.studentBId),
+      )
+    ) {
+      const left =
+        students.find((student) => student.id === rule.studentAId)?.name ??
+        'A student';
+      const right =
+        students.find((student) => student.id === rule.studentBId)?.name ??
+        'another student';
+      issues.push(
+        `${left} and ${right} should be apart. Move a student or unlock their placements and make groups again.`,
+      );
+    }
+  }
+  return issues;
+}
+
 export function generateGroups(
   students: Student[],
   relationships: Relationship[],
   groupSet: GroupSet,
+  random: () => number = Math.random,
 ): GroupSet {
   const activeStudents = students.filter((student) => !student.absent);
-  const desiredCount = Math.max(2, Math.min(8, groupSet.recipe.groupCount));
+  const desiredCount =
+    groupSet.recipe.sizeMode === 'pairs'
+      ? Math.max(1, Math.floor(activeStudents.length / 2))
+      : Math.max(
+          2,
+          Math.min(
+            Math.max(8, students.length, groupSet.groups.length),
+            Math.floor(groupSet.recipe.groupCount) || 2,
+          ),
+        );
   const existingByIndex = groupSet.groups;
-  const groups = createGroupShells(desiredCount).map((shell, index) => {
+  const groups = createGroupShells(desiredCount, groupSet.nameTheme).map((shell, index) => {
     const existing = existingByIndex[index];
     return existing
       ? {
@@ -294,7 +482,7 @@ export function generateGroups(
             activeStudents.some((student) => student.id === id),
           ),
         }
-      : shell;
+      : { ...shell, id: `${groupSet.id}-${shell.id}` };
   });
 
   const placedLocked = new Set<string>();
@@ -309,20 +497,33 @@ export function generateGroups(
     });
   });
 
+  if (groupSet.recipe.mode === 'random') {
+    return randomGroups(
+      activeStudents,
+      relationships,
+      { ...groupSet, groups },
+      random,
+    );
+  }
+
   const attribute = groupSet.recipe.primaryAttribute;
   const remaining = activeStudents
     .filter((student) => !placedLocked.has(student.id))
     .sort((left, right) => {
-      const primary = groupSet.recipe.mode === 'mixed'
-        ? right[attribute] - left[attribute]
-        : left[attribute] - right[attribute];
+      const primary =
+        groupSet.recipe.mode === 'mixed'
+          ? right[attribute] - left[attribute]
+          : left[attribute] - right[attribute];
       if (primary !== 0) return primary;
       return left.name.localeCompare(right.name);
     });
-  const hasLockedPlacements = groups.some((group) => group.studentIds.length > 0);
-  const capacities = groupSet.recipe.mode === 'similar' && !hasLockedPlacements
-    ? optimalSimilarCapacities(activeStudents, attribute, groups.length)
-    : balancedCapacities(groups, activeStudents.length);
+  const hasLockedPlacements = groups.some(
+    (group) => group.studentIds.length > 0,
+  );
+  const capacities =
+    groupSet.recipe.mode === 'similar' && !hasLockedPlacements
+      ? optimalSimilarCapacities(activeStudents, attribute, groups.length)
+      : balancedCapacities(groups, activeStudents.length);
   const levelSlots = similarLevelSlots(activeStudents, attribute, capacities);
   if (groupSet.recipe.mode === 'similar') {
     groups.forEach((group, index) => {
@@ -353,18 +554,22 @@ export function generateGroups(
           (groupSet.recipe.mode === 'similar'
             ? levelSlots[index].length > 0
               ? Math.abs(
-                  student[attribute] - levelSlots[index][closestLevelSlot(
-                    levelSlots[index],
-                    student[attribute],
-                  )],
+                  student[attribute] -
+                    levelSlots[index][
+                      closestLevelSlot(levelSlots[index], student[attribute])
+                    ],
                 ) * 500
               : Number.POSITIVE_INFINITY
             : 0),
       }))
-      .filter(({ group, index }) =>
-        group.studentIds.length < capacities[index] &&
-        (groupSet.recipe.mode !== 'similar' || levelSlots[index].length > 0))
-      .sort((left, right) => left.score - right.score || left.index - right.index);
+      .filter(
+        ({ group, index }) =>
+          group.studentIds.length < capacities[index] &&
+          (groupSet.recipe.mode !== 'similar' || levelSlots[index].length > 0),
+      )
+      .sort(
+        (left, right) => left.score - right.score || left.index - right.index,
+      );
     ranked[0].group.studentIds.push(student.id);
     if (groupSet.recipe.mode === 'similar') {
       levelSlots[ranked[0].index].splice(
@@ -382,7 +587,9 @@ export function moveStudent(
   studentId: string,
   targetGroupId: string,
 ): GroupSet {
-  const source = groupSet.groups.find((group) => group.studentIds.includes(studentId));
+  const source = groupSet.groups.find((group) =>
+    group.studentIds.includes(studentId),
+  );
   const target = groupSet.groups.find((group) => group.id === targetGroupId);
   if (!target || source?.id === target.id) {
     if (!target) return groupSet;
@@ -390,7 +597,12 @@ export function moveStudent(
       ...groupSet,
       groups: groupSet.groups.map((group) =>
         group.id === target.id
-          ? { ...group, lockedStudentIds: Array.from(new Set([...group.lockedStudentIds, studentId])) }
+          ? {
+              ...group,
+              lockedStudentIds: Array.from(
+                new Set([...group.lockedStudentIds, studentId]),
+              ),
+            }
           : group,
       ),
     };
@@ -398,7 +610,9 @@ export function moveStudent(
 
   const groups = groupSet.groups.map((group) => {
     let studentIds = group.studentIds.filter((id) => id !== studentId);
-    let lockedStudentIds = group.lockedStudentIds.filter((id) => id !== studentId);
+    let lockedStudentIds = group.lockedStudentIds.filter(
+      (id) => id !== studentId,
+    );
     if (group.id === target.id) {
       studentIds = [...studentIds, studentId];
       lockedStudentIds = [...lockedStudentIds, studentId];

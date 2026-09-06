@@ -728,6 +728,42 @@ button { font: inherit; }
 .app-menu-divider { display: block; height: 1px; margin: 4px 5px; background: #e2e7e3; }
 .save-issue { display: block; margin: 10px 30px 0; padding: 10px 12px; border: 1px solid #dea889; border-radius: 10px; color: #7c4733; background: #fff1e9; font-size: 12px; font-weight: 700; }
 .print-sheet { display: none; }
+.grouping-note { margin: 8px 0 14px; font-size: 12px; color: #5b6f66; }
+.group-board.many-groups { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.many-groups .student-list { min-height: 140px; }
+
+.planning-block-panel { margin: 0 0 18px; padding: 18px; border: 1px solid #c5d9d1; border-radius: 14px; background: #f4f8f5; }
+.block-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.block-heading strong { font-size: 17px; color: #28584e; }
+.block-heading p, .block-history-note { margin: 6px 0; color: #5b6f66; font-size: 12px; line-height: 1.5; }
+.block-overview-scroll { overflow-x: auto; margin-top: 14px; }
+.block-overview { width: 100%; border-collapse: collapse; background: white; font-size: 12px; }
+.block-overview caption { padding: 0 0 9px; text-align: left; color: #546b61; }
+.block-overview th, .block-overview td { padding: 10px 14px; border: 1px solid #dce5df; text-align: left; vertical-align: top; }
+.block-overview th { background: #edf3ef; }
+.block-overview th button { padding: 5px 9px; border: 1px solid #adc6bc; border-radius: 7px; background: white; cursor: pointer; white-space: nowrap; }
+.block-overview th button.selected-day { background: #28675c; color: white; }
+.block-overview th small { display: block; padding-top: 5px; color: #96543d; }
+.block-overview ol { margin: 0; padding-left: 17px; min-width: 145px; list-style: decimal; }
+.block-overview li { padding: 3px 0; }
+.block-overview li span { color: #61786d; font-size: 10px; }
+.block-overview .route-gap { color: #a53d30; font-weight: 700; }
+.block-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.block-form label { display: grid; gap: 6px; font-size: 13px; }
+.station-rules { grid-column: 1 / -1; display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px 20px; padding: 12px 0 2px; border-top: 1px solid #e3e9e4; }
+.station-rules > label { display: grid; gap: 5px; color: #53695f; font-size: 11px; font-weight: 600; }
+.station-rules small { align-self: center; color: #61756b; font-size: 11px; }
+.daily-group-choices { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; width: 100%; padding: 9px; border: 1px solid #dbe5de; border-radius: 8px; }
+.daily-group-choices legend { font-size: 11px; color: #53695f; }
+.daily-group-choices label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.shared-rotation-cell { display: flex; flex-direction: column; justify-content: center; gap: 7px; }
+.shared-rotation-cell .group-assignment { width: 100%; }
+.shared-rotation-cell .group-assignment strong { white-space: normal; line-height: 1.3; overflow-wrap: anywhere; }
+.group-assignment.is-locked { background: #e7f3ec; border-radius: 7px; }
+.group-assignment[draggable="false"], .station-assignment > div[draggable="false"] { cursor: default; }
+.capacity-label { display: block; color: #6e8078; font-size: 10px; }
+.assignment-select { max-width: 100%; width: 100%; padding: 4px; border: 1px solid #dce5df; border-radius: 5px; font-size: 11px; background: white; }
+.station-assignment { flex-direction: column; gap: 7px; }
 
 @media (max-width: 1180px) {
   .topbar { grid-template-columns: auto minmax(180px, 1fr) auto; }
@@ -749,6 +785,7 @@ button { font: inherit; }
   .drop-space { display: none; }
   .rotation-workspace > :not(.print-sheet) { display: none !important; }
   .print-sheet { display: block; color: #1f2b28; font-family: Arial, Helvetica, sans-serif; }
+  .print-sheet + .print-sheet { break-before: page; }
   .print-sheet > header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #2b5651; }
   .print-sheet header p { margin: 0 0 2px; color: #52706b; font-size: 10pt; font-weight: 700; text-transform: uppercase; }
   .print-sheet header h1 { margin: 0; font-size: 22pt; }
@@ -766,4 +803,20 @@ button { font: inherit; }
   .print-station .station-picture svg { width: .38in; height: .38in; }
   .print-station .station-name { max-width: 1.3in; font-size: 10pt; white-space: normal; }
   .print-station .location-name { max-width: 1.3in; color: #344f4a; font-size: 8pt; white-space: normal; }
+}
+.planner-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.8rem 1rem;
+  margin-block: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--background);
+  font-size: 0.875rem;
+}
+
+@media print {
+  .planner-status { display: none; }
 }

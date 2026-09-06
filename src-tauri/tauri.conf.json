@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Student Grouper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "com.excodecowboy.studentgrouper",
   "build": {
     "frontendDist": "../dist",
@@ -18,13 +18,14 @@
         "minWidth": 960,
         "minHeight": 680,
         "center": true,
+        "dragDropEnabled": false,
         "zoomHotkeysEnabled": true,
         "resizable": true,
         "fullscreen": false
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost"
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {

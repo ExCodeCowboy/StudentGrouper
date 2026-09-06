@@ -1,0 +1,14 @@
+.fairy-flight { position: absolute; left: 50%; top: 44%; width: clamp(180px, 19vw, 280px); animation: fairy-fly 3000ms cubic-bezier(.3,.2,.4,.9) both; filter: drop-shadow(0 0 16px #edd8ff); }
+.fairy-flight > svg { display: block; width: 100%; height: auto; overflow: visible; }
+.fairy-wing-left, .fairy-wing-right { transform-origin: 123px 139px; animation: fairy-wing 180ms ease-in-out infinite alternate; }
+.fairy-wing-right { animation-direction: alternate-reverse; }
+.fairy-wand-star { filter: drop-shadow(0 0 10px #ffe4a0); }
+.fairy-spark { position: absolute; left: var(--spark-x); top: var(--spark-y); color: var(--spark-color); font-size: var(--spark-size); font-style: normal; text-shadow: 0 0 14px #fff4b1; animation: fairy-twinkle 1400ms var(--spark-delay) ease-out both; }
+.fairy-cover { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 60%, #fff4ce, #f1e5fa); border: 2px dotted #d8b4da; border-radius: inherit; display: grid; place-items: center; animation: fairy-uncover 1250ms calc(var(--reveal-left) * 500ms) ease-in-out both; }
+.fairy-cover > span { font-size: 115px; line-height: 1; color: #b88db8; }
+.fairy-cover i, .fairy-cover b { position: absolute; color: #d6ad4d; font-size: 36px; font-style: normal; top: 15%; right: 18%; }
+.fairy-cover b { top: auto; bottom: 15%; right: auto; left: 18%; }
+@keyframes fairy-fly { 0% { transform: translate(calc(-50vw - 100%), 18vh) rotate(-25deg) scale(.5); opacity: 0; } 15% { opacity: 1; } 35%, 68.333% { transform: translate(-50%, -50%) rotate(10deg) scale(1); opacity: 1; } 85% { opacity: 1; } 100% { transform: translate(calc(50vw + 100%), 8vh) rotate(35deg) scale(.6); opacity: 0; } }
+@keyframes fairy-wing { from { transform: scale(.6, 1); } to { transform: scale(1.15, 1); } }
+@keyframes fairy-twinkle { 0% { opacity: 0; transform: translateY(12px) scale(0) rotate(0); } 25% { opacity: 1; transform: translateY(-15px) scale(1.25) rotate(30deg); } 55% { opacity: .7; transform: translateY(-25px) scale(.65) rotate(75deg); } 70% { opacity: 1; transform: translateY(-32px) scale(1) rotate(100deg); } 100% { opacity: 0; transform: translateY(-55px) scale(.1) rotate(140deg); } }
+@keyframes fairy-uncover { 0%, 15% { clip-path: polygon(0 0,100% 0,100% 100%,75% 100%,50% 100%,25% 100%,0 100%); opacity: 1; } 65% { clip-path: polygon(60% 0,100% 0,100% 40%,90% 48%,83% 30%,74% 37%,69% 12%); opacity: .8; } 100% { clip-path: polygon(100% 0,100% 0,100% 0,100% 0,100% 0,100% 0,100% 0); opacity: 0; } }

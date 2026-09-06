@@ -1,0 +1,565 @@
+{
+  "schemaVersion": 1,
+  "activeClassroomId": "class-1",
+  "classrooms": [
+    {
+      "id": "class-1",
+      "name": "Sample First Grade",
+      "students": [
+        {
+          "id": "student-1",
+          "name": "Ava",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 3,
+          "math": 2,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-2",
+          "name": "Eli",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 2,
+          "math": 3,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-3",
+          "name": "Maya",
+          "language": "Spanish",
+          "gender": "Girl",
+          "reading": 1,
+          "math": 2,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-4",
+          "name": "Noah",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 2,
+          "math": 1,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-5",
+          "name": "Sofia",
+          "language": "Spanish",
+          "gender": "Girl",
+          "reading": 3,
+          "math": 3,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-6",
+          "name": "Liam",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 1,
+          "math": 2,
+          "writing": 1,
+          "absent": false
+        },
+        {
+          "id": "student-7",
+          "name": "Emma",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 3,
+          "math": 2,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-8",
+          "name": "Mateo",
+          "language": "Spanish",
+          "gender": "Boy",
+          "reading": 2,
+          "math": 3,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-9",
+          "name": "Zoe",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 2,
+          "math": 2,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-10",
+          "name": "Leo",
+          "language": "Spanish",
+          "gender": "Boy",
+          "reading": 3,
+          "math": 3,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-11",
+          "name": "Mila",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 2,
+          "math": 1,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-12",
+          "name": "Jack",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 1,
+          "math": 2,
+          "writing": 1,
+          "absent": false
+        },
+        {
+          "id": "student-13",
+          "name": "Layla",
+          "language": "Arabic",
+          "gender": "Girl",
+          "reading": 3,
+          "math": 2,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-14",
+          "name": "Owen",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 2,
+          "math": 3,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-15",
+          "name": "Nora",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 3,
+          "math": 2,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-16",
+          "name": "Henry",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 1,
+          "math": 1,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-17",
+          "name": "Isla",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 2,
+          "math": 2,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-18",
+          "name": "Lucas",
+          "language": "Spanish",
+          "gender": "Boy",
+          "reading": 2,
+          "math": 3,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-19",
+          "name": "Aria",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 1,
+          "math": 2,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-20",
+          "name": "Theo",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 2,
+          "math": 2,
+          "writing": 1,
+          "absent": false
+        },
+        {
+          "id": "student-21",
+          "name": "Mia",
+          "language": "Spanish",
+          "gender": "Girl",
+          "reading": 3,
+          "math": 3,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-22",
+          "name": "Ezra",
+          "language": "English",
+          "gender": "Boy",
+          "reading": 1,
+          "math": 1,
+          "writing": 2,
+          "absent": false
+        },
+        {
+          "id": "student-23",
+          "name": "Lily",
+          "language": "English",
+          "gender": "Girl",
+          "reading": 2,
+          "math": 2,
+          "writing": 3,
+          "absent": false
+        },
+        {
+          "id": "student-24",
+          "name": "Kai",
+          "language": "Japanese",
+          "gender": "Boy",
+          "reading": 3,
+          "math": 3,
+          "writing": 2,
+          "absent": true
+        }
+      ],
+      "relationships": [
+        {
+          "id": "relation-1",
+          "studentAId": "student-6",
+          "studentBId": "student-8",
+          "kind": "apart"
+        }
+      ],
+      "groupSets": [
+        {
+          "id": "groups-centers",
+          "name": "Center Groups",
+          "recipe": {
+            "groupCount": 5,
+            "primaryAttribute": "reading",
+            "mode": "mixed",
+            "secondaryGoal": "mix-gender"
+          },
+          "groups": [
+            {
+              "id": "group-1",
+              "name": "Blue Stars",
+              "color": "#3778b8",
+              "symbol": "★",
+              "studentIds": [
+                "student-1",
+                "student-6",
+                "student-11",
+                "student-16",
+                "student-21"
+              ],
+              "lockedStudentIds": [
+                "student-1"
+              ],
+              "imageDataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6X8AAAAASUVORK5CYII="
+            },
+            {
+              "id": "group-2",
+              "name": "Green Circles",
+              "color": "#4c916a",
+              "symbol": "●",
+              "studentIds": [
+                "student-2",
+                "student-7",
+                "student-12",
+                "student-17",
+                "student-22"
+              ],
+              "lockedStudentIds": []
+            },
+            {
+              "id": "group-3",
+              "name": "Golden Moons",
+              "color": "#c58a24",
+              "symbol": "☾",
+              "studentIds": [
+                "student-3",
+                "student-8",
+                "student-13",
+                "student-18",
+                "student-23"
+              ],
+              "lockedStudentIds": []
+            },
+            {
+              "id": "group-4",
+              "name": "Coral Hearts",
+              "color": "#cf6d64",
+              "symbol": "♥",
+              "studentIds": [
+                "student-4",
+                "student-9",
+                "student-14",
+                "student-19",
+                "student-24"
+              ],
+              "lockedStudentIds": []
+            },
+            {
+              "id": "group-5",
+              "name": "Purple Squares",
+              "color": "#8066a7",
+              "symbol": "■",
+              "studentIds": [
+                "student-5",
+                "student-10",
+                "student-15",
+                "student-20"
+              ],
+              "lockedStudentIds": []
+            }
+          ]
+        }
+      ],
+      "activeGroupSetId": "groups-centers",
+      "locations": [
+        {
+          "id": "location-short-table",
+          "name": "Short Table"
+        },
+        {
+          "id": "location-seatwork",
+          "name": "Seatwork Area"
+        },
+        {
+          "id": "location-teacher-desk",
+          "name": "Teacher's Desk"
+        },
+        {
+          "id": "location-whiteboard",
+          "name": "Whiteboard Table"
+        },
+        {
+          "id": "location-carpet",
+          "name": "Carpet"
+        },
+        {
+          "id": "location-computers",
+          "name": "Computer Area"
+        },
+        {
+          "id": "location-listening",
+          "name": "Listening Corner"
+        },
+        {
+          "id": "location-art",
+          "name": "Art Table"
+        }
+      ],
+      "sessions": [
+        {
+          "id": "session-today",
+          "label": "Today",
+          "createdAt": "2026-08-31T12:00:00.000Z",
+          "date": "2026-08-31",
+          "groupSetId": "groups-centers",
+          "plannedStations": [
+            {
+              "id": "plan-teacher",
+              "activityName": "Teacher Time",
+              "locationId": "location-short-table",
+              "iconKey": "teacher",
+              "imageDataUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6X8AAAAASUVORK5CYII="
+            },
+            {
+              "id": "plan-reading",
+              "activityName": "Independent Reading",
+              "locationId": "location-carpet",
+              "iconKey": "reading"
+            },
+            {
+              "id": "plan-writing",
+              "activityName": "Writing Practice",
+              "locationId": "location-seatwork",
+              "iconKey": "writing"
+            },
+            {
+              "id": "plan-math",
+              "activityName": "Math Games",
+              "locationId": "location-whiteboard",
+              "iconKey": "math"
+            },
+            {
+              "id": "plan-computer",
+              "activityName": "Computer Practice",
+              "locationId": "location-computers",
+              "iconKey": "computer"
+            }
+          ],
+          "rounds": [
+            {
+              "id": "round-1",
+              "assignments": [
+                {
+                  "groupId": "group-1",
+                  "stationId": "plan-teacher",
+                  "locked": true,
+                  "studentIds": [
+                    "student-1",
+                    "student-6",
+                    "student-11",
+                    "student-16",
+                    "student-21"
+                  ],
+                  "locationId": "location-short-table",
+                  "activityName": "Teacher Time"
+                },
+                {
+                  "groupId": "group-2",
+                  "stationId": "plan-reading",
+                  "locked": false,
+                  "studentIds": [
+                    "student-2",
+                    "student-7",
+                    "student-12",
+                    "student-17",
+                    "student-22"
+                  ],
+                  "locationId": "location-carpet",
+                  "activityName": "Independent Reading"
+                },
+                {
+                  "groupId": "group-3",
+                  "stationId": "plan-writing",
+                  "locked": false,
+                  "studentIds": [
+                    "student-3",
+                    "student-8",
+                    "student-13",
+                    "student-18",
+                    "student-23"
+                  ],
+                  "locationId": "location-seatwork",
+                  "activityName": "Writing Practice"
+                },
+                {
+                  "groupId": "group-4",
+                  "stationId": "plan-math",
+                  "locked": false,
+                  "studentIds": [
+                    "student-4",
+                    "student-9",
+                    "student-14",
+                    "student-19"
+                  ],
+                  "locationId": "location-whiteboard",
+                  "activityName": "Math Games"
+                },
+                {
+                  "groupId": "group-5",
+                  "stationId": "plan-computer",
+                  "locked": false,
+                  "studentIds": [
+                    "student-5",
+                    "student-10",
+                    "student-15",
+                    "student-20"
+                  ],
+                  "locationId": "location-computers",
+                  "activityName": "Computer Practice"
+                }
+              ],
+              "completed": true
+            },
+            {
+              "id": "round-2",
+              "completed": false,
+              "assignments": [
+                {
+                  "groupId": "group-1",
+                  "stationId": "plan-reading",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-2",
+                  "stationId": "plan-writing",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-3",
+                  "stationId": "plan-math",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-4",
+                  "stationId": "plan-computer",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-5",
+                  "stationId": "plan-teacher",
+                  "locked": false
+                }
+              ]
+            },
+            {
+              "id": "round-3",
+              "completed": false,
+              "assignments": [
+                {
+                  "groupId": "group-1",
+                  "stationId": "plan-writing",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-2",
+                  "stationId": "plan-math",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-3",
+                  "stationId": "plan-computer",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-4",
+                  "stationId": "plan-teacher",
+                  "locked": false
+                },
+                {
+                  "groupId": "group-5",
+                  "stationId": "plan-reading",
+                  "locked": false
+                }
+              ]
+            }
+          ],
+          "ignoredIssueIds": [
+            "teacher-ignored-caution"
+          ]
+        }
+      ],
+      "activeSessionId": "session-today"
+    }
+  ]
+}

@@ -27,7 +27,7 @@ type LegacyStation = {
   active: boolean;
 };
 
-type LegacyPlan = Partial<PlannedStation> & { stationId?: string; locationId: string };
+type LegacyPlan = Partial<PlannedStation> & { stationId?: string; locationId: string; dailyPin?: { groupId: string; roundIndex: number } };
 type IntermediateActivity = { id: string; name: string; locationId: string };
 type IntermediatePlan = { id: string; activityId: string; locationId: string };
 type IntermediateLibraryActivity = {
@@ -139,6 +139,15 @@ function migratedPlannedStations(
     const legacyStation = stationsById.get(plan.stationId ?? sourceId);
     return {
       id: sourceId,
+      trackingId: typeof plan.trackingId === 'string' ? plan.trackingId : undefined,
+      visitRule: ['rotate', 'once-per-block', 'daily', 'repeatable'].includes(plan.visitRule ?? '') ? plan.visitRule : undefined,
+      groupCapacity: Number.isSafeInteger(plan.groupCapacity) && plan.groupCapacity! >= 1 ? plan.groupCapacity : undefined,
+      dailyGroupIds: Array.isArray(plan.dailyGroupIds) ? plan.dailyGroupIds.filter((id) => typeof id === 'string') : undefined,
+      dailyPinGroupIds: Array.isArray(plan.dailyPinGroupIds)
+        ? [...new Set(plan.dailyPinGroupIds.filter((id) => typeof id === 'string' && id))]
+        : plan.dailyPin && typeof plan.dailyPin.groupId === 'string' && plan.dailyPin.groupId
+          ? [plan.dailyPin.groupId]
+          : undefined,
       activityName: plan.activityName ?? legacyStation?.name ?? `Activity ${index + 1}`,
       locationId: knownLocationIds.has(plan.locationId)
         ? plan.locationId
@@ -178,6 +187,8 @@ export function normalizeAppData(saved: AppData): AppData {
                   groupId: assignment.groupId,
                   stationId,
                   locked: assignment.locked,
+                  pinned: assignment.pinned,
+                  trackingId: assignment.trackingId,
                   studentIds: round.completed
                     ? assignment.studentIds ??
                       groupSet?.groups
@@ -215,6 +226,10 @@ function hasAppDataShape(candidate: unknown): candidate is AppData {
     classroom &&
     typeof classroom.id === 'string' &&
     typeof classroom.name === 'string' &&
+    (classroom.planningBlocks === undefined || (Array.isArray(classroom.planningBlocks) && classroom.planningBlocks.every((block) =>
+      block && typeof block.id === 'string' && typeof block.name === 'string' &&
+      typeof block.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(block.startDate) &&
+      typeof block.endDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(block.endDate) && block.endDate >= block.startDate))) &&
     Array.isArray(classroom.students) &&
     Array.isArray(classroom.relationships) &&
     Array.isArray(classroom.groupSets) &&

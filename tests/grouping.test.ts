@@ -117,13 +117,16 @@ describe('generateGroups', () => {
     assert.ok(!generated.groups.flatMap((group) => group.lockedStudentIds).includes('student-2'));
   });
 
-  test('clamps the requested group count to the supported range of two through eight', () => {
+  test('bounds new counts while preserving existing larger arrangements for a small roster', () => {
     const pupils = studentsWithLevels([1, 2, 3]);
     const tooFew = generateGroups(pupils, [], groupSet(1));
-    const tooMany = generateGroups(pupils, [], groupSet(10));
+    const oversizedRecipe = groupSet(2);
+    oversizedRecipe.recipe.groupCount = 100;
+    const tooMany = generateGroups(pupils, [], oversizedRecipe);
 
     assert.equal(tooFew.groups.length, 2);
     assert.equal(tooMany.groups.length, 8);
+    assert.equal(generateGroups(pupils, [], groupSet(10)).groups.length, 10);
   });
 
   test('preserves one canonical placement when malformed data locks a student twice', () => {

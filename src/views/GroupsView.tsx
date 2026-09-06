@@ -9,6 +9,7 @@ import {
   Lock,
   LockKeyholeOpen,
   MoreHorizontal,
+  Presentation,
   RotateCcw,
   Scale,
   Sparkles,
@@ -36,12 +37,18 @@ import type {
 import { levelLabel } from '../model';
 import { GroupVisual } from '../components/GroupVisual';
 import { normalizeUploadedImage } from '../storage';
+import { readDrag, writeDrag } from '../dragDrop';
+import { groupingCautions } from '../grouping';
+import { GroupThemePicker } from '../components/GroupThemePicker';
+import type { GroupThemeId } from '../groupThemes';
 
 type Props = {
   classroom: Classroom;
   groupSet: GroupSet;
   canUndo: boolean;
   onSelectGroupSet: (id: string) => void;
+  onStudentView: () => void;
+  onApplyTheme: (themeId: GroupThemeId) => void;
   onNewGroupSet: (name: string) => void;
   onResetGroupSet: () => void;
   onDeleteGroupSet: () => void;
@@ -58,6 +65,8 @@ export function GroupsView({
   groupSet,
   canUndo,
   onSelectGroupSet,
+  onStudentView,
+  onApplyTheme,
   onNewGroupSet,
   onResetGroupSet,
   onDeleteGroupSet,
@@ -84,14 +93,15 @@ export function GroupsView({
     ? Math.max(...groupSizes) - Math.min(...groupSizes)
     : 0;
   const editingGroup = groupSet.groups.find((group) => group.id === editingGroupId);
+  const cautions = groupingCautions(groupSet, classroom.students, classroom.relationships);
+  const presentCount = classroom.students.filter((student) => !student.absent).length;
 
   const beginDrag = (event: DragEvent, studentId: string) => {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('application/x-student-id', studentId);
+    writeDrag(event.dataTransfer, 'student', studentId);
   };
   const dropOnGroup = (event: DragEvent, groupId: string) => {
     event.preventDefault();
-    const studentId = event.dataTransfer.getData('application/x-student-id');
+    const studentId = readDrag(event.dataTransfer, 'student');
     if (studentId) onMoveStudent(studentId, groupId);
   };
   const openGroupEditor = (group: Group) => {
@@ -112,7 +122,7 @@ export function GroupsView({
 
   return (
     <main className="workspace">
-      <section className="page-heading">
+      <section className="page-heading group-page-heading">
         <div>
           <p className="eyebrow">Saved arrangement</p>
           <div className="arrangement-title-row">
@@ -137,6 +147,10 @@ export function GroupsView({
           <p>Move a student to choose their place. Your move will be locked.</p>
         </div>
         <div className="heading-actions">
+          <GroupThemePicker groupSet={groupSet} onApply={onApplyTheme} />
+          <Button id="open-student-view" variant="outline" size="lg" disabled={!classroom.students.some((student) => !student.absent && placed.has(student.id))} onClick={onStudentView}>
+            <Presentation /> Student view
+          </Button>
           <Button variant="outline" size="lg" disabled={!canUndo} onClick={onUndo}>
             <RotateCcw /> Undo
           </Button>
@@ -153,11 +167,13 @@ export function GroupsView({
         <label>
           <span>Groups</span>
           <select
+            aria-label="Group count"
             className="inline-select"
-            value={groupSet.recipe.groupCount}
-            onChange={(event) => onRecipeChange({ groupCount: Number(event.target.value) })}
+            value={groupSet.recipe.sizeMode === 'pairs' ? 'pairs' : groupSet.recipe.groupCount}
+            onChange={(event) => onRecipeChange(event.target.value === 'pairs' ? { sizeMode: 'pairs' } : { sizeMode: 'count', groupCount: Number(event.target.value) })}
           >
-            {[2, 3, 4, 5, 6, 7, 8].map((count) => <option key={count}>{count}</option>)}
+            <option value="pairs">Pairs ({Math.max(1, Math.floor(presentCount / 2))} groups)</option>
+            {Array.from({ length: Math.max(8, classroom.students.length, groupSet.groups.length, groupSet.recipe.groupCount) - 1 }, (_, index) => index + 2).map((count) => <option key={count}>{count}</option>)}
           </select>
         </label>
         <div className="recipe-divider" />
@@ -165,21 +181,23 @@ export function GroupsView({
           <span>Group by</span>
           <select
             className="inline-select"
-            value={groupSet.recipe.primaryAttribute}
-            onChange={(event) => onRecipeChange({ primaryAttribute: event.target.value as PrimaryAttribute })}
+            aria-label="Grouping method"
+            value={groupSet.recipe.mode === 'random' ? 'random' : groupSet.recipe.primaryAttribute}
+            onChange={(event) => onRecipeChange(event.target.value === 'random' ? { mode: 'random', secondaryGoal: 'none' } : { primaryAttribute: event.target.value as PrimaryAttribute, mode: groupSet.recipe.mode === 'random' ? 'mixed' : groupSet.recipe.mode })}
           >
+            <option value="random">Random</option>
             <option value="reading">Reading level</option>
             <option value="math">Math level</option>
             <option value="writing">Writing level</option>
           </select>
-          <select
+          {groupSet.recipe.mode !== 'random' && <select
             className="inline-select"
             value={groupSet.recipe.mode}
             onChange={(event) => onRecipeChange({ mode: event.target.value as GroupingMode })}
           >
             <option value="mixed">Mixed</option>
             <option value="similar">Similar</option>
-          </select>
+          </select>}
         </label>
         <div className="recipe-divider" />
         <label>
@@ -214,10 +232,14 @@ export function GroupsView({
         </div>
       </section>
 
+      {groupSet.recipe.sizeMode === 'pairs' && <p className="grouping-note">Pairs use the students who are here. With an odd number, one group has three. Existing locks are kept.</p>}
+      {groupSet.recipe.mode === 'random' && <p className="grouping-note">Make groups shuffles unlocked students. Keep-apart notes are respected; if a full arrangement cannot be found, some students stay unassigned.</p>}
+      {cautions.map((caution) => <p key={caution} className="dialog-issue">{caution}</p>)}
+
       {unassigned.length > 0 && (
         <section className="unassigned-tray">
           <strong>Not placed yet</strong>
-          <span>Make groups or drag these students into a group.</span>
+          <span>Make groups or drag these students into a group. Student view shows placed students only.</span>
           <div>
             {unassigned.map((student) => (
               <button
@@ -234,7 +256,7 @@ export function GroupsView({
       )}
 
       <section
-        className="group-board"
+        className={`group-board${groupSet.groups.length > 8 ? ' many-groups' : ''}`}
         style={{ '--group-count': groupSet.groups.length } as CSSProperties}
         aria-label="Student groups"
       >

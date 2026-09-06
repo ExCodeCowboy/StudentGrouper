@@ -2,7 +2,7 @@ export type SkillLevel = 1 | 2 | 3;
 export type Gender = 'Girl' | 'Boy' | '';
 export type RelationshipKind = 'together' | 'apart';
 export type PrimaryAttribute = 'reading' | 'math' | 'writing';
-export type GroupingMode = 'mixed' | 'similar';
+export type GroupingMode = 'mixed' | 'similar' | 'random';
 export type SecondaryGoal = 'none' | 'mix-gender' | 'share-language';
 
 export type Student = {
@@ -35,6 +35,7 @@ export type Group = {
 
 export type GroupRecipe = {
   groupCount: number;
+  sizeMode?: 'count' | 'pairs';
   primaryAttribute: PrimaryAttribute;
   mode: GroupingMode;
   secondaryGoal: SecondaryGoal;
@@ -43,6 +44,7 @@ export type GroupRecipe = {
 export type GroupSet = {
   id: string;
   name: string;
+  nameTheme?: 'woodland' | 'space' | 'ocean' | 'garden' | 'dinosaurs' | 'weather' | 'storybook' | 'builders';
   recipe: GroupRecipe;
   groups: Group[];
 };
@@ -77,6 +79,11 @@ export type Location = {
 
 export type PlannedStation = {
   id: string;
+  trackingId?: string;
+  visitRule?: 'rotate' | 'once-per-block' | 'daily' | 'repeatable';
+  groupCapacity?: number;
+  dailyGroupIds?: string[];
+  dailyPinGroupIds?: string[];
   activityName: string;
   locationId: string;
   iconKey: StationIconKey;
@@ -87,9 +94,18 @@ export type RotationAssignment = {
   groupId: string;
   stationId: string;
   locked: boolean;
+  pinned?: boolean;
   studentIds?: string[];
   activityName?: string;
   locationId?: string;
+  trackingId?: string;
+};
+
+export type PlanningBlock = {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
 };
 
 export type RotationRound = {
@@ -100,6 +116,7 @@ export type RotationRound = {
 
 export type RotationSession = {
   id: string;
+  blockId?: string;
   label: string;
   createdAt: string;
   date: string;
@@ -119,6 +136,7 @@ export type Classroom = {
   locations: Location[];
   sessions: RotationSession[];
   activeSessionId: string;
+  planningBlocks?: PlanningBlock[];
 };
 
 export type AppData = {

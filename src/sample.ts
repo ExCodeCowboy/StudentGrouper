@@ -5,6 +5,7 @@ import type {
   SkillLevel,
   Student,
 } from './model';
+import { themedGroupLook, type GroupThemeId } from './groupThemes';
 
 const groupLooks = [
   ['Blue Stars', '#3778b8', '★'],
@@ -17,14 +18,15 @@ const groupLooks = [
   ['Rose Flowers', '#b85d80', '✿'],
 ] as const;
 
-export function createGroupShells(count: number): Group[] {
+export function createGroupShells(count: number, themeId?: GroupThemeId): Group[] {
   return Array.from({ length: count }, (_, index) => {
     const [name, color, symbol] = groupLooks[index % groupLooks.length];
     return {
       id: `group-${index + 1}`,
-      name,
+      name: index < groupLooks.length ? name : `${name} ${Math.floor(index / groupLooks.length) + 1}`,
       color,
       symbol,
+      ...themedGroupLook(themeId, index),
       studentIds: [],
       lockedStudentIds: [],
     };

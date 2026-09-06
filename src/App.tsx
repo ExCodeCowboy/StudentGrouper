@@ -22,6 +22,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { GroupsView } from './views/GroupsView';
+import { StudentGroupsView } from './views/StudentGroupsView';
+import { StudentRotationsView } from './views/StudentRotationsView';
+import { studentDisplayGroups, studentDisplayRotations } from './studentDisplay';
+import { applyGroupTheme } from './groupThemes';
 import { StudentsView } from './views/StudentsView';
 import { TodayView } from './views/TodayView';
 import type {
@@ -52,10 +56,14 @@ import {
   rebuildUnlocked,
   removeRound,
   scheduleIssues,
+  snapshotPlannedHistory,
   toggleAssignmentLock,
   toggleRoundCompleted,
   unlockAllAssignments,
 } from './rotations';
+import { addBlockStation, createPlanningBlock, removeBlockStation, updateBlockStation, type NewBlockPlan } from './planningBlocks';
+import { plannerInputKey, startBlockPlanner, type PlannerTask } from './planner/client';
+import type { PlannerResult } from './planner/optimizer';
 import { exportBackup, persistence, readBackup } from './storage';
 import {
   deleteClassroom as removeClassroomData,
@@ -144,9 +152,14 @@ function createBlankClassroom(name: string): Classroom {
 export function App() {
   const [data, setData] = useState<AppData>(() => createSampleData());
   const [view, setView] = useState<View>('groups');
+  const [studentViewOpen, setStudentViewOpen] = useState(false);
+  const [rotationStudentViewOpen, setRotationStudentViewOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [undoStack, setUndoStack] = useState<AppData[]>([]);
   const [actionIssue, setActionIssue] = useState('');
+  const [planning, setPlanning] = useState('');
+  const [plannerReport, setPlannerReport] = useState<{ inputKey: string; result: PlannerResult } | null>(null);
+  const plannerTask = useRef<PlannerTask | null>(null);
   const [saveIssue, setSaveIssue] = useState('');
   const [newClassOpen, setNewClassOpen] = useState(false);
   const [newClassName, setNewClassName] = useState('');
@@ -155,6 +168,8 @@ export function App() {
   const [deleteClassOpen, setDeleteClassOpen] = useState(false);
   const backupInput = useRef<HTMLInputElement>(null);
   const appMenu = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => () => { plannerTask.current?.cancel(); }, []);
 
   useEffect(() => {
     let active = true;
@@ -202,7 +217,7 @@ export function App() {
       if (remember) {
         setUndoStack((stack) => [...stack.slice(-29), cloneData(currentData)]);
       }
-      return replaceClassroom(currentData, updater(currentClassroom));
+      return replaceClassroom(currentData, snapshotPlannedHistory(updater(snapshotPlannedHistory(currentClassroom))));
     });
   };
 
@@ -213,6 +228,50 @@ export function App() {
       return previous ? stack.slice(0, -1) : stack;
     });
     setActionIssue('');
+  };
+
+  const planBlock = async (newPlan?: NewBlockPlan) => {
+    if (!session || plannerTask.current) return;
+    const inputKey = plannerInputKey(classroom);
+    const source = snapshotPlannedHistory(classroom);
+    const working = newPlan ? createPlanningBlock(source, session, newPlan) : source;
+    const blockId = newPlan
+      ? working.sessions.find((day) => day.id === working.activeSessionId)?.blockId
+        : session.blockId ?? session.id;
+    if (!blockId) return;
+    setPlanning(session.blockId || newPlan ? 'Preparing the whole block' : 'Preparing the day');
+    setActionIssue('');
+    setPlannerReport(null);
+    let task: PlannerTask | undefined;
+    try {
+      task = startBlockPlanner({ classroom: working, blockId, preserveSessionIds: newPlan ? source.sessions.map((day) => day.id) : undefined }, setPlanning);
+      plannerTask.current = task;
+      const result = await task.promise;
+      if (result.status === 'failed') {
+        setActionIssue('The planner could not validate a finished result. Your plan has not changed.');
+        return;
+      }
+      setData((currentData) => {
+        const current = currentData.classrooms.find((item) => item.id === source.id);
+        if (!current || plannerInputKey(current) !== inputKey) {
+          setActionIssue('Your class or plan changed during planning. Build again to include those changes.');
+          return currentData;
+        }
+        const next = snapshotPlannedHistory({ ...result.classroom,
+          activeSessionId: newPlan ? result.classroom.activeSessionId : current.activeSessionId,
+          activeGroupSetId: current.activeGroupSetId,
+        });
+        setUndoStack((stack) => [...stack.slice(-29), cloneData(currentData)]);
+        setPlannerReport({ inputKey: plannerInputKey(next), result });
+        return replaceClassroom(currentData, next);
+      });
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        setActionIssue(error instanceof Error ? error.message : 'The planner could not finish. Your plan has not changed.');
+      }
+    } finally {
+      if (!task || plannerTask.current === task) { plannerTask.current = null; setPlanning(''); }
+    }
   };
 
   const updateActiveGroupSet = (
@@ -345,7 +404,8 @@ export function App() {
         id,
         name,
         recipe: { ...groupSet.recipe },
-        groups: createGroupShells(groupSet.recipe.groupCount).map((group) => ({ ...group, id: makeId('group') })),
+        nameTheme: groupSet.nameTheme,
+        groups: createGroupShells(groupSet.recipe.groupCount, groupSet.nameTheme).map((group) => ({ ...group, id: makeId('group') })),
       };
       return { ...current, groupSets: [...current.groupSets, next], activeGroupSetId: id };
     }, true);
@@ -370,6 +430,7 @@ export function App() {
 
   const buildOptimizeSchedule = () => {
     if (!session) return;
+    if (session.blockId || session.plannedStations.some((station) => station.dailyPinGroupIds?.length)) { void planBlock(); return; }
     updateClassroom((current) => updateActiveSession(current, (currentSession) => {
       const set = current.groupSets.find((item) => item.id === currentSession.groupSetId) ?? current.groupSets[0];
       return rebuildUnlocked(current, currentSession, set);
@@ -459,6 +520,7 @@ export function App() {
       let nextSession: RotationSession = {
         id,
         label: shortDateLabel(date),
+        blockId: current.planningBlocks?.find((block) => block.startDate <= date && block.endDate >= date)?.id,
         createdAt: new Date().toISOString(),
         date,
         groupSetId: selectedGroupSetId,
@@ -481,47 +543,15 @@ export function App() {
   };
 
   const updateStation = (stationId: string, patch: Partial<PlannedStation>) => {
-    updateClassroom((current) => updateActiveSession(current, (currentSession) => ({
-      ...currentSession,
-      plannedStations: currentSession.plannedStations.map((station) =>
-        station.id === stationId ? { ...station, ...patch } : station),
-    })));
+    updateClassroom((current) => updateBlockStation(current, current.activeSessionId, stationId, patch), true);
   };
 
   const addStation = () => {
-    updateClassroom((current) => updateActiveSession(current, (currentSession) => {
-      const usedLocationIds = new Set(
-        currentSession.plannedStations.map((station) => station.locationId),
-      );
-      const location = current.locations.find(
-        (item) => !item.archived && !usedLocationIds.has(item.id),
-      ) ?? current.locations.find((item) => !item.archived);
-      return {
-        ...currentSession,
-        plannedStations: [
-          ...currentSession.plannedStations,
-          {
-            id: makeId('station'),
-            activityName: '',
-            locationId: location?.id ?? '',
-            iconKey: 'independent',
-          },
-        ],
-      };
-    }), true);
+    updateClassroom((current) => addBlockStation(current, current.activeSessionId), true);
   };
 
   const removeStation = (stationId: string) => {
-    updateClassroom((current) => updateActiveSession(current, (currentSession) => ({
-      ...currentSession,
-      plannedStations: currentSession.plannedStations.filter((station) => station.id !== stationId),
-      rounds: currentSession.rounds.map((round) => round.completed
-        ? round
-        : {
-            ...round,
-            assignments: round.assignments.filter((assignment) => assignment.stationId !== stationId),
-          }),
-    })), true);
+    updateClassroom((current) => removeBlockStation(current, current.activeSessionId, stationId), true);
   };
 
   const updateLocation = (locationId: string, patch: Partial<Location>) => {
@@ -619,6 +649,26 @@ export function App() {
 
   if (!classroom || !groupSet) return null;
 
+  if (rotationStudentViewOpen && session) return (
+    <StudentRotationsView
+      day={studentDisplayRotations(classroom, session)}
+      onClose={() => {
+        setRotationStudentViewOpen(false);
+        requestAnimationFrame(() => document.getElementById('open-rotation-student-view')?.focus());
+      }}
+    />
+  );
+
+  if (studentViewOpen) return (
+    <StudentGroupsView
+      groups={studentDisplayGroups(groupSet, classroom.students)}
+      onClose={() => {
+        setStudentViewOpen(false);
+        requestAnimationFrame(() => document.getElementById('open-student-view')?.focus());
+      }}
+    />
+  );
+
   return (
     <div className="app-shell">
       <header className="topbar screen-only">
@@ -686,6 +736,8 @@ export function App() {
           groupSet={groupSet}
           canUndo={undoStack.length > 0}
           onSelectGroupSet={(id) => updateClassroom((current) => ({ ...current, activeGroupSetId: id }))}
+          onStudentView={() => { if (loaded) setStudentViewOpen(true); }}
+          onApplyTheme={(themeId) => updateClassroom((current) => updateActiveGroupSet(current, (set) => applyGroupTheme(set, themeId)), true)}
           onNewGroupSet={createGroupSet}
           onResetGroupSet={resetCurrentGroupSet}
           onDeleteGroupSet={deleteCurrentGroupSet}
@@ -700,11 +752,15 @@ export function App() {
       {view === 'today' && session && (
         <TodayView
           classroom={classroom}
+          onStudentView={() => { if (loaded) setRotationStudentViewOpen(true); }}
           groupSet={rotationGroupSet}
           session={session}
           issues={issues}
           ignoredIssueCount={ignoredIssueCount}
           actionIssue={actionIssue}
+          planning={planning}
+          plannerReport={plannerReport && plannerReport.inputKey === plannerInputKey(classroom) && plannerReport.result.blockId === (session.blockId ?? session.id) ? plannerReport.result : undefined}
+          onCancelPlanning={() => plannerTask.current?.cancel()}
           onSelectSession={(id) => updateClassroom((current) => ({ ...current, activeSessionId: id }))}
           onSelectGroupSet={selectRotationGroupSet}
           onBuildOptimize={buildOptimizeSchedule}
@@ -716,6 +772,12 @@ export function App() {
           canUndo={undoStack.length > 0}
           onUndo={undo}
           onPlanNextDay={planNextDay}
+          onCreateBlock={(plan: NewBlockPlan) => {
+            void planBlock(plan);
+          }}
+          onBuildBlock={() => {
+            void planBlock();
+          }}
           onMove={moveRotation}
           onMoveStation={moveRotationStation}
           onToggleLock={(roundId, groupId) => updateClassroom((current) => updateActiveSession(current, (currentSession) => toggleAssignmentLock(currentSession, roundId, groupId)), true)}
