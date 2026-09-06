@@ -5,11 +5,34 @@
 - **Groups → Group themes** previews eight themes: Woodland Friends, Space Explorers, Ocean Crew, Garden Buddies, Dino Discoverers, Weather Wonders, Storybook Friends, and Busy Builders. Applying a theme replaces names, colors, symbols, and uploaded pictures for that arrangement. It preserves group IDs, memberships, locks, and schedule references. Undo restores the prior appearance.
 - Each theme has twelve distinct teams and numbered extensions for larger arrangements. New groups use the arrangement’s chosen theme. Existing custom names and pictures survive Make groups. Old exports do not need a theme field.
 - **Groups → Student view → Reveal all teams** reveals every team together with one click. There are no individual-team reveal controls or countdown. Hide again resets the presentation without changing groups.
-- **Today → Student view → Reveal the day** uncovers the entire selected day in one click, with one effect for every team and round together. The team-by-round chart remains visible for the class to follow throughout the day. There are no per-round reveals or navigation steps. Hide again resets the whole presentation without changing the plan or completion marks.
+- **Today → Student view → Reveal the day** uncovers the entire selected day in one click, with one effect for every team and round together. The team-by-round chart remains visible for the class to follow throughout the day. There are no per-round reveals. Hide again resets the whole presentation and pauses its timer without changing the plan or completion marks.
 - Student names can be hidden. When membership is the same all day, names appear once beside the team; when historical membership differs by round, each round keeps its own names. Shared stations appear for each assigned group. Missing destinations say “Check with your teacher.”
 - Both student views offer Full screen, Teacher view, an effect picker, and instant reveals. Escape returns to teaching when outside browser fullscreen. Wide daily charts can be focused and scrolled with the keyboard.
 
 The presentation model contains names and group/station visuals, with locations for rotations. It omits student levels, relationships, private arrangement names, rules, locks, and planning diagnostics. Completed rounds use saved learner/activity/location snapshots. Present-day rounds use present students in the day’s arrangement, even if the teacher selected another arrangement on the Groups page.
+
+## Rotation timer and transition music
+
+**Today → Student view → Timer & transition** saves the following per class, including in exported backups:
+
+- Round duration: defaults to 15 minutes; editable from 5 seconds to 120 minutes.
+- Transition source: one of four built-in public-domain melodies, or a YouTube video link. Supported links include watch, share, Shorts, live, and embed links; URL start times are retained.
+- Built-in tune: Ode to Joy, Au clair de la lune, Twinkle, Twinkle, Little Star, or Lavender's Blue. Choose 30, 45, or 60 seconds (default 45). Preview plays the chosen duration and stops when closed. Gentle accompaniment follows each melody, and complete phrases fill the selected duration. [Sheet-music sources and arrangement notes](TRANSITION_MUSIC.md) document the public-domain editions.
+- **Play transition music when time is up**: off by default. The timer itself is silent. Music can also be started manually.
+
+Reveal the day, then Start timer. Pause, Resume, Reset, and +1 minute affect only this presentation. Choosing another round resets its timer; Start round N moves the highlight and starts a fresh countdown. Finishing a timer never changes stored assignments, marks a round complete, automatically starts the next round, or repeats the reveal. Returning to teacher view pauses the timer and stops music. Its paused position is retained for that day until the app is reloaded; running timers are not stored in backups. Changing the configured duration affects the next round/reset (or the current idle timer), not an already running or paused countdown.
+
+The clock derives remaining time from a deadline, so delayed callbacks or computer sleep do not accumulate drift. Completion triggers at most one transition per run, and automatic transitions wait until the page is visible. Built-in music uses local synthesis and needs no network or audio files. Playback is exclusive and cancellable, and every tune has a soft ending. The next round is highlighted while transition music plays, with the daily chart still visible. Teachers decide when everyone is ready.
+
+YouTube opens a visible player with ordinary YouTube controls. If playback is blocked, errors, or has not started within eight seconds, that player is removed before the chosen built-in tune starts. Video length is controlled by the selected YouTube video, not the built-in tune length. A teacher can close the video or start the next round at any time. A school network can still block YouTube, and videos may disallow embedding or show ads.
+
+### Mac playback
+
+The pinned Wry 0.55.1 runtime already enables autoplay on macOS by setting `WKWebViewConfiguration.mediaTypesRequiringUserActionForPlayback` to `None`. Starting a timer or manually playing music also prepares Web Audio from the teacher's click. No microphone, camera, or audio recording API is used. The outer player frame explicitly denies camera, microphone, and screen-capture permissions.
+
+Mac's `tauri://localhost` origin cannot supply an HTTP referrer for YouTube. `src/youtubePlayer.ts` therefore uses the small HTTPS helper at `https://excodecowboy.github.io/StudentGrouper/app/transition-player.html`; web previews use the same helper from their own origin. **Publish the web build containing both `public/transition-player.html` and `public/transition-player.js` before distributing the new Mac installer.** The Mac CSP permits just that helper URL, without granting the remote frame native app capabilities. The helper loads YouTube's IFrame API and a privacy-enhanced embed, and receives only the video ID, start time, and a random message channel. Parent messages validate both source and origin; the helper validates its parent/channel. No roster or classroom state is sent.
+
+Sources: [YouTube IFrame API](https://developers.google.com/youtube/iframe_api_reference), [embedded-player identity and visibility requirements](https://developers.google.com/youtube/terms/required-minimum-functionality), and the installed `wry-0.55.1/src/wkwebview/mod.rs` implementation. Mac autoplay still needs a real-device check after packaging; browser playback alone cannot establish the Mac result.
 
 ## Reveal effects
 
@@ -34,4 +57,4 @@ The effect system is under `src/revealEffects/`:
 
 ## Validation
 
-Domain checks cover privacy, absent/missing students, completed snapshots after regrouping, shared stations, wrong active arrangement, missing destinations, large themed arrangements, preservation of locks/IDs, theme backup round trips, added-group naming, random effect variety, disabled/removed effects, and bounded effect durations. Browser checks cover applying/undoing a theme, daily routes, simultaneous reveals, effect playback/cancellation, names visibility, and return to the teacher screen.
+Domain checks cover privacy, absent/missing students, completed snapshots after regrouping, shared stations, wrong active arrangement, missing destinations, large themed arrangements, preservation of locks/IDs, theme backup round trips, added-group naming, random effect variety, disabled/removed effects, and bounded effect durations. Timer checks cover delayed callbacks, pause/resume, reset, extension, next rounds, settings migration, URL validation, all twelve tune/length combinations, audio cancellation, stale playback starts, and the YouTube message bridge. Browser checks cover applying/undoing a theme, daily routes, simultaneous reveals, effect playback/cancellation, names visibility, and return to the teacher screen.

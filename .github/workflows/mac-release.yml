@@ -41,14 +41,15 @@ jobs:
           tagName: v__VERSION__
           releaseName: Student Grouper v__VERSION__
           releaseBody: |
-            Classroom planning and student displays for Student Grouper 0.2.0.
+            Rotation timers and transition music for Student Grouper 0.3.0.
 
-            - Plan a whole block of days with history-aware station coverage, once-only activities, and shared station capacity.
-            - Pin several groups for one daily station visit while the planner chooses their rounds.
-            - Create pairs or larger group counts, with random grouping that respects keep-apart rules.
-            - Show daily rotations or reveal all teams together with seven animated effects and eight group-name themes.
-            - Enable browser drag-and-drop handling in the Mac app.
-            - Import existing 0.1.0 backups, including saved groups and rotation history.
+            - Use a silent rotation countdown with pause, resume, reset, extra time, and teacher-controlled next rounds.
+            - Choose four familiar public-domain melodies with gentle accompaniment, lasting 30, 45, or 60 seconds. They work offline and leave the rotation chart visible.
+            - Play an embedded YouTube transition video, with an optional automatic start when time is up and a built-in tune if the video cannot play.
+            - Save timer and music preferences per class. Existing classroom backups remain compatible.
+            - Keep all the block planning, flexible station pins, group themes, and animated student reveals from 0.2.0.
+
+            To set up: Today → Student view → Timer & transition. Automatic music is off by default. YouTube needs internet and may restrict playback; built-in tunes are the offline option. No camera or microphone is used.
 
             Mac downloads:
 

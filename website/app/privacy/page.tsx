@@ -48,6 +48,11 @@ export default function PrivacyPage() {
         </section>
 
         <section>
+          <h2>Optional transition music</h2>
+          <p>The timer and built-in tunes work offline. If a teacher chooses YouTube, opening a transition video connects to YouTube and, in the Mac app, a small player page on this website. Only the video choice and playback controls are passed to the player, never student names or classroom records. YouTube may show ads and process playback data under its own privacy policy. No YouTube player is loaded until playback is requested, either by the teacher or the timer setting they enabled.</p>
+        </section>
+
+        <section>
           <h2><Download aria-hidden="true" /> Backups are the teacher’s copy</h2>
           <p>
             An exported backup contains the classroom information in the app. Treat that file

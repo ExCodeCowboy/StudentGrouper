@@ -25,6 +25,7 @@ import { GroupsView } from './views/GroupsView';
 import { StudentGroupsView } from './views/StudentGroupsView';
 import { StudentRotationsView } from './views/StudentRotationsView';
 import { studentDisplayGroups, studentDisplayRotations } from './studentDisplay';
+import { normalizePresentationSettings, type RotationClock } from './rotationTimer';
 import { applyGroupTheme } from './groupThemes';
 import { StudentsView } from './views/StudentsView';
 import { TodayView } from './views/TodayView';
@@ -154,6 +155,7 @@ export function App() {
   const [view, setView] = useState<View>('groups');
   const [studentViewOpen, setStudentViewOpen] = useState(false);
   const [rotationStudentViewOpen, setRotationStudentViewOpen] = useState(false);
+  const [rotationClocks, setRotationClocks] = useState(new Map<string, RotationClock>());
   const [loaded, setLoaded] = useState(false);
   const [undoStack, setUndoStack] = useState<AppData[]>([]);
   const [actionIssue, setActionIssue] = useState('');
@@ -651,7 +653,12 @@ export function App() {
 
   if (rotationStudentViewOpen && session) return (
     <StudentRotationsView
+      key={`${classroom.id}:${session.id}`}
       day={studentDisplayRotations(classroom, session)}
+      settings={normalizePresentationSettings(classroom.rotationPresentation)}
+      onSettingsChange={(rotationPresentation) => updateClassroom((current) => ({ ...current, rotationPresentation }))}
+      initialTimer={rotationClocks.get(`${classroom.id}:${session.id}`)}
+      onRememberTimer={(clock) => setRotationClocks((current) => new Map(current).set(`${classroom.id}:${session.id}`, clock))}
       onClose={() => {
         setRotationStudentViewOpen(false);
         requestAnimationFrame(() => document.getElementById('open-rotation-student-view')?.focus());

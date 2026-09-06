@@ -1,0 +1,83 @@
+.student-rotations .student-show-top { flex-wrap: wrap; }
+.student-rotations .student-show-tools { flex-wrap: wrap; }
+.student-rotations .student-show-intro.with-rotation-timer { padding-bottom: 12px; }
+.student-rotations .with-rotation-timer h1 { font-size: 30px; }
+.student-rotations .with-rotation-timer > p:last-child { display: none; }
+.rotation-timer { position: relative; display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 22px; margin: 0 34px 20px; padding: 18px 24px; border: 2px solid #bfd3bd; border-radius: 20px; background: #f0f5e9; box-shadow: 0 4px 0 #dce5d3; color: #254f48; }
+.rotation-timer.is-finished { background: #fff0cf; border-color: #dec38a; color: #765323; box-shadow: 0 4px 0 #f2dfb4; }
+.rotation-timer-round label { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.rotation-timer-round select { padding: 3px 26px 3px 0; background: transparent; border: 0; font-size: 23px; font-weight: 850; letter-spacing: 0; color: inherit; }
+.rotation-timer-round output { display: block; margin: 5px 0 0; font-size: 14px; font-weight: 650; }
+.rotation-clock-face { display: flex; gap: 15px; align-items: center; flex-shrink: 0; }
+.rotation-clock-face svg { width: 65px; height: 65px; transform: rotate(-90deg); }
+.rotation-clock-face circle { fill: none; stroke: #d5e2cc; stroke-width: 5; }
+.rotation-clock-face .rotation-clock-progress { stroke: #397866; stroke-linecap: round; }
+.is-finished .rotation-clock-face circle { stroke: #e8d2a7; }
+.rotation-clock-face [role=timer] { font-size: clamp(44px, 5vw, 66px); font-weight: 850; font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1; }
+.rotation-timer-actions { display: flex; flex-direction: column; gap: 7px; align-items: flex-end; }
+.rotation-timer-actions > div { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+.rotation-timer button, .transition-video-actions button, .transition-video-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border: 1px solid #c6d7bd; border-radius: 9px; background: #fffefa; font-size: 12px; font-weight: 750; color: #345b50; }
+.rotation-timer button.timer-primary { background: #286e60; border-color: #286e60; color: #fff; min-width: 105px; }
+.rotation-timer button:disabled, .transition-video-actions button:disabled { opacity: .5; }
+.rotation-timer button svg, .transition-video-actions svg { width: 15px; height: 15px; }
+.rotation-timer small { font-size: 11px; color: #52665b; }
+.student-day-table thead th.is-current-round { background: #d8e9ca; color: #285b45; }
+.student-day-table td.is-current-round { background: #f4f8e9; box-shadow: inset 3px 0 #adc8a1, inset -3px 0 #adc8a1; }
+.current-round-label { display: inline-block; margin-left: 8px; padding: 3px 7px; font-size: 10px; text-transform: uppercase; border-radius: 5px; background: #326e53; color: white; vertical-align: middle; }
+.rotation-settings-dialog { width: min(500px, calc(100vw - 32px)); max-width: 500px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.rotation-duration-fields { display: flex; gap: 14px; padding: 0; border: 0; }
+.rotation-duration-fields legend { margin-bottom: 9px; font-weight: 700; }
+.rotation-duration-fields label, .rotation-video-field { display: flex; flex-direction: column; gap: 7px; font-weight: 650; }
+.rotation-duration-fields input, .rotation-video-field input, .rotation-video-field select { border: 1px solid #cbd2c5; background: #fff; padding: 10px 12px; border-radius: 8px; min-width: 0; font-size: 15px; font-weight: 400; }
+.rotation-duration-fields input { width: 100px; }
+.rotation-autoplay-field { display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: #eef4e9; border-radius: 10px; font-weight: 650; }
+.rotation-autoplay-field input { margin-top: 3px; accent-color: #286e60; width: 17px; height: 17px; }
+.rotation-autoplay-field small { display: block; font-size: 12px; font-weight: 400; margin-top: 5px; color: #59665b; }
+.rotation-settings-note { font-size: 12px; color: #59665b; line-height: 1.6; }
+.rotation-settings-error { color: #963e2d; font-size: 13px; }
+.rotation-transition-dialog { width: min(780px, calc(100vw - 32px)); max-width: 780px; max-height: calc(100vh - 24px); overflow-y: auto; }
+.rotation-transition-dialog [data-slot=dialog-title] { display: flex; gap: 9px; align-items: center; font-size: 24px; }
+.rotation-transition-dialog [data-slot=dialog-title] svg { color: #286e60; }
+.transition-video iframe { display: block; width: 100%; height: min(42vw, 48vh, 410px); min-height: 200px; min-width: 200px; border: 0; background: #17252b; }
+.transition-video > output { display: block; margin: 12px 0; font-size: 13px; line-height: 1.5; }
+.transition-video-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+@media (max-width: 1000px) { .rotation-timer { gap: 12px; padding: 14px 18px; } .rotation-clock-face svg { width: 45px; height: 45px; } .rotation-timer-round p { max-width: 180px; } }
+@media (max-width: 750px) { .rotation-timer { flex-wrap: wrap; margin-inline: 20px; } .rotation-timer-actions { width: 100%; align-items: flex-start; } .rotation-timer-actions > div { justify-content: flex-start; } }
+@media print { .rotation-timer { display: none; } }
+.rotation-tune-choices { display: flex; gap: 12px; }
+.rotation-tune-choices > label:first-child { flex: 1; }
+.transition-melody { text-align: center; padding: 26px 20px 22px; border: 1px solid #cbdac0; border-radius: 16px; background: radial-gradient(ellipse at top, #f6f7d9, #eef4e9 70%); color: #345b50; }
+.transition-melody-art { display: flex; align-items: center; justify-content: center; gap: 25px; margin-bottom: 16px; }
+.transition-melody-art > span { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 24px; background: #d7e8c3; transform: rotate(-7deg); }
+.transition-melody-art svg { width: 40px; height: 40px; stroke-width: 1.5; }
+.transition-melody-art > svg { color: #89a57c; transform: rotate(20deg); }
+.transition-melody-kicker { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; font-weight: 750; }
+.transition-melody h3 { margin: 10px 0 5px; font-size: 30px; font-weight: 800; }
+.transition-melody p:not(.transition-melody-kicker) { margin: 0; color: #63735e; font-size: 14px; }
+.transition-melody-time { display: block; margin: 17px 0 8px; font-size: 60px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.transition-melody output { display: block; font-size: 13px; margin: 12px 0 18px; }
+.transition-melody button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border: 1px solid #bbccb0; border-radius: 9px; background: #fffefa; font-size: 13px; font-weight: 700; }
+.transition-melody button svg { width: 15px; height: 15px; }
+.transition-fallback-note { padding: 9px 12px; font-size: 13px; background: #fff0cf; border-radius: 8px; }
+.transition-melody.is-compact { padding: 12px; }
+.transition-melody.is-compact .transition-melody-art, .transition-melody.is-compact .transition-melody-kicker, .transition-melody.is-compact p, .transition-melody.is-compact output { display: none; }
+.transition-melody.is-compact h3 { font-size: 18px; margin: 0; }
+.transition-melody.is-compact .transition-melody-time { font-size: 32px; margin: 10px 0; }
+.rotation-music-strip { margin: 0 34px 20px; border: 2px solid #b9cca6; border-radius: 20px; background: #eef4e4; display: grid; grid-template-columns: 1fr auto; gap: 8px 20px; padding: 15px 22px; color: #345b50; }
+.rotation-music-heading { display: flex; align-items: center; gap: 10px; }
+.rotation-music-heading > svg { width: 24px; height: 24px; }
+.rotation-music-heading strong { display: block; font-size: 20px; font-weight: 800; }
+.rotation-music-heading small { display: block; font-size: 12px; margin-top: 4px; }
+.rotation-music-controls { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.rotation-music-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #bccdac; background: #fffefa; border-radius: 9px; padding: 9px 12px; font-size: 12px; font-weight: 700; }
+.rotation-music-controls button.timer-primary { background: #286e60; color: #fff; }
+.rotation-music-controls svg { width: 15px; height: 15px; }
+.transition-melody.is-banner { grid-column: 1; background: transparent; border: 0; padding: 0; text-align: left; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.transition-melody.is-banner .transition-melody-art, .transition-melody.is-banner .transition-melody-kicker, .transition-melody.is-banner p { display: none; }
+.transition-melody.is-banner h3 { margin: 0; font-size: 15px; order: 1; }
+.transition-melody.is-banner .transition-melody-time { margin: 0; font-size: 42px; order: 0; }
+.transition-melody.is-banner output { display: none; }
+.transition-melody.is-banner button { order: 2; padding: 6px 10px; font-size: 11px; }
+.transition-melody.is-banner .transition-melody-issue, .transition-melody.is-compact .transition-melody-issue { display: block; order: 3; margin: 0; color: #8c4e2e; }
+@media (max-width: 750px) { .rotation-music-strip { margin-inline: 20px; grid-template-columns: 1fr; } .rotation-music-controls { grid-column: 1; grid-row: auto; flex-direction: row; justify-content: flex-start; } }
+@media print { .rotation-music-strip { display: none; } }

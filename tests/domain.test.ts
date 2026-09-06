@@ -13,3 +13,5 @@ import './groupThemes.test';
 import './revealEffects.test';
 import './planner.test';
 import './stationPins.test';
+import './rotationTimer.test';
+import './transitionPlayback.test';

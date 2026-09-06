@@ -2,11 +2,13 @@
 
 Last reviewed: September 6, 2026
 
-## Current update: version 0.2.0
+## Current update: version 0.3.0
+
+Version 0.3.0 adds a silent daily-rotation countdown, class-specific timer/music settings, and four familiar public-domain melodies with gentle accompaniment lasting 30, 45, or 60 seconds. Sheet-music sources and arrangement details are in [TRANSITION_MUSIC.md](TRANSITION_MUSIC.md). Optional YouTube playback uses a small HTTPS helper for the Mac app's referrer requirements; errors or blocked playback switch to a built-in tune. Publish the helper as part of the web build before distributing this Mac update. The pinned native runtime permits autoplay, but real-Mac playback still needs user validation. No camera or microphone capture is used; the YouTube frame explicitly denies both permissions.
 
 The 0.2.0 work adds whole-block planning with a local HiGHS solver, learner-level activity tracking, once-only station limits, shared capacity, and multiple daily pins whose rounds are chosen by the planner. Group creation supports random arrangements, pairs, and counts above eight while respecting keep-apart rules. Student displays include a whole-day chart, simultaneous team reveals, seven modular effects, and eight naming themes. The Mac window now leaves HTML drag-and-drop to the webview.
 
-There are 165 tests. Browser checks covered the September 7–8 sample block, pin selection and planning, theme previews, reveals, cancellation, and old backup imports. Intel and Apple-silicon installers are built by the release workflow; installation, performance, and native drag-and-drop still require a real Mac check.
+There are 176 tests. Browser checks covered the September 7–8 sample block, pin selection and planning, theme previews, reveals, cancellation, old backup imports, automatic transition tunes, embedded YouTube playback, unavailable-video fallback, and paused timer restoration. Music checks cover all twelve tune/duration combinations, resolved endings, consonant accompaniment, and removal of the old metallic bell partial. Intel and Apple-silicon installers are built by the release workflow. The user confirmed that native Mac drag-and-drop works in 0.2.0. Timer/YouTube playback in 0.3.0 still needs a real Mac check.
 
 For the current design and validation details, read [planning blocks](PLANNING_BLOCKS.md), [the planner model](PLANNER_ALGORITHM.md), [student displays](STUDENT_DISPLAYS.md), and [the development guide](DEVELOPMENT.md). Completed snapshots and manual locks remain authoritative. Pins request one visit each day, while their generated round placements may move on rebuild. Legacy round-specific pins migrate to the selected group. Block tracking uses stable activity IDs; names do not change planning priorities.
 

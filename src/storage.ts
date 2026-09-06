@@ -8,6 +8,7 @@ import type {
   RotationSession,
   StationIconKey,
 } from './model';
+import { normalizePresentationSettings } from './rotationTimer';
 
 export interface PersistencePort {
   load(): Promise<AppData | null>;
@@ -170,6 +171,7 @@ export function normalizeAppData(saved: AppData): AppData {
       return {
         ...classroom,
         locations,
+        ...(classroom.rotationPresentation ? { rotationPresentation: normalizePresentationSettings(classroom.rotationPresentation) } : {}),
         sessions: classroom.sessions.map((session) => {
           const groupSet = classroom.groupSets.find((item) => item.id === session.groupSetId);
           const plannedStations = migratedPlannedStations(classroom, session, locations);

@@ -126,6 +126,15 @@ export type RotationSession = {
   ignoredIssueIds?: string[];
 };
 
+export type RotationPresentationSettings = {
+  durationSeconds: number;
+  youtubeUrl: string;
+  autoplay: boolean;
+  transitionSource: 'melody' | 'youtube';
+  melodyId: 'sunny' | 'tiptoe' | 'starlight' | 'meadow';
+  transitionSeconds: 30 | 45 | 60;
+};
+
 export type Classroom = {
   id: string;
   name: string;
@@ -137,6 +146,7 @@ export type Classroom = {
   sessions: RotationSession[];
   activeSessionId: string;
   planningBlocks?: PlanningBlock[];
+  rotationPresentation?: RotationPresentationSettings;
 };
 
 export type AppData = {

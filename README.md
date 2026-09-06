@@ -8,7 +8,7 @@ Student Grouper is a local-first classroom tool for making student groups, conti
 
 ## Project status
 
-Version 0.2.0 adds whole-block rotation planning, flexible daily station pins, random groups and pairs, and animated student displays with eight team themes. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 165 tests, including legacy backup imports and planner validation.
+Version 0.3.0 adds silent rotation timers and transition music: four familiar public-domain melodies with gentle accompaniment, optional YouTube videos, and automatic fallback when a video cannot play. It includes whole-block planning, flexible daily station pins, random groups and pairs, and animated student displays with eight team themes. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 176 tests, including legacy backup imports, planner validation, timer behavior, and music playback.
 
 For follow-up work, start with [the project handoff](docs/PROJECT_HANDOFF.md). The product rules that should not change accidentally are in [the product contract](PRODUCT_SPEC.md), and the build and release details are in [the development guide](docs/DEVELOPMENT.md).
 
@@ -28,12 +28,15 @@ This was made for the small, repetitive planning decisions that consume a surpri
 - Plan activities and reusable classroom locations separately.
 - Print group routes with activity pictures, words, colors, and symbols.
 - Project daily rotations or reveal all teams together with seven playful visual effects.
+- Run a quiet rotation timer, then play a YouTube transition song or an offline tune lasting 30, 45, or 60 seconds.
 - Choose woodland, space, ocean, garden, dinosaur, weather, storybook, or builder names and symbols for groups.
 - Export and restore a complete local backup.
 
 ## Privacy
 
 Student Grouper has no accounts, cloud database, analytics, advertising, or tracking. The Mac app stores classroom information on that Mac. The browser version stores it inside that browser on that device. Exported backups go only where the teacher chooses to save them.
+
+Optional YouTube transition videos connect to YouTube and may show its ads or collect playback data under its own policies. The Mac app also loads a small player page from the public site. Only video parameters are passed to that player, never classroom records. Built-in tunes and the timer work offline; no camera or microphone is used.
 
 The app was created with help from AI, but AI is not part of the running app and student information is never sent to an AI model.
 
