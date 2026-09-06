@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { test as nodeTest } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { createRotationClock, formatRotationTime, normalizePresentationSettings, parseYouTubeVideo, reduceRotationClock, remainingRotationMs } from '../src/rotationTimer';
 import { readPlayerMessage, transitionPlayerUrl, HOSTED_PLAYER_URL } from '../src/youtubePlayer';
 import { renderTransitionMelody, melodyScore, transitionMelodies } from '../src/transitionMelodies';
+import { richTransitionMusic, transitionLengths, transitionMusic, transitionRecordingUrl } from '../src/transitionMusic';
 import { createSampleData } from '../src/sample';
 import { createBackupFile, readBackup } from '../src/storage';
 
@@ -32,6 +34,65 @@ test('pausing preserves partial seconds, resuming ignores paused time, and reset
   assert.equal(clock.endsAt, null);
   assert.equal(clock.remainingMs, 45000);
   assert.equal(reduceRotationClock(clock, { type: 'tick', now: 500000 }), clock);
+});
+
+test('changing a running duration replaces the old deadline and finishes the new countdown once', () => {
+  const running = reduceRotationClock(createRotationClock('one', 30), { type: 'start', now: 1000 });
+  const changed = reduceRotationClock(running, { type: 'set-duration', durationSeconds: 60, now: 11000 });
+  assert.equal(changed.roundId, 'one');
+  assert.equal(changed.status, 'running');
+  assert.equal(changed.durationMs, 60000);
+  assert.equal(changed.remainingMs, 60000);
+  assert.equal(changed.endsAt, 71000);
+  assert.ok(changed.runId > running.runId);
+  assert.equal(remainingRotationMs(changed, 12000), 59000);
+  assert.equal(reduceRotationClock(changed, { type: 'tick', now: 31000 }).status, 'running', 'the old deadline cannot finish the new countdown');
+  const ended = reduceRotationClock(changed, { type: 'tick', now: 71000 });
+  assert.equal(ended.status, 'finished');
+  assert.equal(ended.runId, changed.runId);
+  assert.equal(reduceRotationClock(ended, { type: 'tick', now: 72000 }), ended);
+
+  const shorter = reduceRotationClock(changed, { type: 'set-duration', durationSeconds: 5, now: 21000 });
+  assert.equal(shorter.endsAt, 26000);
+  assert.equal(reduceRotationClock(shorter, { type: 'tick', now: 26000 }).status, 'finished');
+});
+
+test('changing a paused duration shows the full new time and waits for Resume', () => {
+  const running = reduceRotationClock(createRotationClock('one', 60), { type: 'start', now: 1000 });
+  const paused = reduceRotationClock(running, { type: 'pause', now: 12000 });
+  const changed = reduceRotationClock(paused, { type: 'set-duration', durationSeconds: 20, now: 15000 });
+  assert.equal(changed.roundId, 'one');
+  assert.equal(changed.status, 'paused');
+  assert.equal(changed.durationMs, 20000);
+  assert.equal(changed.remainingMs, 20000);
+  assert.equal(changed.endsAt, null);
+  assert.ok(changed.runId > paused.runId);
+  assert.equal(remainingRotationMs(changed, 90000), 20000);
+  assert.equal(reduceRotationClock(changed, { type: 'tick', now: 90000 }), changed);
+  const resumed = reduceRotationClock(changed, { type: 'start', now: 90000 });
+  assert.equal(resumed.endsAt, 110000);
+  assert.equal(resumed.runId, changed.runId);
+});
+
+test('changing an idle or finished duration makes the current round ready at the new time', () => {
+  const idle = createRotationClock('one', 30);
+  const started = reduceRotationClock(idle, { type: 'start', now: 0 });
+  const finished = reduceRotationClock(started, { type: 'tick', now: 30000 });
+  for (const clock of [idle, finished]) {
+    const changed = reduceRotationClock(clock, { type: 'set-duration', durationSeconds: 45, now: 40000 });
+    assert.equal(changed.roundId, 'one');
+    assert.equal(changed.status, 'idle');
+    assert.equal(changed.durationMs, 45000);
+    assert.equal(changed.remainingMs, 45000);
+    assert.equal(changed.endsAt, null);
+    const restarted = reduceRotationClock(changed, { type: 'start', now: 50000 });
+    assert.equal(restarted.endsAt, 95000);
+    assert.ok(restarted.runId > clock.runId, 'a new completion can trigger its transition');
+  }
+  const extended = reduceRotationClock(finished, { type: 'add-minute', now: 40000 });
+  const changed = reduceRotationClock(extended, { type: 'set-duration', durationSeconds: 20, now: 41000 });
+  assert.equal(changed.status, 'paused');
+  assert.ok(changed.runId > finished.runId, 'editing after extending a finished timer starts a fresh run');
 });
 
 test('extra time and next round have explicit behavior without changing a schedule or completion marks', () => {
@@ -90,9 +151,9 @@ test('Mac embeds use the HTTPS player bridge and transmit only video parameters,
   assert.deepEqual(readPlayerMessage({ type: 'student-grouper-youtube', channel: 'ours', status: 'blocked' }, 'ours'), { status: 'blocked', code: undefined });
 });
 
-test('all four public-domain tunes render for 30, 45 and 60 seconds with bounded sound and a soft ending', () => {
+test('all four minimal tunes render at every offered length through two minutes with bounded sound and a soft ending', () => {
   const fingerprints = new Set<number>();
-  for (const melody of transitionMelodies) for (const seconds of [30, 45, 60]) {
+  for (const melody of transitionMelodies) for (const seconds of transitionLengths) {
     const samples = renderTransitionMelody(melody.id, seconds, 8000);
     assert.equal(samples.length, seconds * 8000);
     assert.equal(samples[0], 0);
@@ -110,7 +171,7 @@ test('all four public-domain tunes render for 30, 45 and 60 seconds with bounded
 
 test('transition arrangements avoid clashing simultaneous notes and finish their melody on the tonic', () => {
   const consonant = new Set([0, 3, 4, 5, 7, 8, 9]);
-  for (const tune of transitionMelodies) for (const seconds of [30, 45, 60]) {
+  for (const tune of transitionMelodies) for (const seconds of transitionLengths) {
     const score = melodyScore(tune.id, seconds);
     const lead = score.filter((note) => note.part === 'melody');
     assert.equal(lead.at(-1)!.midi, tune.root, `${tune.name} has a resolved ending`);
@@ -123,6 +184,29 @@ test('transition arrangements avoid clashing simultaneous notes and finish their
     }
     for (let i = 1; i < lead.length; i++) assert.ok(lead[i - 1].at + lead[i - 1].duration <= lead[i].at + .0001, 'previous notes release before the melody moves on');
   }
+});
+
+test('the rich library is bundled locally and new music settings round-trip without breaking old selections', async () => {
+  assert.deepEqual(transitionLengths, [30, 45, 60, 90, 120]);
+  assert.equal(new Set(transitionMusic.map((track) => track.id)).size, 9);
+  assert.ok(transitionMusic.filter((track) => track.kind === 'minimal').every((track) => track.name.endsWith(' (minimal)')));
+  const data = createSampleData();
+  for (const track of richTransitionMusic) {
+    const file = readFileSync(`public/${track.asset}`);
+    assert.equal(file.subarray(0, 3).toString(), 'ID3');
+    assert.ok(file.length > 100000, `${track.name} must include a real recording`);
+    assert.equal(transitionRecordingUrl(track, '/StudentGrouper/app/'), `/StudentGrouper/app/${track.asset}`);
+    for (const transitionSeconds of transitionLengths) {
+      const settings = normalizePresentationSettings({ melodyId: track.id, transitionSeconds });
+      assert.equal(settings.melodyId, track.id);
+      assert.equal(settings.transitionSeconds, transitionSeconds);
+      data.classrooms[0].rotationPresentation = settings;
+      const result = await readBackup({ text: async () => createBackupFile(data).contents });
+      assert.deepEqual(result.classrooms[0].rotationPresentation, settings);
+    }
+  }
+  for (const melodyId of ['sunny', 'tiptoe', 'starlight', 'meadow'] as const) assert.equal(normalizePresentationSettings({ melodyId }).melodyId, melodyId);
+  for (const transitionSeconds of [150, 180, 'full', '90', NaN]) assert.equal(normalizePresentationSettings({ melodyId: 'rich-bells', transitionSeconds } as never).transitionSeconds, 45);
 });
 
 test('music-box synthesis keeps the intended pitch without the old metallic off-key partial', () => {

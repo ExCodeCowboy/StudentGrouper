@@ -8,6 +8,7 @@ import './platform.test';
 import './planningBlocks.test';
 import './dragDrop.test';
 import './randomGroups.test';
+import './pairStarters.test';
 import './studentDisplay.test';
 import './groupThemes.test';
 import './revealEffects.test';

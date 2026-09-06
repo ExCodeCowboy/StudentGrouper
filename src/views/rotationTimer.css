@@ -1,9 +1,4 @@
-.student-rotations .student-show-top { flex-wrap: wrap; }
-.student-rotations .student-show-tools { flex-wrap: wrap; }
-.student-rotations .student-show-intro.with-rotation-timer { padding-bottom: 12px; }
-.student-rotations .with-rotation-timer h1 { font-size: 30px; }
-.student-rotations .with-rotation-timer > p:last-child { display: none; }
-.rotation-timer { position: relative; display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 22px; margin: 0 34px 20px; padding: 18px 24px; border: 2px solid #bfd3bd; border-radius: 20px; background: #f0f5e9; box-shadow: 0 4px 0 #dce5d3; color: #254f48; }
+.rotation-timer { position: relative; display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 22px; margin: 0 34px 16px; padding: 18px 24px; border: 2px solid #bfd3bd; border-radius: 20px; background: #f0f5e9; box-shadow: 0 4px 0 #dce5d3; color: #254f48; }
 .rotation-timer.is-finished { background: #fff0cf; border-color: #dec38a; color: #765323; box-shadow: 0 4px 0 #f2dfb4; }
 .rotation-timer-round label { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .rotation-timer-round select { padding: 3px 26px 3px 0; background: transparent; border: 0; font-size: 23px; font-weight: 850; letter-spacing: 0; color: inherit; }
@@ -45,7 +40,10 @@
 @media (max-width: 750px) { .rotation-timer { flex-wrap: wrap; margin-inline: 20px; } .rotation-timer-actions { width: 100%; align-items: flex-start; } .rotation-timer-actions > div { justify-content: flex-start; } }
 @media print { .rotation-timer { display: none; } }
 .rotation-tune-choices { display: flex; gap: 12px; }
+.rotation-tune-choices > label { min-width: 0; }
 .rotation-tune-choices > label:first-child { flex: 1; }
+.rotation-tune-choices > label:last-child { flex: 0 0 130px; }
+.rotation-tune-choices select { width: 100%; }
 .transition-melody { text-align: center; padding: 26px 20px 22px; border: 1px solid #cbdac0; border-radius: 16px; background: radial-gradient(ellipse at top, #f6f7d9, #eef4e9 70%); color: #345b50; }
 .transition-melody-art { display: flex; align-items: center; justify-content: center; gap: 25px; margin-bottom: 16px; }
 .transition-melody-art > span { display: grid; place-items: center; width: 76px; height: 76px; border-radius: 24px; background: #d7e8c3; transform: rotate(-7deg); }

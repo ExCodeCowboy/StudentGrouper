@@ -116,7 +116,7 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
     <main className={`student-show student-rotations${animate ? ' with-effects' : ''}`} ref={setScreen} onKeyDown={handleKey}>
       <div className="student-show-decor" aria-hidden="true"><Star className="show-star star-one" /><Star className="show-star star-two" /><span className="show-orbit orbit-one" /></div>
       <header className="student-show-top">
-        <span className="student-show-brand"><span><Sparkles /></span> Our day together</span>
+        <div className="student-day-heading"><span className="student-day-heading-icon" aria-hidden="true"><Sparkles /></span><div><h1>Our day together</h1><time dateTime={day.date}>{date}</time></div></div>
         <div className="student-show-tools">
           <label className="show-effects"><input type="checkbox" checked={showNames} onChange={(event) => setShowNames(event.target.checked)} /> Student names</label>
           <RevealEffectPicker selection={selection} onSelect={select} reducedMotion={reducedMotion} />
@@ -126,12 +126,6 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
         </div>
       </header>
       {issue && <output className="student-show-issue">{issue}</output>}
-      <section className={`student-show-intro${revealed ? ' with-rotation-timer' : ''}`} aria-labelledby="student-rotations-title">
-        <p className="student-show-kicker">{date}</p>
-        <h1 id="student-rotations-title">{revealed ? <>Our day of <span>discovery</span></> : <>What’s in store <span>today?</span></>}</h1>
-        <p>{revealed ? 'Find your team. Follow your day from left to right.' : 'Find your team. A whole day of adventures is waiting!'}</p>
-      </section>
-
       {hasPlan && !melodyOpen && <section className={`rotation-timer${finished ? ' is-finished' : ''}`} aria-label="Rotation timer">
         <div className="rotation-timer-round">
           <label>Our focus now<select aria-label="Current round" value={clock.roundId} onChange={(event) => dispatch({ type: 'round', roundId: event.target.value, durationSeconds: settings.durationSeconds, now: Date.now() })}>{day.rounds.map((round, index) => <option key={round.id} value={round.id}>Round {index + 1}</option>)}</select></label>
@@ -143,13 +137,14 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
         </div>
         <div className="rotation-timer-actions">
           <div>
-            <button type="button" className="timer-primary" disabled={!revealed || !!playback} onClick={() => { prepareTransitionAudio(); dispatch({ type: clock.status === 'running' ? 'pause' : 'start', now: Date.now() }); }}>{clock.status === 'running' ? <><Pause />Pause</> : <><Play />{clock.status === 'paused' ? 'Resume' : finished ? 'Start again' : 'Start timer'}</>}</button>
+            {finished && nextRound && <button type="button" className="timer-primary" title={`Start round ${roundIndex + 2}`} disabled={!revealed || !!playback} onClick={startNextRound}>Next round<ArrowRight /></button>}
+            <button type="button" className={finished && nextRound ? undefined : 'timer-primary'} disabled={!revealed || !!playback} onClick={() => { prepareTransitionAudio(); dispatch({ type: clock.status === 'running' ? 'pause' : 'start', now: Date.now() }); }}>{clock.status === 'running' ? <><Pause />Pause</> : finished ? <><RotateCcw />Restart round</> : <><Play />{clock.status === 'paused' ? 'Resume' : 'Start timer'}</>}</button>
             <button type="button" onClick={() => dispatch({ type: 'add-minute', now: Date.now() })}><Plus />1 min</button>
             <button type="button" aria-label="Reset timer" title="Reset timer" onClick={() => dispatch({ type: 'reset', durationSeconds: settings.durationSeconds })}><RotateCcw /></button>
           </div>
           <div>
             <button type="button" onClick={playSong}><Music2 />Play transition music</button>
-            {nextRound && <button type="button" disabled={!revealed || !!playback} onClick={startNextRound}>Start round {roundIndex + 2}<ArrowRight /></button>}
+            {nextRound && !finished && <button type="button" title={`Start round ${roundIndex + 2}`} disabled={!revealed || !!playback} onClick={startNextRound}>Next round<ArrowRight /></button>}
           </div>
           {!revealed && <small>Reveal the day to start station time.</small>}
         </div>
@@ -157,8 +152,8 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
 
       {melodyOpen && <section className="rotation-music-strip" aria-label="Transition time">
         <div className="rotation-music-heading"><Music2 /><span><strong>{finished && nextRound ? `Get ready for round ${roundIndex + 2}` : finished ? 'Time to tidy up. Well done!' : 'Time to tidy up'}</strong><small>{videoFailed ? 'YouTube could not start. Using your built-in tune.' : 'Small steps to your next adventure.'}</small></span></div>
-        <TransitionMelody melodyId={settings.melodyId} seconds={settings.transitionSeconds} banner />
-        <div className="rotation-music-controls"><button type="button" onClick={() => setVideoOpen(false)}>Close transition</button>{finished && nextRound ? <button type="button" className="timer-primary" onClick={startNextRound}>Start round {roundIndex + 2}<ArrowRight /></button> : !finished && revealed ? <button type="button" className="timer-primary" onClick={() => { prepareTransitionAudio(); setVideoOpen(false); dispatch({ type: 'start', now: Date.now() }); }}>Resume round {roundIndex + 1}<Play /></button> : null}</div>
+        <TransitionMelody key={`${settings.melodyId}:${settings.transitionSeconds}`} melodyId={settings.melodyId} seconds={settings.transitionSeconds} banner />
+        <div className="rotation-music-controls">{finished && nextRound ? <button type="button" className="timer-primary" title={`Start round ${roundIndex + 2}`} disabled={!revealed || !!playback} onClick={startNextRound}>Next round<ArrowRight /></button> : !finished && revealed ? <button type="button" className="timer-primary" onClick={() => { prepareTransitionAudio(); setVideoOpen(false); dispatch({ type: 'start', now: Date.now() }); }}>Resume round {roundIndex + 1}<Play /></button> : null}<button type="button" onClick={() => setVideoOpen(false)}>Close transition</button></div>
       </section>}
 
       {hasPlan ? <section className="student-day-table-wrap" tabIndex={0} aria-label="Scroll the daily rotation chart">
@@ -197,15 +192,18 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
       <output className="sr-only" aria-live="polite" aria-atomic="true">{revealed ? `All ${day.rounds.length} rounds for ${date} are revealed. Find your team and read from left to right.` : 'The day is ready to reveal.'}</output>
       <RevealEffectLayer playback={playback} />
       {settingsOpen && <RotationPresentationSettings settings={settings} container={screen} onClose={() => setSettingsOpen(false)} onSave={(next) => {
+        if (next.durationSeconds !== settings.durationSeconds) {
+          setVideoOpen(false);
+          dispatch({ type: 'set-duration', durationSeconds: next.durationSeconds, now: Date.now() });
+        }
         onSettingsChange(next);
-        if (clock.status === 'idle') dispatch({ type: 'reset', durationSeconds: next.durationSeconds });
         setSettingsOpen(false);
       }} />}
       <Dialog open={videoOpen && !melodyOpen} onOpenChange={setVideoOpen}>
         <DialogContent portalContainer={screen} className="rotation-transition-dialog" onKeyDown={(event) => event.stopPropagation()}>
           <DialogHeader><DialogTitle><Music2 />Transition time</DialogTitle><DialogDescription>{finished ? nextRound ? `Tidy up, then get ready for round ${roundIndex + 2}.` : 'Tidy up and celebrate a day of learning.' : 'A little music for your next move.'}</DialogDescription></DialogHeader>
           {videoOpen && !melodyOpen && <TransitionVideo youtubeUrl={settings.youtubeUrl} onUnavailable={() => setVideoFailed(true)} />}
-          <DialogFooter><Button variant="outline" onClick={() => setVideoOpen(false)}>Back to the day</Button>{finished && nextRound ? <Button onClick={startNextRound}>Start round {roundIndex + 2}<ArrowRight /></Button> : !finished && revealed ? <Button onClick={() => { prepareTransitionAudio(); setVideoOpen(false); dispatch({ type: 'start', now: Date.now() }); }}>Resume round {roundIndex + 1}</Button> : null}</DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setVideoOpen(false)}>Back to the day</Button>{finished && nextRound ? <Button title={`Start round ${roundIndex + 2}`} disabled={!revealed || !!playback} onClick={startNextRound}>Next round<ArrowRight /></Button> : !finished && revealed ? <Button onClick={() => { prepareTransitionAudio(); setVideoOpen(false); dispatch({ type: 'start', now: Date.now() }); }}>Resume round {roundIndex + 1}</Button> : null}</DialogFooter>
         </DialogContent>
       </Dialog>
     </main>

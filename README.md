@@ -8,9 +8,11 @@ Student Grouper is a local-first classroom tool for making student groups, conti
 
 ## Project status
 
-Version 0.3.0 adds silent rotation timers and transition music: four familiar public-domain melodies with gentle accompaniment, optional YouTube videos, and automatic fallback when a video cannot play. It includes whole-block planning, flexible daily station pins, random groups and pairs, and animated student displays with eight team themes. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 176 tests, including legacy backup imports, planner validation, timer behavior, and music playback.
+Version 0.3.1 adds randomly chosen starter stars for pairs, five rich transition songs, immediate timer-duration updates, and a more compact daily display with Next round as the main action after a countdown. It includes whole-block planning, flexible daily station pins, random groups and pairs, and animated student displays with eight team themes. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 187 tests, including legacy backup imports, planner validation, pair starters, timer behavior, and music playback.
 
 For follow-up work, start with [the project handoff](docs/PROJECT_HANDOFF.md). The product rules that should not change accidentally are in [the product contract](PRODUCT_SPEC.md), and the build and release details are in [the development guide](docs/DEVELOPMENT.md).
+
+Five rich transition recordings and four synthesized options labeled **(minimal)** offer 30-, 45-, 60-, 90-, and 120-second playback with a gentle fade for shortened recordings. All built-in music is bundled in the Mac app. See [music sources and playback details](docs/TRANSITION_MUSIC.md).
 
 ## Why it exists
 
@@ -28,7 +30,7 @@ This was made for the small, repetitive planning decisions that consume a surpri
 - Plan activities and reusable classroom locations separately.
 - Print group routes with activity pictures, words, colors, and symbols.
 - Project daily rotations or reveal all teams together with seven playful visual effects.
-- Run a quiet rotation timer, then play a YouTube transition song or an offline tune lasting 30, 45, or 60 seconds.
+- Run a quiet rotation timer, then play a YouTube transition song or built-in music lasting up to two minutes.
 - Choose woodland, space, ocean, garden, dinosaur, weather, storybook, or builder names and symbols for groups.
 - Export and restore a complete local backup.
 

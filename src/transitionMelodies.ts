@@ -70,7 +70,9 @@ const chords: Record<Chord, readonly [number, number]> = {
 export function melodyScore(id: MelodyId, seconds: number): MelodyNote[] {
   if (!Number.isFinite(seconds) || seconds <= 0) return [];
   const tune = transitionMelodies.find((item) => item.id === id) ?? transitionMelodies[0];
-  const phrases: readonly Phrase[] = tune.forms[seconds <= 30 ? 30 : seconds <= 45 ? 45 : 60];
+  const phrases: readonly Phrase[] = seconds <= 60
+    ? tune.forms[seconds <= 30 ? 30 : seconds <= 45 ? 45 : 60]
+    : Array.from({ length: 2 }, () => tune.forms[seconds <= 90 ? 45 : 60]).flat();
   const totalBeats = phrases.flat().reduce((sum, item) => sum + item.beats, 0);
   const leadIn = Math.min(.08, seconds * .01);
   const tail = Math.min(.25, seconds * .02);

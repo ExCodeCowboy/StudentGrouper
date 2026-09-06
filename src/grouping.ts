@@ -1,5 +1,6 @@
 import type { Group, GroupSet, Relationship, Student } from './model';
 import { createGroupShells } from './sample';
+import { ensurePairStarters } from './pairStarters';
 
 function relationshipBetween(
   relationships: Relationship[],
@@ -498,12 +499,12 @@ export function generateGroups(
   });
 
   if (groupSet.recipe.mode === 'random') {
-    return randomGroups(
+    return ensurePairStarters(randomGroups(
       activeStudents,
       relationships,
       { ...groupSet, groups },
       random,
-    );
+    ), activeStudents, random);
   }
 
   const attribute = groupSet.recipe.primaryAttribute;
@@ -579,7 +580,7 @@ export function generateGroups(
     }
   }
 
-  return optimizeGroups(activeStudents, relationships, { ...groupSet, groups });
+  return ensurePairStarters(optimizeGroups(activeStudents, relationships, { ...groupSet, groups }), activeStudents, random);
 }
 
 export function moveStudent(

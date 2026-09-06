@@ -41,15 +41,15 @@ jobs:
           tagName: v__VERSION__
           releaseName: Student Grouper v__VERSION__
           releaseBody: |
-            Rotation timers and transition music for Student Grouper 0.3.0.
+            Starter stars, richer transition music, and classroom refinements for Student Grouper 0.3.1.
 
-            - Use a silent rotation countdown with pause, resume, reset, extra time, and teacher-controlled next rounds.
-            - Choose four familiar public-domain melodies with gentle accompaniment, lasting 30, 45, or 60 seconds. They work offline and leave the rotation chart visible.
-            - Play an embedded YouTube transition video, with an optional automatic start when time is up and a built-in tune if the video cannot play.
-            - Save timer and music preferences per class. Existing classroom backups remain compatible.
-            - Keep all the block planning, flexible station pins, group themes, and animated student reveals from 0.2.0.
+            - Pairs get one randomly chosen starter, marked with a gold star beside their name in the teacher and student group views. The choice stays the same through reveals and reopening; making pairs again draws fresh starters. Odd-numbered trios get one starter too.
+            - Choose five rich songs: Bells, Oboe, Strings, Guitar, and Koto. The four synthesized tunes are labeled (minimal). Built-in music offers 30, 45, 60, 90, or 120 seconds, with gentle fades when recordings are shortened. All nine choices work offline in the Mac app.
+            - Saving a new rotation duration immediately updates the countdown. Running timers continue from the new time; paused timers stay paused. Music-only edits preserve progress.
+            - Next round is the main action when a round ends, with Restart round as the secondary option. A compact date and title leave more room for the rotation chart.
+            - Existing classroom exports remain compatible, including saved pair starters and music preferences. Earlier pairs receive starters without changing their partners.
 
-            To set up: Today → Student view → Timer & transition. Automatic music is off by default. YouTube needs internet and may restrict playback; built-in tunes are the offline option. No camera or microphone is used.
+            For starters, choose Groups → Pairs → Make groups. For music, choose Today → Student view → Timer & transition. Automatic music is off by default. YouTube keeps its own video length, needs internet, and may restrict playback. No camera or microphone is used.
 
             Mac downloads:
 

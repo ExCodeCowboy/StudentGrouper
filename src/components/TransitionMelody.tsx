@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Footprints, Music2, Play, Square } from 'lucide-react';
 import { playTransitionMelody, prepareTransitionAudio } from '../transitionAudio';
-import { transitionMelodies, type MelodyId } from '../transitionMelodies';
+import { getTransitionMusic, transitionMusicSeconds, type TransitionLength, type TransitionMusicId } from '../transitionMusic';
 import { formatRotationTime } from '../rotationTimer';
 
-export function TransitionMelody({ melodyId, seconds, compact = false, banner = false }: { melodyId: MelodyId; seconds: number; compact?: boolean; banner?: boolean }) {
+export function TransitionMelody({ melodyId, seconds, compact = false, banner = false }: { melodyId: TransitionMusicId; seconds: TransitionLength; compact?: boolean; banner?: boolean }) {
   const [attempt, setAttempt] = useState(0);
   const [stopped, setStopped] = useState(false);
-  const [remaining, setRemaining] = useState(seconds);
+  const [remaining, setRemaining] = useState(transitionMusicSeconds(melodyId, seconds));
   const [issue, setIssue] = useState('');
-  const melody = transitionMelodies.find((item) => item.id === melodyId)!;
+  const melody = getTransitionMusic(melodyId);
   useEffect(() => {
     if (stopped) return;
     const controller = new AbortController();
     let interval: number | undefined;
     void playTransitionMelody(melodyId, seconds, controller.signal, () => { setRemaining(0); setStopped(true); }).then((playback) => {
       if (!playback || controller.signal.aborted) return;
+      setRemaining(playback.remaining());
       interval = window.setInterval(() => setRemaining(playback.remaining()), 200);
-    }).catch(() => { if (!controller.signal.aborted) setIssue('Press Play tune to allow sound on this device.'); });
+    }).catch((error: unknown) => { if (!controller.signal.aborted) setIssue(error instanceof Error ? error.message : 'Press Play tune to allow sound on this device.'); });
     return () => { controller.abort(); window.clearInterval(interval); };
   }, [melodyId, seconds, attempt, stopped]);
   return <section className={`transition-melody${compact ? ' is-compact' : ''}${banner ? ' is-banner' : ''}`} aria-label="Built-in transition tune">
@@ -29,7 +30,7 @@ export function TransitionMelody({ melodyId, seconds, compact = false, banner = 
     <output className={issue ? 'transition-melody-issue' : undefined}>{issue || (remaining === 0 ? 'All ready? Your teacher will start the next round.' : stopped ? 'Music stopped.' : 'Tidy your space. Move safely. Find your next station.')}</output>
     <button type="button" onClick={() => {
       if (!stopped && !issue) setStopped(true);
-      else { prepareTransitionAudio(); setStopped(false); setRemaining(seconds); setIssue(''); setAttempt((value) => value + 1); }
+      else { prepareTransitionAudio(); setStopped(false); setRemaining(transitionMusicSeconds(melodyId, seconds)); setIssue(''); setAttempt((value) => value + 1); }
     }}>{stopped || issue ? <><Play />Play tune</> : <><Square />Stop music</>}</button>
   </section>;
 }

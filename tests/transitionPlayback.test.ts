@@ -9,12 +9,14 @@ function test(name: string, body: () => void | Promise<void>) { void nodeTest(na
 test('transition audio cancels pending starts, replaces old playback, and releases sound on close and completion', async () => {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
   const sources: Array<{ stopped: boolean; disconnected: boolean; onended: (() => void) | null; stop: () => void }> = [];
+  const contexts: FakeAudioContext[] = [];
   let resume = () => Promise.resolve();
   class FakeAudioContext {
     state = 'running'; currentTime = 0; destination = {};
+    constructor() { contexts.push(this); }
     resume() { return resume(); }
-    createBuffer(_channels: number, length: number) { return { copyToChannel: (data: Float32Array) => assert.equal(data.length, length) }; }
-    createGain() { return { gain: { value: 0 }, connect() {}, disconnect() {} }; }
+    createBuffer(_channels: number, length: number, rate: number) { return { duration: length / rate, copyToChannel: (data: Float32Array) => assert.equal(data.length, length) }; }
+    createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {}, disconnect() {} }; }
     createBufferSource() {
       const source = { buffer: null, stopped: false, disconnected: false, onended: null as (() => void) | null, connect() {}, start() {}, stop() { source.stopped = true; }, disconnect() { source.disconnected = true; } };
       sources.push(source);
@@ -49,6 +51,97 @@ test('transition audio cancels pending starts, replaces old playback, and releas
     await Promise.resolve();
     assert.equal(sources.length, 3, 'a late audio permission response cannot restart closed music');
   } finally {
+    for (const context of contexts) context.state = 'closed';
+    if (previousWindow) Object.defineProperty(globalThis, 'window', previousWindow);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
+});
+
+test('recorded songs fade when shortened, cap playback at two minutes, and cancel stale downloads or decodes', async () => {
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  const previousFetch = globalThis.fetch;
+  const durations = [119.736, 118.416, 118.656, 129.696, 129];
+  const filenames = ['bells.mp3', 'oboe.mp3', 'strings.mp3', 'guitar.mp3', 'koto.mp3'];
+  const sources: Array<{ buffer: { duration: number } | null; duration: number; stopped: boolean; onended: (() => void) | null }> = [];
+  const envelopes: Array<Array<[string, number, number]>> = [];
+  let now = 0; let closed = false; let delay = false; let fail = false;
+  let decodeStarted!: () => void;
+  let finishDecode!: () => void;
+  class FakeAudioContext {
+    get state() { return closed ? 'closed' : 'running'; }
+    get currentTime() { return now; }
+    destination = {};
+    resume() { return Promise.resolve(); }
+    decodeAudioData(bytes: ArrayBuffer) {
+      const buffer = { duration: durations[new Uint8Array(bytes)[0]] };
+      if (!delay) return Promise.resolve(buffer);
+      return new Promise<typeof buffer>((resolve) => { finishDecode = () => resolve(buffer); decodeStarted(); });
+    }
+    createGain() {
+      const envelope: Array<[string, number, number]> = [];
+      envelopes.push(envelope);
+      return { gain: { setValueAtTime(value: number, at: number) { envelope.push(['set', value, at]); }, linearRampToValueAtTime(value: number, at: number) { envelope.push(['ramp', value, at]); } }, connect() {}, disconnect() {} };
+    }
+    createBufferSource() {
+      const source = { buffer: null, duration: 0, stopped: false, onended: null as (() => void) | null, connect() {}, disconnect() {}, start(_at: number, _offset: number, duration: number) { source.duration = duration; }, stop() { source.stopped = true; } };
+      sources.push(source); return source;
+    }
+  }
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: { AudioContext: FakeAudioContext, setTimeout, clearTimeout } });
+  globalThis.fetch = (async (url: string, options: RequestInit) => {
+    assert.ok(url.startsWith('/music/transitions/'), 'recordings come from the local app');
+    assert.ok(options.signal, 'downloads are cancellable');
+    const index = filenames.indexOf(url.split('/').at(-1)!);
+    assert.ok(index >= 0);
+    return { ok: !fail, arrayBuffer: async () => new Uint8Array([index]).buffer } as Response;
+  }) as typeof fetch;
+  try {
+    let ended = 0;
+    const bell = await playTransitionMelody('rich-bells', 30, new AbortController().signal, () => ended++);
+    assert.equal(sources[0].duration, 30);
+    assert.deepEqual(envelopes[0].slice(-2), [['set', .65, 27], ['ramp', 0, 30]], 'three-second fade reaches silence exactly at the cutoff');
+    now = 12;
+    assert.equal(bell!.remaining(), 18);
+    sources[0].onended!();
+    assert.equal(ended, 1);
+    const guitar = await playTransitionMelody('rich-guitar', 120, new AbortController().signal, () => ended++);
+    assert.equal(sources[1].duration, 120, 'a longer recording is capped');
+    assert.deepEqual(envelopes[1].slice(-2), [['set', .65, 129], ['ramp', 0, 132]]);
+    guitar!.stop();
+    assert.equal(ended, 1, 'manual stop does not signal normal completion');
+    const oboe = await playTransitionMelody('rich-oboe', 120, new AbortController().signal, () => ended++);
+    assert.equal(sources[2].duration, durations[1], 'shorter recordings end naturally without a loop');
+    assert.equal(oboe!.remaining(), durations[1], 'countdown uses decoded duration');
+    assert.equal(envelopes[2].some(([kind, value]) => kind === 'ramp' && value === 0), false, 'natural endings are retained');
+    oboe!.stop();
+
+    delay = true;
+    const entered = new Promise<void>((resolve) => { decodeStarted = resolve; });
+    const old = playTransitionMelody('rich-strings', 45, new AbortController().signal, () => ended++);
+    await entered;
+    delay = false;
+    const latest = await playTransitionMelody('rich-koto', 60, new AbortController().signal, () => ended++);
+    finishDecode();
+    assert.equal(await old, null);
+    assert.equal(sources.length, 4, 'a superseded decode cannot start old music');
+    latest!.stop();
+
+    delay = true;
+    const enteredAgain = new Promise<void>((resolve) => { decodeStarted = resolve; });
+    const controller = new AbortController();
+    const canceled = playTransitionMelody('rich-guitar', 90, controller.signal, () => ended++);
+    await enteredAgain;
+    controller.abort();
+    await assert.rejects(canceled, { name: 'AbortError' });
+    finishDecode();
+    await Promise.resolve();
+    assert.equal(sources.length, 4);
+    fail = true; delay = false;
+    await assert.rejects(playTransitionMelody('rich-bells', 45, new AbortController().signal, () => ended++), /recording could not load/);
+    assert.equal(ended, 1);
+  } finally {
+    closed = true;
+    globalThis.fetch = previousFetch;
     if (previousWindow) Object.defineProperty(globalThis, 'window', previousWindow);
     else Reflect.deleteProperty(globalThis, 'window');
   }

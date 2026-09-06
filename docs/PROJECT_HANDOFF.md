@@ -2,7 +2,13 @@
 
 Last reviewed: September 6, 2026
 
-## Current update: version 0.3.0
+## Current update: version 0.3.1
+
+Five owner-supplied Suno MP3s are bundled under `public/music/transitions`: Bells, Oboe, Strings, Guitar, and Koto. The owner confirmed commercial-use rights. `src/transitionMusic.ts` is the common registry; previous choices are labeled **(minimal)** and keep their saved IDs. Both libraries offer 30/45/60/90/120 seconds, capped at two minutes. Shortened recordings fade out over their final three seconds; shorter files end naturally. YouTube keeps its own duration. Saving a changed round duration immediately applies the full new time while preserving running/paused status; idle/finished timers become ready. The old deadline is discarded, and music-only changes preserve progress. The daily title/date share a compact toolbar, and Next round becomes the primary action after a countdown.
+
+Pairs save one `starterStudentId` per nonempty group, shown as a gold star in Groups and its student reveal. `ensurePairStarters` retains valid present starters during ordinary edits and migration; generation chooses fresh starters after placing partners. Empty groups and count mode clear the role. Attendance/deletion/moves repair affected choices through the classroom update path. Undo and exports preserve selections. Older pair backups gain stars without regrouping. There are 187 tests, covering these behaviors plus recording cancellation, stale decoding, fades, duration limits, assets, preference backups, and timer edits. Browser checks confirmed one star per pair, matching teacher/student selections, repeat reveals, and the new timer actions.
+
+## Previous update: version 0.3.0
 
 Version 0.3.0 adds a silent daily-rotation countdown, class-specific timer/music settings, and four familiar public-domain melodies with gentle accompaniment lasting 30, 45, or 60 seconds. Sheet-music sources and arrangement details are in [TRANSITION_MUSIC.md](TRANSITION_MUSIC.md). Optional YouTube playback uses a small HTTPS helper for the Mac app's referrer requirements; errors or blocked playback switch to a built-in tune. Publish the helper as part of the web build before distributing this Mac update. The pinned native runtime permits autoplay, but real-Mac playback still needs user validation. No camera or microphone capture is used; the YouTube frame explicitly denies both permissions.
 

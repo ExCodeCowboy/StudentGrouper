@@ -8,6 +8,7 @@ export function resetGroupSet(groupSet: GroupSet): GroupSet {
       ...group,
       studentIds: [],
       lockedStudentIds: [],
+      starterStudentId: undefined,
     })),
   };
 }

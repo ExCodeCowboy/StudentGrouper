@@ -1,4 +1,5 @@
 import type { RotationPresentationSettings } from './model';
+import { isTransitionMusicId, transitionLengths } from './transitionMusic';
 
 export const DEFAULT_ROTATION_SECONDS = 15 * 60;
 export const MAX_ROTATION_SECONDS = 120 * 60;
@@ -38,13 +39,14 @@ export function canonicalYouTubeUrl(video: { videoId: string; startSeconds: numb
 export function normalizePresentationSettings(value?: Partial<RotationPresentationSettings> | null): RotationPresentationSettings {
   const seconds = value?.durationSeconds;
   const video = typeof value?.youtubeUrl === 'string' ? parseYouTubeVideo(value.youtubeUrl) : null;
+  const melodyId = isTransitionMusicId(value?.melodyId) ? value.melodyId : 'sunny';
   return {
     durationSeconds: Number.isSafeInteger(seconds) && seconds! >= 5 && seconds! <= MAX_ROTATION_SECONDS ? seconds! : DEFAULT_ROTATION_SECONDS,
     youtubeUrl: video ? canonicalYouTubeUrl(video) : '',
     autoplay: value?.autoplay === true,
     transitionSource: value?.transitionSource === 'youtube' && video ? 'youtube' : 'melody',
-    melodyId: ['sunny', 'tiptoe', 'starlight', 'meadow'].includes(value?.melodyId ?? '') ? value!.melodyId! : 'sunny',
-    transitionSeconds: [30, 45, 60].includes(value?.transitionSeconds ?? 0) ? value!.transitionSeconds! : 45,
+    melodyId,
+    transitionSeconds: transitionLengths.some((length) => length === value?.transitionSeconds) ? value!.transitionSeconds! : 45,
   };
 }
 
@@ -59,6 +61,7 @@ export type RotationClock = {
 export type ClockAction =
   | { type: 'tick' | 'start' | 'pause' | 'add-minute'; now: number }
   | { type: 'reset'; durationSeconds: number }
+  | { type: 'set-duration'; durationSeconds: number; now: number }
   | { type: 'round'; roundId: string; durationSeconds: number; start?: boolean; now: number };
 
 export function createRotationClock(roundId: string, durationSeconds: number, runId = 0): RotationClock {
@@ -72,6 +75,12 @@ export function remainingRotationMs(clock: RotationClock, now: number): number {
 
 export function reduceRotationClock(clock: RotationClock, action: ClockAction): RotationClock {
   if (action.type === 'reset') return createRotationClock(clock.roundId, action.durationSeconds, clock.runId);
+  if (action.type === 'set-duration') {
+    const next = createRotationClock(clock.roundId, action.durationSeconds, clock.runId);
+    if (clock.status === 'running') return reduceRotationClock(next, { type: 'start', now: action.now });
+    if (clock.status === 'paused') return { ...next, status: 'paused', runId: clock.runId + 1 };
+    return next;
+  }
   if (action.type === 'round') {
     const next = createRotationClock(action.roundId, action.durationSeconds, clock.runId);
     return action.start ? reduceRotationClock(next, { type: 'start', now: action.now }) : next;

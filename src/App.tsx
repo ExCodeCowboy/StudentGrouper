@@ -44,6 +44,7 @@ import { makeId } from './model';
 import { cloneData } from './platform';
 import { createGroupShells, createSampleData } from './sample';
 import { generateGroups, moveStudent } from './grouping';
+import { ensurePairStarters } from './pairStarters';
 import {
   changeSessionGroupSet,
   deleteGroupSet as removeGroupSet,
@@ -219,7 +220,11 @@ export function App() {
       if (remember) {
         setUndoStack((stack) => [...stack.slice(-29), cloneData(currentData)]);
       }
-      return replaceClassroom(currentData, snapshotPlannedHistory(updater(snapshotPlannedHistory(currentClassroom))));
+      const updated = snapshotPlannedHistory(updater(snapshotPlannedHistory(currentClassroom)));
+      return replaceClassroom(currentData, {
+        ...updated,
+        groupSets: updated.groupSets.map((set) => ensurePairStarters(set, updated.students)),
+      });
     });
   };
 

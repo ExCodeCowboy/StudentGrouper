@@ -36,6 +36,7 @@ import type {
 } from '../model';
 import { levelLabel } from '../model';
 import { GroupVisual } from '../components/GroupVisual';
+import { StarterStar } from '../components/StarterStar';
 import { normalizeUploadedImage } from '../storage';
 import { readDrag, writeDrag } from '../dragDrop';
 import { groupingCautions } from '../grouping';
@@ -232,7 +233,7 @@ export function GroupsView({
         </div>
       </section>
 
-      {groupSet.recipe.sizeMode === 'pairs' && <p className="grouping-note">Pairs use the students who are here. With an odd number, one group has three. Existing locks are kept.</p>}
+      {groupSet.recipe.sizeMode === 'pairs' && <p className="grouping-note">Pairs use the students who are here. With an odd number, one group has three. Existing locks are kept. <span className="starter-legend"><StarterStar /> marks the starter.</span> Making pairs draws starters at random.</p>}
       {groupSet.recipe.mode === 'random' && <p className="grouping-note">Make groups shuffles unlocked students. Keep-apart notes are respected; if a full arrangement cannot be found, some students stay unassigned.</p>}
       {cautions.map((caution) => <p key={caution} className="dialog-issue">{caution}</p>)}
 
@@ -295,7 +296,7 @@ export function GroupsView({
                       onDragStart={(event) => beginDrag(event, student.id)}
                     >
                       <span className="student-avatar">{student.name[0]}</span>
-                      <span className="student-name">{student.name}</span>
+                      <span className="student-name"><span className="student-name-text">{student.name}</span>{groupSet.recipe.sizeMode === 'pairs' && group.starterStudentId === student.id && !student.absent && <StarterStar />}</span>
                       {showLevels && (
                         <span className={`level level-${levelLabel(student[groupSet.recipe.primaryAttribute]).toLowerCase()}`}>
                           {levelLabel(student[groupSet.recipe.primaryAttribute])}

@@ -1,3 +1,5 @@
+import type { TransitionLength, TransitionMusicId } from './transitionMusic';
+
 export type SkillLevel = 1 | 2 | 3;
 export type Gender = 'Girl' | 'Boy' | '';
 export type RelationshipKind = 'together' | 'apart';
@@ -31,6 +33,7 @@ export type Group = {
   imageDataUrl?: string;
   studentIds: string[];
   lockedStudentIds: string[];
+  starterStudentId?: string;
 };
 
 export type GroupRecipe = {
@@ -131,8 +134,8 @@ export type RotationPresentationSettings = {
   youtubeUrl: string;
   autoplay: boolean;
   transitionSource: 'melody' | 'youtube';
-  melodyId: 'sunny' | 'tiptoe' | 'starlight' | 'meadow';
-  transitionSeconds: 30 | 45 | 60;
+  melodyId: TransitionMusicId;
+  transitionSeconds: TransitionLength;
 };
 
 export type Classroom = {

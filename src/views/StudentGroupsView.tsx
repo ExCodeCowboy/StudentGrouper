@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { ArrowLeft, Check, Maximize, Minimize, RotateCcw, Sparkles, Star } from 'lucide-react';
 import { GroupVisual } from '../components/GroupVisual';
+import { StarterStar } from '../components/StarterStar';
 import type { DisplayGroup } from '../studentDisplay';
 import { RevealCover, RevealEffectLayer, RevealEffectPicker } from '../revealEffects/RevealEffects';
 import { useRevealEffects } from '../revealEffects/useRevealEffects';
@@ -15,6 +16,7 @@ export function StudentGroupsView({ groups, onClose }: { groups: DisplayGroup[];
   const hideButton = useRef<HTMLButtonElement>(null);
   const { selection, select, reducedMotion, animate, playback, play, stop } = useRevealEffects();
   const complete = groups.length > 0 && revealed;
+  const hasStarters = groups.some((group) => group.starterStudentId);
 
   useEffect(() => {
     revealButton.current?.focus({ preventScroll: true });
@@ -73,7 +75,7 @@ export function StudentGroupsView({ groups, onClose }: { groups: DisplayGroup[];
       <section className="student-show-intro" aria-labelledby="student-show-title">
         <p className="student-show-kicker"><Star fill="currentColor" /> OUR CLASS. OUR TEAMS. <Star fill="currentColor" /></p>
         <h1 id="student-show-title">{complete ? <>Together, we <span>shine!</span></> : <>Who’s on your <span>team?</span></>}</h1>
-        <p>{complete ? 'Find your name. Find your team. Let’s do great things!' : 'A little mystery. A little magic. All our teams, together.'}</p>
+        <p>{complete ? hasStarters ? <>Find your team. <span className="starter-legend"><StarterStar /> The starter goes first!</span></> : 'Find your name. Find your team. Let’s do great things!' : 'A little mystery. A little magic. All our teams, together.'}</p>
       </section>
       <section className={`student-show-grid${groups.length > 8 ? ' show-many-groups' : ''}`} aria-label="Class teams">
         {groups.map((group, index) => <article
@@ -85,7 +87,7 @@ export function StudentGroupsView({ groups, onClose }: { groups: DisplayGroup[];
           {revealed ? <>
             <div className="student-team-revealed">
               <div className="student-team-heading"><GroupVisual group={group} /><h2>{group.name}</h2></div>
-              <ul>{group.students.map((student) => <li key={student.id}>{student.name}</li>)}</ul>
+              <ul>{group.students.map((student) => <li key={student.id}>{student.name}{group.starterStudentId === student.id && <StarterStar />}</li>)}</ul>
               <span className="student-team-cheer"><Sparkles />Dream team!</span>
             </div>
             {playback && <RevealCover key={playback.sequence} effect={playback.effect} />}
@@ -104,7 +106,7 @@ export function StudentGroupsView({ groups, onClose }: { groups: DisplayGroup[];
           <button ref={revealButton} type="button" className="show-primary" disabled={revealed || groups.length === 0} onClick={reveal}>{complete ? <><Check />Everyone’s here!</> : <><Sparkles />Reveal all teams</>}</button>
         </div>
       </footer>
-      <output className="sr-only" aria-live="polite" aria-atomic="true">{revealed ? groups.map((group) => `${group.name}: ${group.students.map((student) => student.name).join(', ')}.`).join(' ') : 'All teams are hidden. Ready for the big reveal!'}</output>
+      <output className="sr-only" aria-live="polite" aria-atomic="true">{revealed ? groups.map((group) => `${group.name}: ${group.students.map((student) => `${student.name}${student.id === group.starterStudentId ? ', starter' : ''}`).join(', ')}.`).join(' ') : 'All teams are hidden. Ready for the big reveal!'}</output>
       <RevealEffectLayer playback={playback} />
     </main>
   );

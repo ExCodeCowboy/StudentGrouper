@@ -2,6 +2,7 @@ import type { Classroom, Group, GroupSet, PlannedStation, RotationSession, Stude
 
 export type DisplayGroup = Pick<Group, 'id' | 'name' | 'color' | 'symbol' | 'imageDataUrl'> & {
   students: Pick<Student, 'id' | 'name'>[];
+  starterStudentId?: string;
 };
 
 // Pass only presentation fields into the student screen. Teacher notes, levels,
@@ -21,7 +22,12 @@ export function studentDisplayGroups(groupSet: GroupSet, students: Student[]): D
       seen.add(id);
       return [{ id: student.id, name: student.name }];
     }),
-  })).filter((group) => group.students.length > 0);
+  })).filter((group) => group.students.length > 0).map((group) => {
+    const starterStudentId = groupSet.groups.find((item) => item.id === group.id)?.starterStudentId;
+    return groupSet.recipe.sizeMode === 'pairs' && starterStudentId && group.students.some((student) => student.id === starterStudentId)
+      ? { ...group, starterStudentId }
+      : group;
+  });
 }
 
 type DisplayTeam = Omit<DisplayGroup, 'students'>;
