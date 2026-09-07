@@ -1,0 +1,7 @@
+.cat-reveal-scene { position: absolute; inset: 0; overflow: hidden; }
+.cat-yarn-curtain { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 32%, #fffbef, #f1dfcd); }
+.cat-wallpaper, .cat-yarn-threads { position: absolute; inset: 0; overflow: visible; }
+.cat-scene-caption { position: absolute; left: 0; right: 0; top: 24%; text-align: center; color: #8c715b; font-family: Georgia, serif; font-style: italic; font-size: clamp(22px, 3vw, 44px); letter-spacing: .02em; }
+.cat-scene-caption > span { display: block; margin-top: 12px; color: #9daf9b; font: 15px/1.5 system-ui, sans-serif; letter-spacing: 8px; }
+.cat-walker { position: absolute; }
+.cat-tabby { display: block; width: 100%; overflow: visible; }

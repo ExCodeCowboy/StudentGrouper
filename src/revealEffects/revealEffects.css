@@ -11,7 +11,7 @@
 .student-show { overflow-x: hidden; }
 .reveal-cover { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; --reveal-target-x: 0px; --reveal-target-y: -100px; --reveal-left: .5; }
 .student-destination-reveal { position: relative; display: flex; flex: 1; flex-direction: column; margin-top: 14px; border-radius: 15px; min-height: 225px; }
-.student-show-controls, .student-show-top { z-index: 6; }
+.student-show .student-show-controls, .student-show .student-show-top { z-index: 6; }
 .student-show-top { position: relative; }
 @media (prefers-reduced-motion: reduce) { .reveal-effects-layer, .reveal-cover { display: none !important; } }
 @media print { .reveal-effects-layer, .reveal-cover { display: none; } }

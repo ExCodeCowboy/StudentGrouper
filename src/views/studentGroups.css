@@ -31,7 +31,7 @@
 .show-orbit { position: absolute; width: 260px; height: 260px; border: 30px solid #ebf0df; border-radius: 50%; opacity: .7; }
 .orbit-one { top: -170px; left: 20%; }
 .orbit-two { top: 470px; right: -220px; width: 350px; height: 350px; border-color: #f5e5d5; }
-.student-show-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 34px; }
+.student-show-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 34px; background: #fffaf0f2; }
 .student-show-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 850; white-space: nowrap; }
 .student-show-brand > span { display: grid; place-items: center; width: 36px; height: 36px; color: #fffaf0; background: #246e67; border-radius: 12px; transform: rotate(-8deg); }
 .student-show-brand svg { width: 21px; }

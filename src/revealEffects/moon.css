@@ -1,0 +1,7 @@
+.moon-reveal-scene { position: absolute; inset: 0; }
+.moon-reveal-scene > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.moon-mission-caption { position: absolute; left: 18px; right: 18px; bottom: 78px; text-align: center; color: #fff4d8; font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; font-size: clamp(11px, 1.1vw, 17px); font-weight: 600; letter-spacing: .2em; }
+.moon-mission-progress { display: flex; justify-content: center; gap: 18px; margin-top: 17px; }
+.moon-mission-progress > i { position: relative; width: 5px; height: 5px; border-radius: 50%; background: #728297; }
+.moon-mission-progress > i.is-lit { background: #f3d7a0; }
+.moon-mission-progress > i + i::before { content: ''; position: absolute; top: 2px; right: 10px; width: 9px; height: 1px; background: #8190a270; }

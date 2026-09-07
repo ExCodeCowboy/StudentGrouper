@@ -5,10 +5,12 @@ import { waveEffect } from './wave';
 import { balloonEffect } from './balloons';
 import { zipperEffect } from './zipper';
 import { dragonEffect } from './dragon';
+import { catEffect } from './cat';
+import { moonEffect } from './moon';
 import type { RevealEffect } from './types';
 
 // Add/remove one entry here to change the menu, random pool, and both screens.
-export const revealEffects: readonly RevealEffect[] = [balloonEffect, zipperEffect, dragonEffect, blackHoleEffect, fairyEffect, waveEffect, confettiEffect];
+export const revealEffects: readonly RevealEffect[] = [balloonEffect, zipperEffect, dragonEffect, catEffect, moonEffect, blackHoleEffect, fairyEffect, waveEffect, confettiEffect];
 
 export function resolveRevealEffect(selection: string, previousId?: string, random = Math.random): RevealEffect | null {
   if (selection === 'none' || revealEffects.length === 0) return null;
