@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { catRig, catSkinPoint, fadeWindow, type CatPose, type Point } from './sceneMotion';
+import { trimContourLoops } from './contourGeometry';
 
 type RigLeg = ReturnType<typeof catRig>['legs'][number];
 
@@ -14,12 +15,14 @@ const pawPoint = (foot: Point, angle: number, x: number, y: number): Point => {
 function legOutline({ hip, knee, ankle, foot, hind, toeAngle }: RigLeg) {
   const centers = [hip, between(hip, knee, .5), knee, between(knee, ankle, .3), between(knee, ankle, .72), ankle, pawPoint(foot, toeAngle, 0, -7)];
   const radii = hind ? [21, 19, 13.5, 11.5, 7.5, 5.5, 5.5] : [19, 17, 12, 10.5, 7.5, 5.5, 5.5];
-  const sides = [-1, 1].map(side => centers.map((p, i) => {
+  // A tightly folded elbow can make its inside offsets cross. Trim the skin
+  // contour at that join before rounding it; the underlying bones stay fixed.
+  const sides = [-1, 1].map(side => trimContourLoops(centers.map((p, i) => {
     const previous = centers[Math.max(0, i - 1)];
     const next = centers[Math.min(centers.length - 1, i + 1)];
     const length = Math.max(1, Math.hypot(next.x - previous.x, next.y - previous.y));
     return { x: p.x + side * (next.y - previous.y) / length * radii[i], y: p.y - side * (next.x - previous.x) / length * radii[i] };
-  }));
+  })));
   const outline = [...sides[0],
     ...[[-7,-2],[-3,0],[6,0],[13,-1],[13,-6],[7,-8]].map(([x,y]) => pawPoint(foot, toeAngle, x, y)),
     ...sides[1].reverse()];
@@ -28,7 +31,7 @@ function legOutline({ hip, knee, ankle, foot, hind, toeAngle }: RigLeg) {
   return `${path}Z`;
 }
 
-function TabbyLeg({ leg, coat }: { leg: RigLeg; coat: string }) {
+function TabbyLeg({ leg, coat, fur }: { leg: RigLeg; coat: string; fur: string }) {
   const id = useId();
   const { knee, ankle, foot, hind, far, toeAngle } = leg;
   const outline = legOutline(leg);
@@ -44,6 +47,7 @@ function TabbyLeg({ leg, coat }: { leg: RigLeg; coat: string }) {
         const width = (hind ? 13 : 11) * (1 - t * .5);
         return <path key={t} d={`M${p.x - normal.x * width} ${p.y - normal.y * width}Q${p.x - lower.x * .04} ${p.y - lower.y * .04} ${p.x + normal.x * width} ${p.y + normal.y * width}`} fill="none" stroke={far ? '#695b49' : '#705b42'} strokeWidth={3.5 - i * .6} opacity=".7" />;
       })}
+      <path d={outline} fill={fur} opacity={far ? .45 : 1} />
       <g transform={`rotate(${toeAngle} ${foot.x} ${foot.y})`}>
         <path d={`M${foot.x - 6} ${foot.y - 6}Q${foot.x + 3} ${foot.y - 9} ${foot.x + 14} ${foot.y - 5}V${foot.y + 1}H${foot.x - 7}Z`} fill={far ? '#bcae91' : '#e4d6b7'} />
         <path d={`M${foot.x + 5} ${foot.y - 4}v3m4-3v2`} stroke="#9e8c6d" strokeWidth=".65" />
@@ -79,6 +83,8 @@ export function WalkingTabby({ time, distance, strideOffset = 0, pose }: { time:
   const thighEnd = thighEdge(1, 13.5);
   const shoulder = inCoat(legs[3].hip);
   const elbow = inCoat(legs[3].knee);
+  const foreleg = legs[3];
+  const foreBlendStart = between(foreleg.hip, foreleg.knee, .35);
   const shoulderGlide = shoulder.x - 375;
   const scapula = { x: shoulder.x - 25 + shoulderGlide * .3, y: shoulder.y - 27 };
   const neck = inCoat(neckBase);
@@ -86,6 +92,7 @@ export function WalkingTabby({ time, distance, strideOffset = 0, pose }: { time:
   const blink = fadeWindow(time, 3.42, 3.47, 3.5, 3.56);
   const tail = tailCurl;
   const coat = `url(#${id}-coat)`;
+  const fur = `url(#${id}-fur)`;
   // The croup narrows diagonally into the thigh instead of forming a round rump.
   const body = `M${skin(148,154)}C${skin(155,139)} ${skin(180,136)} ${skin(211,140)}C${skin(255,148)} ${skin(305 + shoulderGlide*.3,134)} ${skin(337 + shoulderGlide*.4,141)}Q${skin(365,151)} ${skin(385,148)}L${skin(404,156)} ${skin(412,180)}Q${skin(413,202)} ${skin(392,213)}C${skin(367,223)} ${skin(343,222)} ${skin(322,216)}Q${skin(282,212)} ${skin(248,205)}Q${skin(232,200)} ${skin(222,203)}C${skin(208,208)} ${skin(184,204)} ${skin(164,191)}C${skin(154,183)} ${skin(146,171)} ${skin(148,154)}Z`;
   const neckShape = 'M364 152C385 155 404 149 422 139L440 150 444 179Q441 188 435 185Q426 181 417 193C410 204 406 212 392 215Q377 217 367 209Z';
@@ -102,6 +109,15 @@ export function WalkingTabby({ time, distance, strideOffset = 0, pose }: { time:
       <linearGradient id={`${id}-belly`} x2="0" y2="1"><stop stopColor="#e9dbbd" stopOpacity="0" /><stop offset="1" stopColor="#eddfc2" stopOpacity=".75" /></linearGradient>
       <pattern id={`${id}-fur`} width="11" height="9" patternUnits="userSpaceOnUse"><path d="m1 2 2 1m4 0 2 1M3 7l3 1" stroke="#f3e1bd" strokeWidth=".6" opacity=".2" /><path d="m5 1 2 1M0 6l2 1m5-2 2 1" stroke="#5d5142" strokeWidth=".5" opacity=".13" /></pattern>
       <clipPath id={`${id}-body-clip`}><path d={body} /></clipPath>
+      <linearGradient id={`${id}-foreleg-blend`} gradientUnits="userSpaceOnUse" x1={foreBlendStart.x} y1={foreBlendStart.y} x2={foreleg.knee.x} y2={foreleg.knee.y}>
+        <stop stopColor="black" /><stop offset=".18" stopColor="black" /><stop offset=".85" stopColor="white" />
+      </linearGradient>
+      <mask id={`${id}-near-foreleg`} maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="340">
+        {/* Blend the shoulder into its coat, but keep a folded forearm in front
+            of the chest even when its wrist rises above the belly line. */}
+        <path d={legOutline(foreleg)} fill={`url(#${id}-foreleg-blend)`} stroke={`url(#${id}-foreleg-blend)`} strokeWidth="3" />
+        <path d={`M${pair(foreleg.knee)}L${pair(foreleg.ankle)} ${pair(foreleg.foot)}`} fill="none" stroke="white" strokeWidth="28" strokeLinecap="round" strokeLinejoin="round" />
+      </mask>
       <mask id={`${id}-body-edge`} maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="310">
         <rect width="600" height="310" fill="white" />
         {/* Do not draw a torso seam through the legs emerging from its coat. */}
@@ -114,13 +130,14 @@ export function WalkingTabby({ time, distance, strideOffset = 0, pose }: { time:
       <radialGradient id={`${id}-shadow`}><stop stopColor="#514d3d" stopOpacity=".23" /><stop offset="1" stopColor="#514d3d" stopOpacity="0" /></radialGradient>
     </defs>
     <ellipse cx="260" cy="280" rx="145" ry="9" fill={`url(#${id}-shadow)`} />
-    {legs.filter(leg => leg.far).map(leg => <TabbyLeg key={leg.key} leg={leg} coat={coat} />)}
+    {legs.filter(leg => leg.far).map(leg => <TabbyLeg key={leg.key} leg={leg} coat={coat} fur={fur} />)}
     <g transform={`translate(${tailBase.x - 155} ${tailBase.y - 160}) rotate(${torso[0].angle + tailAngle} 155 160) translate(155 160) scale(1 .86) translate(-155 -160)`}>
       <path d={tailShape} fill={coat} stroke="#7a6953" strokeWidth="1.2" />
       <g clipPath={`url(#${id}-tail-clip)`} fill="none" stroke="#534a3e" strokeWidth="6" opacity=".8">{[[136,151,-65],[117,143,-60],[100,132,-50],[85,116,-35],[73,97,-20],[64,78,-10],[62,61,0],[66,47,25]].map(([x,y,angle],i)=><path key={i} d="M-11 0H11" transform={`translate(${x} ${y+(i>2?tail:0)}) rotate(${angle})`}/>)}<path d={`M78 ${40 + tail}Q87 ${41 + tail} 89 ${49 + tail}`} strokeWidth="9" /><path d={tailShape} stroke={`url(#${id}-fur)`} strokeWidth="16" /></g>
     </g>
-    {/* The torso occludes upper joints; the visible legs emerge under the fur. */}
-    {legs.filter(leg => !leg.far).map(leg => <TabbyLeg key={leg.key} leg={leg} coat={coat} />)}
+    {/* The thigh blends under the flank. The near foreleg is drawn after the
+        torso, so crossing the chest cannot hide its elbow or wrist. */}
+    {legs.filter(leg => !leg.far && leg.hind).map(leg => <TabbyLeg key={leg.key} leg={leg} coat={coat} fur={fur} />)}
     <g transform={`translate(140 ${bob}) scale(.8 1) translate(-140 0)`}>
       <path d={body} fill={coat} />
       <path d={body} fill="none" stroke="#807056" strokeWidth="1.3" mask={`url(#${id}-body-edge)`} />
@@ -180,6 +197,9 @@ export function WalkingTabby({ time, distance, strideOffset = 0, pose }: { time:
         <path d="m444 185-4 2m9-1-3 2" stroke="#8d775c" strokeWidth=".8" />
         </g>
       </g>
+    </g>
+    <g mask={`url(#${id}-near-foreleg)`}>
+      <TabbyLeg leg={foreleg} coat={coat} fur={fur} />
     </g>
   </svg>;
 }

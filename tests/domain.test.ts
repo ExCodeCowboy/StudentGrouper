@@ -12,6 +12,7 @@ import './pairStarters.test';
 import './studentDisplay.test';
 import './groupThemes.test';
 import './revealEffects.test';
+import './contourGeometry.test';
 import './planner.test';
 import './stationPins.test';
 import './priorityStations.test';

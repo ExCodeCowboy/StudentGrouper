@@ -14,7 +14,11 @@
     "tauri:build": "tauri build",
     "test": "node scripts/run-domain-tests.mjs",
     "lint": "oxlint src tests scripts components/ui/button.tsx components/ui/dialog.tsx components/ui/input.tsx lib/utils.ts",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "animation:dev": "vite --config tooling/animation-workbench/vite.config.ts",
+    "animation:build": "tsc -p tooling/animation-workbench/tsconfig.json && vite build --config tooling/animation-workbench/vite.config.ts",
+    "animation:check": "tsc -p tooling/animation-workbench/tsconfig.json && oxlint tooling/animation-workbench",
+    "animation:test": "node tooling/animation-workbench/run-tests.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

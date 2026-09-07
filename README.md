@@ -80,6 +80,8 @@ The public information site lives in `website/` and has its own lockfile and scr
 
 The application is intentionally split into pure domain modules in `src/` and React views in `src/views/`. Read [the development guide](docs/DEVELOPMENT.md) before changing persistence, deployment, or release packaging.
 
+[Motion Desk](tooling/animation-workbench/README.md) is a separate local animation workbench for posing and retiming the cat reveal. Run `npm run animation:dev` to use its timeline, onion skins, synchronized comparisons, and JSON/SVG exports. It is excluded from the classroom app build.
+
 ## Product boundaries
 
 The project intentionally does not include a student information system integration, behavior tracking, cloud sync, accounts, analytics, AI scheduling, weighted optimization controls, or a multi-week calendar editor. The working product contract is in [PRODUCT_SPEC.md](PRODUCT_SPEC.md).
