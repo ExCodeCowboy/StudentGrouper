@@ -25,5 +25,5 @@ function WaveCover() { return <div className="ocean-reveal-cover"><span>?</span>
 
 export const waveEffect: RevealEffect = {
   id: 'wave', name: 'Ocean wave', description: 'A foamy wave washes the covers away, with a couple of ocean friends along for the ride.',
-  durationMs: 2600, Stage: WaveStage, Cover: WaveCover,
+  durationMs: 2600, sound: 'wave', Stage: WaveStage, Cover: WaveCover,
 };

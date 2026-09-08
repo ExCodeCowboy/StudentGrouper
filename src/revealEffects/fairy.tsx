@@ -58,5 +58,5 @@ function FairyCover() {
 
 export const fairyEffect: RevealEffect = {
   id: 'fairy', name: 'Fairy dust', description: 'A smiling fairy flutters past with her star wand, turning the covers into twinkling stardust.',
-  durationMs: 3200, Stage: FairyStage, Cover: FairyCover,
+  durationMs: 3200, sound: 'fairy', Stage: FairyStage, Cover: FairyCover,
 };

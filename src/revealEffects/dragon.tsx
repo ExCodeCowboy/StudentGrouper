@@ -88,5 +88,5 @@ function DragonCover() { return <div className="dragon-bubble-cover"><span>?</sp
 
 export const dragonEffect: RevealEffect = {
   id: 'dragon', name: 'Dragon hiccup', description: 'A friendly little dragon hiccups a stream of rainbow bubbles that pop the covers open.',
-  durationMs: 2800, Stage: DragonStage, Cover: DragonCover,
+  durationMs: 2800, sound: 'dragon', Stage: DragonStage, Cover: DragonCover,
 };

@@ -16,5 +16,5 @@ function ZipperStage() {
 function ZipperCover() { return null; }
 export const zipperEffect: RevealEffect = {
   id: 'zipper', name: 'Rainbow zipper', description: 'A giant star zipper opens a rainbow curtain across the whole screen.',
-  durationMs: 2200, Stage: ZipperStage, Cover: ZipperCover,
+  durationMs: 2200, sound: 'zipper', Stage: ZipperStage, Cover: ZipperCover,
 };

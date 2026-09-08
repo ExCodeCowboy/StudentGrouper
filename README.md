@@ -8,7 +8,7 @@ Student Grouper is a local-first classroom tool for making student groups, conti
 
 ## Project status
 
-Version 0.3.1 adds randomly chosen starter stars for pairs, five rich transition songs, immediate timer-duration updates, and a more compact daily display with Next round as the main action after a countdown. It includes whole-block planning, flexible daily station pins, random groups and pairs, and animated student displays with eight team themes. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 187 tests, including legacy backup imports, planner validation, pair starters, timer behavior, and music playback.
+Version 0.3.2 adds Cat & yarn and Saturn V moon-landing reveals, gentle bundled sound effects with a shared mute control, and refinements for projected classroom use. Teachers can switch between Groups and Today and rebuild groups from student view. Group assignment shuffles within matching buckets, and rotation planning supports priority stations. It includes whole-block planning, flexible daily station pins, pairs with starter stars, timers, and offline transition music. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 243 tests, including legacy backup imports, planner validation, pair starters, timer behavior, and sound playback.
 
 For follow-up work, start with [the project handoff](docs/PROJECT_HANDOFF.md). The product rules that should not change accidentally are in [the product contract](PRODUCT_SPEC.md), and the build and release details are in [the development guide](docs/DEVELOPMENT.md).
 

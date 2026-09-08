@@ -33,7 +33,7 @@ void test('each registered reveal is selectable and completes within its brief p
   assert.equal(new Set(revealEffects.map((effect) => effect.id)).size, revealEffects.length);
   for (const effect of revealEffects) {
     assert.equal(resolveRevealEffect(effect.id), effect);
-    const budget = { fairy: 3200, cat: 7000, moon: 9000 }[effect.id] ?? 3000;
+    const budget = { fairy: 3200, cat: 7000, moon: 9000, confetti: 3800 }[effect.id] ?? 3000;
     assert.ok(effect.durationMs > 0 && effect.durationMs <= budget);
     assert.equal(typeof effect.Stage, 'function');
     assert.equal(typeof effect.Cover, 'function');

@@ -1,0 +1,294 @@
+[
+  {
+    "file": "balloons.wav",
+    "durationMs": 2600,
+    "sampleRate": 22050,
+    "sha256": "cfb15d020d51af1d0b9bab966a186b2566b1b120f7f95971fed2f50fd616f9c5",
+    "cues": [
+      {
+        "sourceId": "swishes",
+        "file": "extracted/swishes/swishes/swish-1.wav",
+        "at": 0.28,
+        "speed": 0.65,
+        "peak": 0.13,
+        "duration": 0.19388,
+        "sha256": "9a15c881345c1ce1c39cc31f52f081c8c4dc81fa41111e0079400f39d3ba0e45"
+      },
+      {
+        "sourceId": "swishes",
+        "file": "extracted/swishes/swishes/swish-2.wav",
+        "at": 0.77,
+        "speed": 0.7,
+        "peak": 0.12,
+        "duration": 0.13687,
+        "sha256": "1ce7752cce3d43f16fc222ad7f7ffb69d9a5fc01e64b93d205765fc37b8e9b0d"
+      },
+      {
+        "sourceId": "swishes",
+        "file": "extracted/swishes/swishes/swish-4.wav",
+        "at": 1.25,
+        "speed": 0.8,
+        "peak": 0.1,
+        "duration": 0.18227,
+        "sha256": "0060f4a7040edce4cc50d1daa10a9cb76764128a942e4688339e69cd1d5d784c"
+      },
+      {
+        "sourceId": "foley",
+        "file": "extracted/foley/bell_02.ogg",
+        "at": 1.4,
+        "peak": 0.09,
+        "rms": 0.02,
+        "duration": 0.53098,
+        "sha256": "ea47ae29d3fe87c82414881084cf5dfa4a0a43c6def7437fcafbc21ffbf3ec72"
+      }
+    ],
+    "peak": 0.13,
+    "rms": 0.010296
+  },
+  {
+    "file": "zipper.wav",
+    "durationMs": 2200,
+    "sampleRate": 22050,
+    "sha256": "a394f8027939016a162696348c57ea0dcaddb3a5e12865da121f84357c32798a",
+    "cues": [
+      {
+        "sourceId": "zipper",
+        "file": "zipper.wav",
+        "at": 0.23,
+        "speed": 0.7,
+        "peak": 0.18,
+        "rms": 0.035,
+        "duration": 1.17347,
+        "sha256": "0b3def41d4c76b40bc4edc45391115b29494c3380110bd42b0b53819d9d8475c"
+      }
+    ],
+    "peak": 0.18,
+    "rms": 0.025543
+  },
+  {
+    "file": "dragon.wav",
+    "durationMs": 2800,
+    "sampleRate": 22050,
+    "sha256": "3dcfda108a5b6cfdda3ec4ad678ba186cae8a1e6e325f618018b8972f4c7d7f1",
+    "cues": [
+      {
+        "sourceId": "bubbles",
+        "file": "extracted/bubbles/bubble_02.ogg",
+        "at": 0.68,
+        "peak": 0.18,
+        "duration": 0.36036,
+        "sha256": "7992a1a4637ea727b177b3edbc086ec280167d67a8fad010bb8fb58893b2e2f2"
+      },
+      {
+        "sourceId": "bubbles",
+        "file": "extracted/bubbles/bubble_03.ogg",
+        "at": 1.28,
+        "peak": 0.17,
+        "duration": 0.54712,
+        "sha256": "6189106305ab917f1a260b66a74380ed7d6e5be0fb4f5eba3ac93aeb89d9b7ca"
+      }
+    ],
+    "peak": 0.18,
+    "rms": 0.01281
+  },
+  {
+    "file": "cat.wav",
+    "durationMs": 6800,
+    "sampleRate": 22050,
+    "sha256": "41442e90b25e6b15183328c082207df7ba5c37afc37f1841713d8d0daa06b95c",
+    "cues": [
+      {
+        "sourceId": "cat",
+        "file": "cat_mewpurr.wav",
+        "at": 2.05,
+        "peak": 0.2,
+        "rms": 0.04,
+        "attack": 0.04,
+        "release": 0.14,
+        "duration": 1.41066,
+        "sha256": "a58487959ee00c812f9f02ca822a668173bcf04a98c6dd98a902514a1d3994ea"
+      },
+      {
+        "sourceId": "foley",
+        "file": "extracted/foley/wooden_01.ogg",
+        "at": 3.22,
+        "peak": 0.09,
+        "rms": 0.02,
+        "duration": 0.37365,
+        "sha256": "e7f7b1243ecd6ff3487eee1540de56f38fac606fe6218bdd49a91efc29ae1b9a"
+      }
+    ],
+    "peak": 0.2,
+    "rms": 0.01758
+  },
+  {
+    "file": "moon.wav",
+    "durationMs": 8800,
+    "sampleRate": 22050,
+    "sha256": "91fa3be30bf589728251082a1e2c4b92f8d57fb8068422ce1737405079b4eef4",
+    "cues": [
+      {
+        "sourceId": "rocket",
+        "file": "rocket_engine.001.wav",
+        "at": 0.24,
+        "trimStart": 2.015,
+        "length": 2.06,
+        "processing": "speaker-rumble",
+        "peak": 0.24,
+        "rms": 0.075,
+        "attack": 0.15,
+        "release": 0.45,
+        "duration": 2.06,
+        "sha256": "dc82ef86d6af2278d6592d20372737c32620f1c1957290c79f6643af5381f277"
+      },
+      {
+        "sourceId": "foley",
+        "file": "extracted/foley/wooden_02.ogg",
+        "at": 5.85,
+        "peak": 0.08,
+        "rms": 0.018,
+        "duration": 0.39982,
+        "sha256": "a6f6edf91a63c5af9059f70df0ac4e3fcee2c57342dc41dd3a166810365392fd"
+      },
+      {
+        "sourceId": "foley",
+        "file": "extracted/foley/bell_01.ogg",
+        "at": 6.88,
+        "peak": 0.12,
+        "rms": 0.024,
+        "release": 0.25,
+        "duration": 1.29959,
+        "sha256": "b29cf8f3885eb2a266a16455227288dd3e004ea0414d2823b1a8677915f862d1"
+      }
+    ],
+    "peak": 0.24,
+    "rms": 0.033876
+  },
+  {
+    "file": "black-hole.wav",
+    "durationMs": 2500,
+    "sampleRate": 22050,
+    "sha256": "a6ce7ebe9936b3ca601548a24d223126b4c07929c1d15324396322469f167b3b",
+    "cues": [
+      {
+        "sourceId": "magic",
+        "file": "extracted/krank_sounds/space/anchor_action.wav",
+        "at": 0.12,
+        "length": 2.2,
+        "peak": 0.17,
+        "rms": 0.032,
+        "attack": 0.12,
+        "release": 0.4,
+        "duration": 2.2,
+        "sha256": "6edd75d9cc9ef272c2ee801869b6fc6d0b903dd0b80d859cbe67478d75038d78"
+      }
+    ],
+    "peak": 0.17,
+    "rms": 0.022256
+  },
+  {
+    "file": "fairy.wav",
+    "durationMs": 3200,
+    "sampleRate": 22050,
+    "sha256": "d1482ad09ca270a07659af8cf1faaddc92e76a9a13d23d30bd1da858f37f5365",
+    "cues": [
+      {
+        "sourceId": "magic",
+        "file": "extracted/krank_sounds/summer/anchor_action.wav",
+        "at": 0.4,
+        "peak": 0.07,
+        "rms": 0.012,
+        "attack": 0.025,
+        "release": 0.25,
+        "duration": 1.77206,
+        "sha256": "dd4bd17514b523bfd1d7f83796ca279b4349d1ef41edcb804370cbcef39dbae0"
+      },
+      {
+        "sourceId": "giggle",
+        "file": "fairy-candidates/fvcalderan-laugh.ogg",
+        "at": 1.05,
+        "peak": 0.2,
+        "rms": 0.04,
+        "attack": 0.025,
+        "release": 0.12,
+        "duration": 1.73002,
+        "sha256": "8b74bc75568a431ebabf639525e1ad7acb4cbe07ae1d36434c61a2975219d985"
+      },
+      {
+        "sourceId": "swishes",
+        "file": "extracted/swishes/swishes/swish-4.wav",
+        "at": 0.3,
+        "speed": 0.7,
+        "peak": 0.07,
+        "duration": 0.2083,
+        "sha256": "0060f4a7040edce4cc50d1daa10a9cb76764128a942e4688339e69cd1d5d784c"
+      },
+      {
+        "sourceId": "swishes",
+        "file": "extracted/swishes/swishes/swish-4.wav",
+        "at": 2.5,
+        "speed": 0.7,
+        "peak": 0.08,
+        "duration": 0.2083,
+        "sha256": "0060f4a7040edce4cc50d1daa10a9cb76764128a942e4688339e69cd1d5d784c"
+      }
+    ],
+    "peak": 0.200001,
+    "rms": 0.018601
+  },
+  {
+    "file": "wave.wav",
+    "durationMs": 2600,
+    "sampleRate": 22050,
+    "sha256": "23eed75efff0950354376a7073917839ea80711d9f78724d519fa2a643e9aaa9",
+    "cues": [
+      {
+        "sourceId": "water",
+        "file": "wave.flac",
+        "at": 0.3,
+        "peak": 0.18,
+        "rms": 0.036,
+        "attack": 0.2,
+        "release": 0.35,
+        "duration": 1.74998,
+        "sha256": "0bd84b2061a82c234470bd4e16efc6ab24851928d3f93e1757bfea048b2d7a33"
+      }
+    ],
+    "peak": 0.167954,
+    "rms": 0.029535
+  },
+  {
+    "file": "confetti.wav",
+    "durationMs": 3800,
+    "sampleRate": 22050,
+    "sha256": "3290c83dc8c77ba543348cf179ac761726d9ed1c34c414fbdb2dae81793bde88",
+    "cues": [
+      {
+        "sourceId": "drumroll",
+        "file": "confetti-candidates/joseph-sardin-drum-roll-2-l.mp3",
+        "at": 0.1,
+        "trimStart": 0.6,
+        "length": 0.9,
+        "peak": 0.2,
+        "rms": 0.045,
+        "attack": 0.16,
+        "release": 0.025,
+        "duration": 0.9,
+        "sha256": "8caab6310a9092b4789e280697a4cb77caa596c7833cc469ae85d7aaac31a442"
+      },
+      {
+        "sourceId": "fanfare",
+        "file": "confetti-candidates/graciano-choc-trumpet-fanfare.mp3",
+        "at": 1.05,
+        "peak": 0.2,
+        "rms": 0.042,
+        "attack": 0.012,
+        "release": 0.12,
+        "duration": 2.42422,
+        "sha256": "e248d4e55f87671898fa1ea3edfa4242969f193ced960864b6a51c960e186c6b"
+      }
+    ],
+    "peak": 0.2,
+    "rms": 0.038492
+  }
+]

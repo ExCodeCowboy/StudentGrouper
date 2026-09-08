@@ -7,6 +7,6 @@ function ConfettiCover() {
 }
 
 export const confettiEffect: RevealEffect = {
-  id: 'confetti', name: 'Confetti party', description: 'The covers flip open and a burst of confetti cheers on your teams.',
-  durationMs: 2800, Stage: StudentConfetti, Cover: ConfettiCover,
+  id: 'confetti', name: 'Confetti party', description: 'A little drumroll, then the covers flip open with a celebratory confetti burst.',
+  durationMs: 3800, sound: 'confetti', Stage: StudentConfetti, Cover: ConfettiCover,
 };

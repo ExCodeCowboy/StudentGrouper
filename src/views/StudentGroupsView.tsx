@@ -5,7 +5,7 @@ import { StarterStar } from '../components/StarterStar';
 import type { DisplayGroup } from '../studentDisplay';
 import type { GroupSet } from '../model';
 import { StudentViewHeader, type StudentNavigation } from '../components/StudentViewHeader';
-import { RevealCover, RevealEffectLayer, RevealEffectPicker } from '../revealEffects/RevealEffects';
+import { RevealCover, RevealEffectLayer, RevealEffectPicker, RevealSoundToggle } from '../revealEffects/RevealEffects';
 import { useRevealEffects } from '../revealEffects/useRevealEffects';
 import './studentGroups.css';
 
@@ -24,7 +24,7 @@ export function StudentGroupsView({ groups, navigation, groupOptions, groupSetId
   const screen = useRef<HTMLElement>(null);
   const revealButton = useRef<HTMLButtonElement>(null);
   const hideButton = useRef<HTMLButtonElement>(null);
-  const { selection, select, reducedMotion, animate, playback, play, stop } = useRevealEffects();
+  const { selection, select, reducedMotion, animate, playback, play, stop, soundEnabled, soundUnavailable, setSoundEnabled } = useRevealEffects();
   const complete = groups.length > 0 && revealed;
   const hasStarters = groups.some((group) => group.starterStudentId);
 
@@ -81,6 +81,7 @@ export function StudentGroupsView({ groups, navigation, groupOptions, groupSetId
       <footer className="student-show-controls" aria-label="Reveal controls">
         <div className="student-show-counter"><span><strong>{groups.length}</strong> teams{hasStarters && <span className="starter-legend"><StarterStar /> The starter goes first</span>}</span></div>
         <div className="student-show-buttons">
+          <RevealSoundToggle enabled={soundEnabled} unavailable={soundUnavailable} onChange={setSoundEnabled} />
           <button ref={hideButton} type="button" className="show-secondary" disabled={!revealed} onClick={hideGroups}><RotateCcw />Hide again</button>
           <div className="reveal-split-button">
             <button ref={revealButton} type="button" className="show-primary" disabled={revealed || groups.length === 0} onClick={reveal}>{complete ? <><Check />Everyone’s here!</> : <><Sparkles />Reveal all teams</>}</button>

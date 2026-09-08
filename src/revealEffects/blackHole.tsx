@@ -16,5 +16,5 @@ function BlackHoleCover() {
 
 export const blackHoleEffect: RevealEffect = {
   id: 'black-hole', name: 'Black-hole whoosh', description: 'Paper ribbons tumble around a swirling space portal, spiraling inward until they disappear.',
-  durationMs: 2500, Stage: BlackHoleStage, Cover: BlackHoleCover,
+  durationMs: 2500, sound: 'black-hole', Stage: BlackHoleStage, Cover: BlackHoleCover,
 };

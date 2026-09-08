@@ -1,0 +1,40 @@
+{
+  "balloons": {"durationMs":2600,"cues":[
+    {"sourceId":"swishes","file":"extracted/swishes/swishes/swish-1.wav","at":0.28,"speed":0.65,"peak":0.13},
+    {"sourceId":"swishes","file":"extracted/swishes/swishes/swish-2.wav","at":0.77,"speed":0.7,"peak":0.12},
+    {"sourceId":"swishes","file":"extracted/swishes/swishes/swish-4.wav","at":1.25,"speed":0.8,"peak":0.10},
+    {"sourceId":"foley","file":"extracted/foley/bell_02.ogg","at":1.4,"peak":0.09,"rms":0.02}
+  ]},
+  "zipper": {"durationMs":2200,"cues":[
+    {"sourceId":"zipper","file":"zipper.wav","at":0.23,"speed":0.7,"peak":0.18,"rms":0.035}
+  ]},
+  "dragon": {"durationMs":2800,"cues":[
+    {"sourceId":"bubbles","file":"extracted/bubbles/bubble_02.ogg","at":0.68,"peak":0.18},
+    {"sourceId":"bubbles","file":"extracted/bubbles/bubble_03.ogg","at":1.28,"peak":0.17}
+  ]},
+  "cat": {"durationMs":6800,"cues":[
+    {"sourceId":"cat","file":"cat_mewpurr.wav","at":2.05,"peak":0.20,"rms":0.04,"attack":0.04,"release":0.14},
+    {"sourceId":"foley","file":"extracted/foley/wooden_01.ogg","at":3.22,"peak":0.09,"rms":0.02}
+  ]},
+  "moon": {"durationMs":8800,"cues":[
+    {"sourceId":"rocket","file":"rocket_engine.001.wav","at":0.24,"trimStart":2.015,"length":2.06,"processing":"speaker-rumble","peak":0.24,"rms":0.075,"attack":0.15,"release":0.45},
+    {"sourceId":"foley","file":"extracted/foley/wooden_02.ogg","at":5.85,"peak":0.08,"rms":0.018},
+    {"sourceId":"foley","file":"extracted/foley/bell_01.ogg","at":6.88,"peak":0.12,"rms":0.024,"release":0.25}
+  ]},
+  "black-hole": {"durationMs":2500,"cues":[
+    {"sourceId":"magic","file":"extracted/krank_sounds/space/anchor_action.wav","at":0.12,"length":2.2,"peak":0.17,"rms":0.032,"attack":0.12,"release":0.4}
+  ]},
+  "fairy": {"durationMs":3200,"cues":[
+    {"sourceId":"magic","file":"extracted/krank_sounds/summer/anchor_action.wav","at":0.40,"peak":0.07,"rms":0.012,"attack":0.025,"release":0.25},
+    {"sourceId":"giggle","file":"fairy-candidates/fvcalderan-laugh.ogg","at":1.05,"peak":0.20,"rms":0.04,"attack":0.025,"release":0.12},
+    {"sourceId":"swishes","file":"extracted/swishes/swishes/swish-4.wav","at":0.30,"speed":0.7,"peak":0.07},
+    {"sourceId":"swishes","file":"extracted/swishes/swishes/swish-4.wav","at":2.50,"speed":0.7,"peak":0.08}
+  ]},
+  "wave": {"durationMs":2600,"cues":[
+    {"sourceId":"water","file":"wave.flac","at":0.30,"peak":0.18,"rms":0.036,"attack":0.20,"release":0.35}
+  ]},
+  "confetti": {"durationMs":3800,"cues":[
+    {"sourceId":"drumroll","file":"confetti-candidates/joseph-sardin-drum-roll-2-l.mp3","at":0.10,"trimStart":0.6,"length":0.90,"peak":0.20,"rms":0.045,"attack":0.16,"release":0.025},
+    {"sourceId":"fanfare","file":"confetti-candidates/graciano-choc-trumpet-fanfare.mp3","at":1.05,"peak":0.20,"rms":0.042,"attack":0.012,"release":0.12}
+  ]}
+}

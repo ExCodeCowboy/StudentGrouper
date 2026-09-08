@@ -5,6 +5,25 @@ import type { RevealEffect } from './types';
 import './moon.css';
 import { Astronaut, LunarLander } from './apolloIllustration';
 
+// Generate once so camera motion keeps the sky steady. Independent random
+// coordinates avoid the diagonal bands produced by modular arithmetic.
+const stars = (() => {
+  let seed = 0x41504f4c;
+  const random = () => {
+    seed += 0x6d2b79f5;
+    let value = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+  return Array.from({ length: 82 }, () => ({
+    x: 16 + random() * 1568,
+    y: 16 + random() * 728,
+    radius: .75 + random() ** 2 * 1.4,
+    opacity: .25 + random() * .65,
+    glint: random() < .07,
+  }));
+})();
+
 function SaturnV({ time, id }: { time: number; id: string }) {
   const separation = progress(time, 2.25, 3.45);
   const secondSeparation = smooth(progress(time, 2.98, 3.56));
@@ -152,11 +171,9 @@ export function MoonScene({ time }: { time: number }) {
         <rect width="1600" height="900" fill={`url(#${id}-space)`} />
         <rect width="1600" height="900" fill={`url(#${id}-sky)`} opacity={1 - smooth(progress(time, 1.1, 2.7))} />
         <g opacity={smooth(progress(time, 1.3, 2.5)) * (1 - .92 * landing)}>
-          {Array.from({ length: 82 }, (_, i) => {
-            const x = (i * 313 + 43) % 1600;
-            const y = (i * 157 + 19) % 760;
-            return <g key={i} opacity={.25 + (i % 5) * .13}><circle cx={x} cy={y} r={i % 7 === 0 ? 2 : 1.1} fill="#e0e6e9" />{i % 13 === 0 && <path d={`M${x - 5} ${y}h10m-5-5v10`} stroke="#cedee4" strokeWidth="1" />}</g>;
-          })}
+          {stars.map(({ x, y, radius, opacity, glint }, i) =>
+            <g key={i} opacity={opacity}><circle cx={x} cy={y} r={radius} fill="#e0e6e9" />{glint && <path d={`M${x - 5} ${y}h10m-5-5v10`} stroke="#cedee4" strokeWidth="1" />}</g>
+          )}
         </g>
         <g opacity={1 - smooth(progress(time, 1.7, 2.55))} transform={`translate(0 ${ascent * 650})`}>
           <path d="M-50 630Q280 610 590 632T1660 615V1000H-50Z" fill="#667d86" /><path d="M0 671Q590 626 1600 656V950H0Z" fill="#536579" />
@@ -231,4 +248,4 @@ export function MoonScene({ time }: { time: number }) {
 
 function MoonStage() { return <MoonScene time={useSceneTime(MOON_DURATION_MS)} />; }
 function MoonCover() { return null; }
-export const moonEffect: RevealEffect = { id: 'moon', name: 'Saturn V · Moon landing', description: 'Liftoff, separation, a gentle lunar landing, and one little astronaut opening a window onto the day.', durationMs: MOON_DURATION_MS, Stage: MoonStage, Cover: MoonCover };
+export const moonEffect: RevealEffect = { id: 'moon', name: 'Saturn V · Moon landing', description: 'Liftoff, separation, a gentle lunar landing, and one little astronaut opening a window onto the day.', durationMs: MOON_DURATION_MS, sound: 'moon', Stage: MoonStage, Cover: MoonCover };

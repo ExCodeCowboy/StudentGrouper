@@ -1,8 +1,16 @@
 import { useLayoutEffect, useRef } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import { revealEffects } from './registry';
 import type { RevealEffect, RevealPlayback } from './types';
 import './revealEffects.css';
+
+export function RevealSoundToggle({ enabled, unavailable, onChange }: { enabled: boolean; unavailable: boolean; onChange: (enabled: boolean) => void }) {
+  const description = unavailable && enabled ? 'Sound could not start. Try the reveal again.' : enabled ? 'Gentle reveal sounds on. Mute reveal sounds.' : 'Reveal sounds muted. Turn on gentle reveal sounds.';
+  return <button type="button" className={`show-secondary reveal-sound-toggle${unavailable && enabled ? ' is-unavailable' : ''}`} aria-label="Reveal sounds" aria-pressed={enabled} title={description} onClick={() => onChange(!enabled)}>
+    {enabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
+    <output className="sr-only">{unavailable && enabled ? description : ''}</output>
+  </button>;
+}
 
 export function RevealEffectPicker({ selection, onSelect, reducedMotion, compact = false }: { selection: string; onSelect: (id: string) => void; reducedMotion: boolean; compact?: boolean }) {
   const name = selection === 'surprise' ? 'Surprise me!' : revealEffects.find((effect) => effect.id === selection)?.name ?? 'None · reveal instantly';

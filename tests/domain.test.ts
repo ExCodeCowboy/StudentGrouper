@@ -12,6 +12,8 @@ import './pairStarters.test';
 import './studentDisplay.test';
 import './groupThemes.test';
 import './revealEffects.test';
+import './revealSounds.test';
+import './revealAudio.test';
 import './contourGeometry.test';
 import './planner.test';
 import './stationPins.test';

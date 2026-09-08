@@ -67,4 +67,4 @@ export function CatScene({ time, pose, blocking }: { time: number; pose?: CatPos
 
 function CatStage() { return <CatScene time={useSceneTime(CAT_DURATION_MS)} />; }
 function CatCover() { return null; }
-export const catEffect: RevealEffect = { id: 'cat', name: 'Cat & yarn', description: 'A curious tabby catches up with a ball of yarn, gives it a gentle tap, and trots after it as the covers unravel.', durationMs: CAT_DURATION_MS, Stage: CatStage, Cover: CatCover };
+export const catEffect: RevealEffect = { id: 'cat', name: 'Cat & yarn', description: 'A curious tabby catches up with a ball of yarn, gives it a gentle tap, and trots after it as the covers unravel.', durationMs: CAT_DURATION_MS, sound: 'cat', Stage: CatStage, Cover: CatCover };

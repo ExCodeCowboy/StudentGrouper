@@ -1,11 +1,13 @@
-.confetti-reveal-paper { position: absolute; inset: 0; display: grid; place-items: center; background: #fff2c9; border: 2px dashed #dbc37c; border-radius: inherit; transform-origin: top center; animation: reveal-paper-flip 800ms cubic-bezier(.4,0,.3,1) both; }
+/* One shared drumroll beat holds every cover closed, independent of card count. */
+.confetti-reveal-paper { position: absolute; inset: 0; display: grid; place-items: center; background: #fff2c9; border: 2px dashed #dbc37c; border-radius: inherit; transform-origin: top center; animation: reveal-paper-flip 800ms 1000ms cubic-bezier(.4,0,.3,1) both; }
 .confetti-reveal-paper > span { font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; color: #aa7c3b; }
 .confetti-reveal-paper i { position: absolute; color: #e6af30; font-size: 44px; top: 12%; left: 14%; }
 .confetti-reveal-paper i:last-child { top: auto; left: auto; right: 14%; bottom: 12%; }
-@keyframes reveal-paper-flip { 0%, 15% { transform: perspective(600px) rotateX(0); opacity: 1; } 100% { transform: perspective(600px) rotateX(100deg) translateY(-50px); opacity: 0; } }
+@keyframes reveal-paper-flip { 0% { transform: perspective(600px) rotateX(0); opacity: 1; } 100% { transform: perspective(600px) rotateX(100deg) translateY(-50px); opacity: 0; } }
 
 .student-confetti { position: fixed; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
 .student-confetti i { position: absolute; top: 62%; left: var(--piece-start); width: 11px; height: 17px; border-radius: 2px; background: var(--piece-color); opacity: 0; animation: student-confetti-flight 2500ms var(--piece-delay) cubic-bezier(.15,.65,.4,1) both; }
+.reveal-effects-layer[data-reveal-effect="confetti"] .student-confetti i { animation-delay: calc(1000ms + var(--piece-delay)); }
 .student-confetti .confetti-star { width: 21px; height: 21px; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 94%, 50% 72%, 21% 94%, 32% 57%, 2% 35%, 39% 35%); }
 @keyframes student-confetti-flight {
   0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }

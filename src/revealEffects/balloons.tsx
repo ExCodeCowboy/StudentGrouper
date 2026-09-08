@@ -12,5 +12,5 @@ function BalloonCover() {
 
 export const balloonEffect: RevealEffect = {
   id: 'balloons', name: 'Balloon lift-off', description: 'Balloons tug on the covers, wobble, and carry them up into the sky.',
-  durationMs: 2600, Stage: BalloonStage, Cover: BalloonCover,
+  durationMs: 2600, sound: 'balloons', Stage: BalloonStage, Cover: BalloonCover,
 };

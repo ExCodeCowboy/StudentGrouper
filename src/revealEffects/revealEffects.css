@@ -7,6 +7,10 @@
 .reveal-effect-picker.is-compact > svg { width: 19px; height: 19px; pointer-events: none; }
 .reveal-effect-picker.is-compact select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; }
 .student-show select:focus-visible { outline: 3px solid #17586a; outline-offset: 3px; }
+.student-show-buttons .reveal-sound-toggle { width: 45px; padding: 0; flex-shrink: 0; }
+.student-show-buttons .reveal-sound-toggle[aria-pressed="true"] { color: #267568; background: #edf5ee; border-color: #b9cebd; }
+.student-show-buttons .reveal-sound-toggle.is-unavailable { color: #947044; border-color: #c5a982; }
+.reveal-sound-toggle:focus-visible { outline: 3px solid #17586a; outline-offset: 3px; }
 .reveal-effects-layer { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
 .student-show { overflow-x: hidden; }
 .reveal-cover { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit; --reveal-target-x: 0px; --reveal-target-y: -100px; --reveal-left: .5; }

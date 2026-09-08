@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "verifiedAt": "2026-09-07",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "notes": "Source pages explicitly identify these assets as CC0. SHA-256 hashes identify original downloaded files before editing. Reveal-specific excerpts, processing and outputs are listed separately under files. No NASA audio is included.",
+  "sources": [
+    {
+      "id": "cat",
+      "title": "Cat Purr & Meow",
+      "author": "Kerzoven",
+      "sourceUrl": "https://opengameart.org/content/cat-purr-meow",
+      "notes": "Creator-recorded cat vocalization. The page notes background noise in the meows. The alternate cat_softmew.wav candidate is not used.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/cat_mewpurr.wav",
+        "filename": "cat_mewpurr.wav",
+        "bytes": 124464,
+        "sha256": "a58487959ee00c812f9f02ca822a668173bcf04a98c6dd98a902514a1d3994ea"
+      }
+    },
+    {
+      "id": "water",
+      "title": "Water Waves",
+      "author": "transitking",
+      "submittedBy": "qubodup",
+      "sourceUrl": "https://opengameart.org/content/water-waves",
+      "upstreamUrl": "https://www.freesound.org/people/transitking/sounds/11505/",
+      "notes": "OpenGameArt provides a wave excerpt from transitking's recording and identifies it as CC0. Downloaded locally as wave.flac.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/wave_01_cc0-11505__transitking__wavesound.flac",
+        "filename": "wave_01_cc0-11505__transitking__wavesound.flac",
+        "bytes": 265335,
+        "sha256": "0bd84b2061a82c234470bd4e16efc6ab24851928d3f93e1757bfea048b2d7a33"
+      }
+    },
+    {
+      "id": "swishes",
+      "title": "Swishes Sound Pack",
+      "author": "artisticdude",
+      "sourceUrl": "https://opengameart.org/content/swishes-sound-pack",
+      "notes": "Thirteen WAV effects created for Summoning Wars: four lighter and nine heavier swishes. Creator describes recording moving wood and a clothes hanger.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/swishes.zip",
+        "filename": "swishes.zip",
+        "bytes": 385150,
+        "sha256": "7980215241b739a787dcf26f660ce510bb237900968789395a86911619795693"
+      }
+    },
+    {
+      "id": "foley",
+      "title": "100 CC0 SFX",
+      "author": "rubberduck",
+      "sourceUrl": "https://opengameart.org/content/100-cc0-sfx",
+      "notes": "One hundred recorded effects, including paper, bells and wood. The page labels the archive 100-CC0-SFX.zip; the actual download URL includes _0. Downloaded locally as foley.zip.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/100-CC0-SFX_0.zip",
+        "filename": "100-CC0-SFX_0.zip",
+        "bytes": 2921904,
+        "sha256": "a5c135878c132f1c59cca54e60061c296cd0ac27ad031ca2c41b8cd5cab3c706"
+      }
+    },
+    {
+      "id": "magic",
+      "title": "Atmospheric Interaction Sound Pack",
+      "author": "legoluft",
+      "submittedBy": "qubodup",
+      "sourceUrl": "https://opengameart.org/content/atmospheric-interaction-sound-pack",
+      "upstreamUrl": "https://sourceforge.net/projects/krank/",
+      "notes": "Forty-three WAV effects from krank. OpenGameArt marks them CC0 and links the original project, which identifies its license as Public Domain. Downloaded locally as magic.7z.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/krank_sounds.7z",
+        "filename": "krank_sounds.7z",
+        "bytes": 8656193,
+        "sha256": "5127037a96d50b9ca09d3dfdab9b41784ac94bef89aeec33ba18849745525eec"
+      }
+    },
+    {
+      "id": "bubbles",
+      "title": "40 CC0 water / splash / slime SFX",
+      "author": "rubberduck",
+      "sourceUrl": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+      "notes": "Forty effects: bubbles, water loops, slime and splashes. The creator describes some slime sounds as recorded from real slime. Downloaded locally as bubbles.zip.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/water-splash-slime-sfx.zip",
+        "filename": "water-splash-slime-sfx.zip",
+        "bytes": 2259262,
+        "sha256": "7cd39abb49d4362a37ba18dc0e454c7dc1d08029d4e5b683149046bc237b2eba"
+      }
+    },
+    {
+      "id": "zipper",
+      "title": "Zipper",
+      "author": "AntumDeluge",
+      "sourceUrl": "https://opengameart.org/content/zipper",
+      "notes": "A recorded jacket zipper. The description and license field both explicitly state CC0. Downloaded locally as zipper.wav.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/zipper-1.wav",
+        "filename": "zipper-1.wav",
+        "bytes": 72494,
+        "sha256": "0b3def41d4c76b40bc4edc45391115b29494c3380110bd42b0b53819d9d8475c"
+      }
+    },
+    {
+      "id": "rocket",
+      "title": "Rocket Engine",
+      "author": "theMinesAreShakin",
+      "sourceUrl": "https://opengameart.org/content/rocket-engine",
+      "notes": "User-selected rocket/spaceship effect described by its creator as a low rumble and tagged loopable. The source page explicitly identifies it as CC0. The original stereo PCM WAV is approximately 6.09 seconds at 48 kHz. This is a game sound effect, not NASA audio.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/rocket_engine.001.wav",
+        "filename": "rocket_engine.001.wav",
+        "bytes": 1169268,
+        "sha256": "dc82ef86d6af2278d6592d20372737c32620f1c1957290c79f6643af5381f277"
+      }
+    },
+    {
+      "id": "drumroll",
+      "title": "Drum roll 2 L",
+      "author": "Joseph SARDIN",
+      "sourceUrl": "https://bigsoundbank.com/drum-roll-2-l-s2405.html",
+      "notes": "Snare drum roll created with HALion Sonic SE in Cubase. The creator's page explicitly identifies it as CC0 and permits editing, redistribution and commercial use without attribution. The original MP3 is 5.068 seconds; downloaded locally as confetti-candidates/joseph-sardin-drum-roll-2-l.mp3.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://bigsoundbank.com/UPLOAD/mp3/2405.mp3",
+        "filename": "2405.mp3",
+        "bytes": 121760,
+        "sha256": "8caab6310a9092b4789e280697a4cb77caa596c7833cc469ae85d7aaac31a442"
+      }
+    },
+    {
+      "id": "fanfare",
+      "title": "Trumpet Fanfare",
+      "author": "Graciano Choc - Bz.gamedev (gchoc)",
+      "sourceUrl": "https://opengameart.org/content/trumpet-fanfare",
+      "notes": "Short trumpet fanfare, explicitly licensed CC0 by uploader gchoc; the page's attribution notice names Graciano Choc - Bz.gamedev. The original MP3 is approximately 2.42424 seconds; downloaded locally as confetti-candidates/graciano-choc-trumpet-fanfare.mp3.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/castlefanfare.mp3",
+        "filename": "castlefanfare.mp3",
+        "bytes": 99385,
+        "sha256": "e248d4e55f87671898fa1ea3edfa4242969f193ced960864b6a51c960e186c6b"
+      }
+    },
+    {
+      "id": "giggle",
+      "title": "Tiny creatures sounds (laugh.ogg)",
+      "author": "fvcalderan",
+      "sourceUrl": "https://opengameart.org/content/tiny-creatures-sounds",
+      "notes": "Creator recorded their own voice, pitched it up and added effects in Audacity. The source page explicitly identifies the sounds as CC0. Original laugh.ogg is approximately 1.73004 seconds; downloaded locally as fairy-candidates/fvcalderan-laugh.ogg.",
+      "license": "CC0-1.0",
+      "download": {
+        "url": "https://opengameart.org/sites/default/files/laugh.ogg",
+        "filename": "laugh.ogg",
+        "bytes": 22271,
+        "sha256": "8b74bc75568a431ebabf639525e1ad7acb4cbe07ae1d36434c61a2975219d985"
+      }
+    }
+  ],
+  "files": [
+    {
+      "file": "balloons.wav",
+      "sha256": "cfb15d020d51af1d0b9bab966a186b2566b1b120f7f95971fed2f50fd616f9c5",
+      "sourceIds": [
+        "foley",
+        "swishes"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "zipper.wav",
+      "sha256": "a394f8027939016a162696348c57ea0dcaddb3a5e12865da121f84357c32798a",
+      "sourceIds": [
+        "zipper"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "dragon.wav",
+      "sha256": "3dcfda108a5b6cfdda3ec4ad678ba186cae8a1e6e325f618018b8972f4c7d7f1",
+      "sourceIds": [
+        "bubbles"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "cat.wav",
+      "sha256": "41442e90b25e6b15183328c082207df7ba5c37afc37f1841713d8d0daa06b95c",
+      "sourceIds": [
+        "cat",
+        "foley"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "moon.wav",
+      "sha256": "91fa3be30bf589728251082a1e2c4b92f8d57fb8068422ce1737405079b4eef4",
+      "sourceIds": [
+        "foley",
+        "rocket"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "black-hole.wav",
+      "sha256": "a6ce7ebe9936b3ca601548a24d223126b4c07929c1d15324396322469f167b3b",
+      "sourceIds": [
+        "magic"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "fairy.wav",
+      "sha256": "d1482ad09ca270a07659af8cf1faaddc92e76a9a13d23d30bd1da858f37f5365",
+      "sourceIds": [
+        "giggle",
+        "magic",
+        "swishes"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "wave.wav",
+      "sha256": "23eed75efff0950354376a7073917839ea80711d9f78724d519fa2a643e9aaa9",
+      "sourceIds": [
+        "water"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "confetti.wav",
+      "sha256": "3290c83dc8c77ba543348cf179ac761726d9ed1c34c414fbdb2dae81793bde88",
+      "sourceIds": [
+        "drumroll",
+        "fanfare"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    }
+  ]
+}

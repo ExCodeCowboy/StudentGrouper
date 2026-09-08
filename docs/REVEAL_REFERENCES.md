@@ -2,6 +2,8 @@
 
 The two reveals are original SVG illustrations. These photographs were inspected as visual references; no reference photographs or paper figures are bundled with the application.
 
+All reveal effects have optional [gentle sound accents](REVEAL_SOUNDS.md), assembled from bundled CC0 game-audio clips, with a shared device mute control in both student views. Recorded and designed source effects are credited separately in [sound credits](../public/sounds/reveals/CREDITS.md); no NASA audio is included.
+
 ## Cat profile and gait
 
 - [Purina: Cat Anatomy](https://www.purina.com/articles/cat/behavior/understanding-cats/cat-anatomy): side-profile photograph used for torso-to-leg proportions, head and muzzle scale, shoulder placement, and an open, lifted tail.

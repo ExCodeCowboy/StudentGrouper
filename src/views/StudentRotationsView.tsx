@@ -11,7 +11,7 @@ import { useRotationTimer } from '../useRotationTimer';
 import type { RotationPresentationSettings as PresentationSettings } from '../model';
 import { GroupVisual } from '../components/GroupVisual';
 import { StationVisual } from '../components/StationVisual';
-import { RevealCover, RevealEffectLayer, RevealEffectPicker } from '../revealEffects/RevealEffects';
+import { RevealCover, RevealEffectLayer, RevealEffectPicker, RevealSoundToggle } from '../revealEffects/RevealEffects';
 import { useRevealEffects } from '../revealEffects/useRevealEffects';
 import type { DisplayRotation, DisplayRotationDay } from '../studentDisplay';
 import { StudentViewHeader, type StudentNavigation } from '../components/StudentViewHeader';
@@ -44,7 +44,7 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
   showNames: boolean;
   onShowNamesChange: (value: boolean) => void;
 }) {
-  const { selection, select, reducedMotion, animate, playback, play, stop } = useRevealEffects();
+  const { selection, select, reducedMotion, animate, playback, play, stop, soundEnabled, soundUnavailable, setSoundEnabled } = useRevealEffects();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
@@ -63,10 +63,10 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
     if (!finished || !visible || settingsOpen || clock.runId === handledFinish.current) return;
     const frame = requestAnimationFrame(() => {
       handledFinish.current = clock.runId;
-      if (settings.autoplay) { setVideoFailed(false); setVideoOpen(true); }
+      if (settings.autoplay) { stop(); setVideoFailed(false); setVideoOpen(true); }
     });
     return () => cancelAnimationFrame(frame);
-  }, [finished, visible, settingsOpen, clock.runId, settings.autoplay]);
+  }, [finished, visible, settingsOpen, clock.runId, settings.autoplay, stop]);
 
   useEffect(() => {
     revealButton.current?.focus({ preventScroll: true });
@@ -74,7 +74,7 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
   const hideOrReveal = () => {
     if (!hasPlan) return;
     if (revealed) { setRevealed(false); stop(); dispatch({ type: 'pause', now: Date.now() }); }
-    else { setRevealed(true); play(); }
+    else { setVideoOpen(false); setRevealed(true); play(); }
   };
   const startNextRound = () => {
     prepareTransitionAudio();
@@ -156,6 +156,7 @@ export function StudentRotationsView({ day, settings, onSettingsChange, initialT
       <footer className="student-show-controls">
         <div className="student-show-counter"><Sparkles /><span><strong>{day.groups.length} teams · {day.rounds.length} rounds</strong>One reveal for the whole day</span></div>
         <div className="student-show-buttons">
+          <RevealSoundToggle enabled={soundEnabled} unavailable={soundUnavailable} onChange={setSoundEnabled} />
           <div className="reveal-split-button">
             <button ref={revealButton} type="button" className="show-primary" disabled={!hasPlan} onClick={hideOrReveal}>{revealed ? <><RotateCcw />Hide again</> : <><Sparkles />Reveal the day</>}</button>
             <RevealEffectPicker compact selection={selection} onSelect={select} reducedMotion={reducedMotion} />
