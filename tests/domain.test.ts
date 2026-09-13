@@ -10,6 +10,7 @@ import './dragDrop.test';
 import './randomGroups.test';
 import './pairStarters.test';
 import './studentDisplay.test';
+import './studentPicker.test';
 import './groupThemes.test';
 import './revealEffects.test';
 import './revealSounds.test';

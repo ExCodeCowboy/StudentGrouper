@@ -29,7 +29,8 @@ export function StudentGroupsView({ groups, navigation, groupOptions, groupSetId
   const hasStarters = groups.some((group) => group.starterStudentId);
 
   useEffect(() => {
-    (revealButton.current?.disabled ? hideButton.current : revealButton.current)?.focus({ preventScroll: true });
+    const action = revealButton.current?.disabled ? hideButton.current : revealButton.current;
+    (action?.disabled ? screen.current : action)?.focus({ preventScroll: true });
   }, []);
 
   const reveal = () => {
@@ -45,7 +46,7 @@ export function StudentGroupsView({ groups, navigation, groupOptions, groupSetId
     screen.current?.scrollTo({ top: 0 });
   };
   return (
-    <main className={`student-show student-groups${animate ? ' with-effects' : ''}${revealed ? ' has-reveals' : ''}`} ref={screen}>
+    <main className={`student-show student-groups${animate ? ' with-effects' : ''}${revealed ? ' has-reveals' : ''}`} ref={screen} tabIndex={-1}>
       <div className="student-show-decor" aria-hidden="true">
         <Star className="show-star star-one" /><Star className="show-star star-two" /><Star className="show-star star-three" /><Sparkles className="show-sparkle" />
         <span className="show-orbit orbit-one" /><span className="show-orbit orbit-two" />

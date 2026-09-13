@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { ArrowLeft, CalendarDays, Maximize, Minimize, Sparkles, UsersRound } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Maximize, Minimize, Shuffle, Sparkles, UsersRound } from 'lucide-react';
 
-export type StudentPage = 'groups' | 'today';
+export type StudentPage = 'groups' | 'today' | 'picker';
 export type StudentNavigation = {
   page: StudentPage;
   onNavigate: (page: StudentPage) => void;
@@ -24,6 +24,7 @@ export function StudentViewHeader({ navigation, title, subtitle, children }: {
       <nav className="student-page-nav" aria-label="Student view navigation">
         <button type="button" aria-current={navigation.page === 'groups' ? 'page' : undefined} onClick={() => navigation.onNavigate('groups')}><UsersRound />Groups</button>
         <button type="button" aria-current={navigation.page === 'today' ? 'page' : undefined} disabled={!navigation.hasDay} onClick={() => navigation.onNavigate('today')}><CalendarDays />Today</button>
+        <button type="button" aria-current={navigation.page === 'picker' ? 'page' : undefined} onClick={() => navigation.onNavigate('picker')}><Shuffle />Pick a student</button>
       </nav>
       <div className="student-show-tools student-compact-tools">
         {children}

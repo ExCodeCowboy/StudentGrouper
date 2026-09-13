@@ -150,7 +150,7 @@ export function GroupsView({
         </div>
         <div className="heading-actions">
           <GroupThemePicker groupSet={groupSet} onApply={onApplyTheme} />
-          <Button id="open-student-view" variant="outline" size="lg" disabled={!classroom.students.some((student) => !student.absent && placed.has(student.id))} onClick={onStudentView}>
+          <Button id="open-student-view" variant="outline" size="lg" onClick={onStudentView}>
             <Presentation /> Student view
           </Button>
           <Button variant="outline" size="lg" disabled={!canUndo} onClick={onUndo}>
@@ -242,7 +242,7 @@ export function GroupsView({
       {unassigned.length > 0 && (
         <section className="unassigned-tray">
           <strong>Not placed yet</strong>
-          <span>Make groups or drag these students into a group. Student view shows placed students only.</span>
+          <span>Make groups or drag these students into a group. Group reveals show placed students only.</span>
           <div>
             {unassigned.map((student) => (
               <button

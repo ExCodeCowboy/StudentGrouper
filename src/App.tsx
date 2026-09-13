@@ -25,6 +25,7 @@ import { GroupsView } from './views/GroupsView';
 import { StudentPresentation } from './views/StudentPresentation';
 import type { StudentPage } from './components/StudentViewHeader';
 import { studentDisplayGroups, studentDisplayRotations } from './studentDisplay';
+import { eligiblePickerStudents } from './studentPicker';
 import { normalizePresentationSettings, type RotationClock } from './rotationTimer';
 import { applyGroupTheme } from './groupThemes';
 import { StudentsView } from './views/StudentsView';
@@ -660,6 +661,7 @@ export function App() {
       key={classroom.id}
       page={studentView}
       onNavigate={setStudentView}
+      students={eligiblePickerStudents(classroom.students)}
       groups={studentDisplayGroups(groupSet, classroom.students)}
       groupOptions={classroom.groupSets.map(({ id, name }) => ({ id, name }))}
       groupSetId={groupSet.id}
@@ -675,9 +677,10 @@ export function App() {
       initialTimer={rotationClocks.get(`${classroom.id}:${session?.id}`)}
       onRememberTimer={(clock) => setRotationClocks((current) => new Map(current).set(`${classroom.id}:${session?.id}`, clock))}
       onClose={() => {
-        setView(studentView);
+        const teacherView = studentView === 'picker' ? view : studentView;
+        setView(teacherView);
         setStudentView(null);
-        requestAnimationFrame(() => document.getElementById(studentView === 'today' ? 'open-rotation-student-view' : 'open-student-view')?.focus());
+        requestAnimationFrame(() => document.getElementById(teacherView === 'today' ? 'open-rotation-student-view' : 'open-student-view')?.focus());
       }}
     />
   );

@@ -41,16 +41,14 @@ jobs:
           tagName: v__VERSION__
           releaseName: Student Grouper v__VERSION__
           releaseBody: |
-            Classroom presentation improvements and gentle reveal sounds for Student Grouper 0.3.2.
+            A confetti student picker and a reveal display fix for Student Grouper 0.3.3.
 
-            - Switch between Groups and Today and rebuild groups while remaining in student view. Compact controls leave more room for the classroom display.
-            - Group assignment shuffles within matching buckets, and priority stations help the planner schedule essential activities sooner.
-            - Cat & yarn and Saturn V moon-landing reveals join the effect library, with refined character motion and a naturally scattered star field.
-            - All nine reveals have short, bundled CC0 sound effects. Highlights include a cat mew, fairy giggle, rocket roar shaped for small speakers, and a drum roll into a trumpet ta-da for confetti.
-            - A small speaker control mutes reveal sounds across Groups and Today. Sounds stop when the reveal is hidden or closed and work offline in the Mac app.
-            - Saved classrooms and earlier exports remain compatible. Pair starter stars, rotation timers, and all nine transition music choices remain available.
+            - Open Student view and choose Pick a student for a quick random choice with a large name display and a confetti reveal.
+            - Every present student has an equal chance on each draw, including students who are not assigned to a group. Absent students are excluded, and Pick again starts a fresh draw.
+            - Move between Groups, Today, and Pick a student without leaving student view. The picker keeps the shared reveal-sound mute preference and respects reduced motion without changing the selected effect for groups or rotations.
+            - Reveal animations no longer produce an unwanted horizontal scrollbar. Wide daily rotation charts still scroll normally.
 
-            Open Student view and choose a reveal from the arrow beside the Reveal button. The speaker beside it controls reveal sounds; Timer & transition retains its separate music controls. Sound creators and source licenses are included with the app.
+            Saved classrooms and earlier exports remain compatible. No group arrangement or planned day is needed to use the picker. All nine reveal effects and existing rotation timers and transition music remain available.
 
             Mac downloads:
 

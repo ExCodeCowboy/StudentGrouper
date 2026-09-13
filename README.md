@@ -8,7 +8,7 @@ Student Grouper is a local-first classroom tool for making student groups, conti
 
 ## Project status
 
-Version 0.3.2 adds Cat & yarn and Saturn V moon-landing reveals, gentle bundled sound effects with a shared mute control, and refinements for projected classroom use. Teachers can switch between Groups and Today and rebuild groups from student view. Group assignment shuffles within matching buckets, and rotation planning supports priority stations. It includes whole-block planning, flexible daily station pins, pairs with starter stars, timers, and offline transition music. The browser app and public information pages are hosted on GitHub Pages; Mac releases provide separate Intel and Apple-silicon installers. The application has 243 tests, including legacy backup imports, planner validation, pair starters, timer behavior, and sound playback.
+Version 0.3.3 adds **Pick a student** to student view for quick classroom choices, with a large name display and a confetti reveal. Each fresh draw gives every present student an equal chance, including students who have not been assigned to a group. Teachers can move between Groups, Today, and Pick a student while keeping the projector in student view. This release also prevents an unwanted horizontal scrollbar during reveal animations while preserving scrolling within the daily rotation chart. The application has 250 tests, including picker eligibility and selection, legacy backup imports, planner validation, pair starters, timer behavior, and sound playback.
 
 For follow-up work, start with [the project handoff](docs/PROJECT_HANDOFF.md). The product rules that should not change accidentally are in [the product contract](PRODUCT_SPEC.md), and the build and release details are in [the development guide](docs/DEVELOPMENT.md).
 
@@ -29,7 +29,8 @@ This was made for the small, repetitive planning decisions that consume a surpri
 - Pin multiple groups for a daily station visit and let the planner choose their rounds.
 - Plan activities and reusable classroom locations separately.
 - Print group routes with activity pictures, words, colors, and symbols.
-- Project daily rotations or reveal all teams together with seven playful visual effects.
+- Project daily rotations or reveal all teams together with nine playful visual effects.
+- Pick one present student at random with a confetti reveal, even before assigning groups or planning a day.
 - Run a quiet rotation timer, then play a YouTube transition song or built-in music lasting up to two minutes.
 - Choose woodland, space, ocean, garden, dinosaur, weather, storybook, or builder names and symbols for groups.
 - Export and restore a complete local backup.

@@ -24,7 +24,9 @@ function savedSelection() {
   return 'surprise';
 }
 
-export function useRevealEffects() {
+// A dedicated screen may request one effect without replacing the teacher's
+// saved choice for group and day reveals. Reduced motion still takes priority.
+export function useRevealEffects(fixedEffect?: string) {
   const [selection, setSelection] = useState(savedSelection);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [playback, setPlayback] = useState<RevealPlayback | null>(null);
@@ -33,7 +35,8 @@ export function useRevealEffects() {
   const soundRequest = useRef<AbortController | null>(null);
   const previous = useRef<string | undefined>(undefined);
   const sequence = useRef(0);
-  const animate = selection !== 'none' && !reducedMotion && revealEffects.length > 0;
+  const activeSelection = fixedEffect ?? selection;
+  const animate = activeSelection !== 'none' && !reducedMotion && revealEffects.length > 0;
 
   const stopSound = useCallback(() => {
     soundRequest.current?.abort();
@@ -112,7 +115,7 @@ export function useRevealEffects() {
   const play = useCallback(() => {
     stopSound();
     setSoundUnavailable(false);
-    const effect = animate ? resolveRevealEffect(selection, previous.current) : null;
+    const effect = animate ? resolveRevealEffect(activeSelection, previous.current) : null;
     if (!effect) { setPlayback(null); return; }
     previous.current = effect.id;
     setPlayback({ effect, sequence: ++sequence.current });
@@ -124,7 +127,7 @@ export function useRevealEffects() {
         if (soundRequest.current === request && !request.signal.aborted) setSoundUnavailable(!started);
       });
     }
-  }, [selection, animate, soundEnabled, stopSound]);
+  }, [activeSelection, animate, soundEnabled, stopSound]);
 
   return { selection, select, reducedMotion, animate, playback, play, stop, soundEnabled, soundUnavailable, setSoundEnabled };
 }

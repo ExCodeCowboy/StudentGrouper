@@ -1,0 +1,28 @@
+.student-picker-stage { flex: 1 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 36px 18px; }
+.student-picker-card { position: relative; display: grid; place-items: center; width: min(100%, 920px); min-height: clamp(320px, 48vh, 530px); border: 2px solid #ded6bc; border-radius: 32px; background: #fffdf5; box-shadow: 0 8px 0 #e9e2cf, 0 20px 60px #806d2210; }
+.student-picker-card.has-pick { border-color: #94b6a6; background: radial-gradient(ellipse at top, #f0f7e9, #fffdf5 70%); }
+.student-picker-content { width: 100%; min-width: 0; text-align: center; padding: 30px 28px 34px; }
+.student-picker-kicker { display: block; color: #6c7362; font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.student-picker-badge { display: grid; place-items: center; width: 106px; height: 106px; margin: 22px auto 16px; border-radius: 50%; background: #fff0bc; color: #af7b26; box-shadow: 0 0 0 8px #fff5d9; }
+.student-picker-badge > span { font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; }
+.student-picker-badge svg { width: 62px; height: 62px; color: #dfa72c; stroke: #ad7920; stroke-width: 1.25px; }
+.student-picker-content h2 { margin: 0; color: #285e53; font-size: clamp(30px, 4vw, 54px); font-weight: 850; line-height: 1.13; letter-spacing: -.045em; overflow-wrap: anywhere; text-wrap: balance; }
+.student-picker-content .student-picker-name { font-size: clamp(46px, 7vw, 100px); }
+.student-picker-content p { margin: 16px 0 0; color: #667264; font-size: clamp(17px, 2vw, 24px); line-height: 1.4; }
+.student-picker-hint { margin: 22px 0 0; color: #707365; font-size: 14px; text-align: center; }
+.student-picker-count { color: #52645e; font-size: 14px; }
+.student-picker-count strong { font-size: 19px; color: #285e53; }
+.student-picker-count > span { display: block; margin-top: 2px; font-size: 12px; color: #748074; }
+.student-picker .show-primary { min-width: 190px; }
+.student-picker .show-primary[aria-disabled="true"] { cursor: default; }
+@media (max-width: 600px) {
+  .student-picker-stage { padding: 18px 14px; }
+  .student-picker-content { padding: 26px 18px; }
+  .student-picker-card { border-radius: 24px; }
+  .student-picker-count { display: none; }
+}
+@media (max-height: 700px) {
+  .student-picker-stage { padding-block: 16px; }
+  .student-picker-badge { width: 90px; height: 90px; margin-block: 18px 14px; }
+  .student-picker-content { padding-block: 24px; }
+}

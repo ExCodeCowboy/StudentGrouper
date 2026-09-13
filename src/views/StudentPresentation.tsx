@@ -5,11 +5,14 @@ import type { RotationClock } from '../rotationTimer';
 import type { StudentPage, StudentNavigation } from '../components/StudentViewHeader';
 import { StudentGroupsView } from './StudentGroupsView';
 import { StudentRotationsView } from './StudentRotationsView';
+import { StudentPickerView, type StudentPick } from './StudentPickerView';
+import type { PickerStudent } from '../studentPicker';
 
-export function StudentPresentation({ page, onNavigate, onClose, groups, groupOptions, groupSetId, onSelectGroupSet, onRebuild, canRebuild, groupsNeedCheck, saveIssue, day, dayId, settings, onSettingsChange, initialTimer, onRememberTimer }: {
+export function StudentPresentation({ page, onNavigate, onClose, students, groups, groupOptions, groupSetId, onSelectGroupSet, onRebuild, canRebuild, groupsNeedCheck, saveIssue, day, dayId, settings, onSettingsChange, initialTimer, onRememberTimer }: {
   page: StudentPage;
   onNavigate: (page: StudentPage) => void;
   onClose: () => void;
+  students: PickerStudent[];
   groups: DisplayGroup[];
   groupOptions: Pick<GroupSet, 'id' | 'name'>[];
   groupSetId: string;
@@ -31,6 +34,7 @@ export function StudentPresentation({ page, onNavigate, onClose, groups, groupOp
   const [revealedGroupSet, setRevealedGroupSet] = useState<string | null>(null);
   const [revealedDay, setRevealedDay] = useState<string | null>(null);
   const [showNames, setShowNames] = useState(true);
+  const [studentPick, setStudentPick] = useState<StudentPick | null>(null);
 
   useEffect(() => {
     const update = () => setFullscreen(!!screen && document.fullscreenElement === screen);
@@ -59,10 +63,15 @@ export function StudentPresentation({ page, onNavigate, onClose, groups, groupOp
   const navigation: StudentNavigation = { page, onNavigate, hasDay: !!day, fullscreen, onFullscreen: () => { void toggleFullscreen(); }, onClose: () => { void close(); }, issue: issue || saveIssue };
 
   return (
-    // The stable fullscreen container survives Groups / Today navigation.
+    // The stable fullscreen container survives student-page navigation.
     // oxlint-disable-next-line jsx-a11y/no-static-element-interactions
     <div className="student-presentation" ref={setScreen} onKeyDown={handleKey}>
-      {page === 'today' && day ? <StudentRotationsView
+      {page === 'picker' ? <StudentPickerView
+        students={students}
+        navigation={navigation}
+        selection={studentPick}
+        onPick={setStudentPick}
+      /> : page === 'today' && day ? <StudentRotationsView
         key={dayId}
         day={day}
         navigation={navigation}
