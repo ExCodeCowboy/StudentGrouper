@@ -1,0 +1,187 @@
+/* Dino egg hatch. Stage: pivot layers holding static SVG, animated by keyframes
+   compiled from dinoEggTimeline.ts. Covers: pure CSS eggs in straw nests. */
+
+/* ---------- Stage ---------- */
+.dino-stage { position: absolute; inset: 0; --u: clamp(.7px, min(.165vh, .125vw), 1.75px); }
+.dino-rig { position: absolute; left: 50%; top: 58%; width: 0; height: 0; }
+.dino-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.dino-l { position: absolute; width: 0; height: 0; transform-origin: 0 0; }
+.dino-l > svg { position: absolute; overflow: visible; display: block; }
+.dino-spot { position: absolute; inset: 0; opacity: 0; background: radial-gradient(circle at 50% 46%, rgba(255, 244, 214, .16) calc(var(--u) * 90), rgba(52, 36, 28, 0) calc(var(--u) * 170), rgba(52, 36, 28, .3) calc(var(--u) * 330)); }
+.dino-ring { position: absolute; left: 50%; top: 46%; width: calc(var(--reach, 800px) * 2); height: calc(var(--reach, 800px) * 2); margin: calc(var(--reach, 800px) * -1) 0 0 calc(var(--reach, 800px) * -1); border-radius: 50%; opacity: 0; transform: scale(0);
+  /* One gradient, no blurred shadows: inner glow, orange edge, cream line, gold band, orange edge, outer glow. */
+  background: radial-gradient(closest-side, rgba(255, 214, 107, 0) calc(100% - 64px), rgba(255, 214, 107, .42) calc(100% - 31px), #e8894a calc(100% - 30px), #e8894a calc(100% - 28px), #fff3c4 calc(100% - 27px), #fff3c4 calc(100% - 24px), #ffc445 calc(100% - 23px), #ffc445 calc(100% - 15px), #e8894a calc(100% - 14px), #e8894a calc(100% - 12px), rgba(255, 196, 69, .45) calc(100% - 11px), rgba(255, 196, 69, 0) 100%); }
+/* A thinner echo trails the ring by a beat. */
+.dino-ring-echo { background: radial-gradient(closest-side, rgba(255, 214, 107, 0) calc(100% - 30px), rgba(255, 214, 107, .3) calc(100% - 13px), #f0a24e calc(100% - 12px), #ffd66b calc(100% - 10px), #ffd66b calc(100% - 7px), #f0a24e calc(100% - 5px), rgba(240, 162, 78, 0) 100%); }
+
+/* ---------- Cover ----------
+   .dino-pit clips what sinks out of the card (straw bed, lower shell, baby head, nest);
+   a second egg wrapper outside it carries the top shell so it can be tossed off the card.
+   Every element runs at most one transform animation, so all of them stay on the compositor:
+   the egg drops in, its .dino-rock wrapper knocks, its .dino-jolt wrapper jolts with the stomp,
+   and the bed, egg and nest sink together on .dino-sinker. */
+.dino-cover {
+  position: absolute; inset: 0; border-radius: inherit;
+  --H: var(--reveal-cover-height, 300px); --W: var(--reveal-cover-width, 300px);
+  /* The stage can also tuck a smaller egg under the hero (--dino-egg-h, --dino-nest-y). */
+  --egg-h: var(--dino-egg-h, min(calc(var(--H) * .66), calc(var(--W) * .8), 24vh));
+  --egg-w: calc(var(--egg-h) * .78);
+  /* The egg top stays a quarter egg below the card top (room for the baby's pop and bounce), the nest rim inside the card. */
+  --nest-y: var(--dino-nest-y, max(calc(var(--H) * .42), min(calc(var(--egg-h) * 1.13), calc(var(--H) - var(--egg-h) * .17))));
+  /* The stage moves an egg aside (--dino-egg-x) when the hero would hide it; a lone card's egg sits at 20%. */
+  --egg-x: var(--dino-egg-x, calc(50% - clamp(0, 2 - var(--reveal-count, 2), 1) * 30%));
+  --egg-top: calc(var(--nest-y) + var(--egg-h) * .11 - var(--egg-h));
+  --order: var(--reveal-order, .5);
+  /* --dino-d (egg distance from the focal point) is written by the stage; a shared card-centre distance or the order are fallbacks. */
+  --ts: calc(var(--dino-stomp, 4800ms) + var(--dino-d, var(--reveal-distance, var(--order))) * var(--dino-ripple, 700ms));
+  --dir: clamp(-1, (var(--reveal-center-x, .5) - .5) * 8, 1);
+  --line: max(2px, calc(var(--egg-h) * .016));
+  animation: dino-hide 1ms calc(var(--ts) + var(--dino-local, 1500ms)) both;
+}
+.dino-cover i { position: absolute; display: block; font-style: normal; }
+.dino-pit { position: absolute; inset: 0; overflow: hidden; border-radius: inherit;
+  /* The pit fades as one group (its parts only move), so nothing ever shows through the egg. */
+  animation: dino-pit-fade var(--dino-sink-dur, 420ms) calc(var(--ts) + var(--dino-sink, 1060ms)) linear both; }
+/* Bed, egg and nest sink right out of the card together (the straw's torn edge leads). */
+.dino-sinker { position: absolute; inset: 0; animation: dino-sink var(--dino-sink-dur, 420ms) calc(var(--ts) + var(--dino-sink, 1060ms)) cubic-bezier(.4, 0, .75, .6) both; }
+/* Instant switches (1 ms): opacity only, so they run on the compositor like everything else. */
+@keyframes dino-show { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dino-hide { from { opacity: 1; } to { opacity: 0; } }
+/* The pit only fades once the egg is mostly gone, so no see-through egg lingers over the names. */
+@keyframes dino-sink { 0% { transform: none; } 100% { transform: translateY(calc(var(--H) * 1.02)); } }
+@keyframes dino-pit-fade { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Straw bed + the nest's dark hollow in one background stack. */
+/* A torn straw fringe above the bed: hidden by the pit until the bed sinks. */
+.dino-bed::before { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: max(9px, calc(var(--H) * .06)); margin-bottom: -1px;
+  background: linear-gradient(#f3dca6, #fbefcb 70%);
+  -webkit-clip-path: polygon(0 100%, 0 55%, 3% 18%, 6% 62%, 9% 4%, 13% 50%, 16% 24%, 20% 70%, 24% 8%, 27% 46%, 31% 0, 35% 56%, 38% 28%, 42% 66%, 46% 6%, 50% 52%, 53% 20%, 57% 62%, 61% 2%, 64% 48%, 68% 22%, 72% 68%, 75% 10%, 79% 52%, 83% 0, 86% 58%, 90% 26%, 94% 64%, 97% 12%, 100% 48%, 100% 100%);
+  clip-path: polygon(0 100%, 0 55%, 3% 18%, 6% 62%, 9% 4%, 13% 50%, 16% 24%, 20% 70%, 24% 8%, 27% 46%, 31% 0, 35% 56%, 38% 28%, 42% 66%, 46% 6%, 50% 52%, 53% 20%, 57% 62%, 61% 2%, 64% 48%, 68% 22%, 72% 68%, 75% 10%, 79% 52%, 83% 0, 86% 58%, 90% 26%, 94% 64%, 97% 12%, 100% 48%, 100% 100%); }
+.dino-bed { inset: 0; background:
+  radial-gradient(calc(var(--egg-w) * .5) calc(var(--egg-h) * .06) at var(--egg-x) calc(var(--nest-y) - var(--egg-h) * .005), rgba(40, 22, 8, .55), rgba(40, 22, 8, 0)),
+  radial-gradient(calc(var(--egg-w) * .66) calc(var(--egg-h) * .085) at var(--egg-x) calc(var(--nest-y) - var(--egg-h) * .015), #5e3b1c 60%, #7b4f27 80%, rgba(123, 79, 39, 0) 100%),
+  radial-gradient(calc(var(--egg-w) * .8) calc(var(--egg-h) * .15) at var(--egg-x) var(--nest-y), #b27a3e 86%, #6f4520 89% 95%, rgba(111, 69, 32, 0) 100%),
+  radial-gradient(calc(var(--egg-w) * .95) calc(var(--egg-h) * .09) at var(--egg-x) calc(var(--nest-y) + var(--egg-h) * .12), rgba(120, 78, 30, .28), rgba(120, 78, 30, 0)),
+  radial-gradient(calc(var(--egg-w) * 1.5) calc(var(--egg-h) * .95) at var(--egg-x) calc(var(--nest-y) - var(--egg-h) * .4), rgba(255, 251, 232, .95), rgba(255, 251, 232, 0)),
+  repeating-linear-gradient(118deg, rgba(201, 149, 74, 0) 0 10px, rgba(201, 149, 74, .3) 10px 12px, rgba(201, 149, 74, 0) 12px 26px),
+  repeating-linear-gradient(62deg, rgba(176, 122, 52, 0) 0 15px, rgba(176, 122, 52, .2) 15px 16.5px, rgba(176, 122, 52, 0) 16.5px 34px),
+  linear-gradient(#fbefcb, #f5dea2);
+  box-shadow: inset 0 0 0 2px rgba(214, 170, 90, .35), inset 0 calc(var(--H) * -.12) calc(var(--H) * .12) rgba(214, 160, 80, .18); }
+/* Front rim of the nest: an inset-shadow crescent that overlaps the egg's base. */
+.dino-nest { width: calc(var(--egg-w) * 1.6); height: calc(var(--egg-h) * .3); left: calc(var(--egg-x) - var(--egg-w) * .8); top: calc(var(--nest-y) - var(--egg-h) * .15); border-radius: 50%;
+  box-shadow: inset 0 calc(var(--egg-h) * -.1) 0 #b98244, inset 0 calc(var(--egg-h) * -.116) 0 #6f4520; }
+.dino-nest::before, .dino-nest::after { content: ''; position: absolute; height: var(--line); border-radius: 9px; background: #dcaa62; width: 34%; bottom: 14%; left: 14%; transform: rotate(8deg); }
+.dino-nest::after { left: auto; right: 12%; bottom: 20%; width: 30%; transform: rotate(-10deg); background: #7d4f25; }
+
+/* Both egg wrappers (the pit's and the flying top's) drop in, knock and jolt the same way. */
+.dino-egg { position: absolute; width: var(--egg-w); height: var(--egg-h); left: calc(var(--egg-x) - var(--egg-w) / 2); top: var(--egg-top); transform-origin: 50% 100%;
+  --drop: min(calc(var(--egg-h) * .7), calc(var(--egg-top) + var(--egg-h) * .3));
+  animation: dino-settle var(--dino-settle, 380ms) calc(var(--order) * var(--dino-settle-stagger, 300ms)) both; }
+.dino-rock, .dino-jolt { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.dino-rock { animation: dino-rock calc(var(--dino-rock-span, 1150ms) - var(--order) * var(--dino-rock-stagger, 400ms)) calc(var(--dino-rock-start, 700ms) + var(--order) * var(--dino-rock-stagger, 400ms)) linear forwards; }
+.dino-jolt { animation: dino-jolt var(--dino-jolt, 260ms) var(--dino-stomp, 4800ms) forwards; }
+/* The baby's head (with a lavender crest behind it) pops up as its top shell is tossed away, bounces once
+   for joy, then ducks back into its shell just before the nest sinks away: one run, dino-hatch. */
+.dino-baby { position: absolute; inset: 0; transform-origin: 50% 100%;
+  animation: dino-hatch var(--dino-hatch-dur, 660ms) calc(var(--ts) + var(--dino-pop, 480ms)) both;
+  background:
+    radial-gradient(ellipse 7% 8% at 50% 5.5%, #c9b8f7 55%, #7f68c9 68%, rgba(127, 104, 201, 0) 76%),
+    radial-gradient(ellipse 6% 7% at 37% 9%, #c9b8f7 55%, #7f68c9 68%, rgba(127, 104, 201, 0) 76%),
+    radial-gradient(ellipse 6% 7% at 63% 9%, #c9b8f7 55%, #7f68c9 68%, rgba(127, 104, 201, 0) 76%); }
+/* 660 ms from ts+480: pop 0-39.39% (260 ms), hold, bounce 42.42-78.79% (from ts+760, 240 ms), duck 78.79-100% (from ts+1000, 140 ms). */
+@keyframes dino-hatch {
+  0% { transform: none; animation-timing-function: cubic-bezier(0, .55, .45, 1); }
+  14.97% { transform: translateY(calc(var(--egg-h) * -.13)) scale(.94, 1.08); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  26.79% { transform: translateY(calc(var(--egg-h) * -.08)) scale(1.05, .95); }
+  39.39% { transform: translateY(calc(var(--egg-h) * -.1)); }
+  42.42% { transform: translateY(calc(var(--egg-h) * -.1)); animation-timing-function: cubic-bezier(0, .55, .45, 1); }
+  56.97% { transform: translateY(calc(var(--egg-h) * -.18)) scale(.95, 1.06); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  68.61% { transform: translateY(calc(var(--egg-h) * -.09)) scale(1.06, .94); }
+  78.79% { transform: translateY(calc(var(--egg-h) * -.1)); }
+  85.15% { transform: translateY(calc(var(--egg-h) * -.12)) scale(.97, 1.04); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  100% { transform: translateY(calc(var(--egg-h) * .05)) scale(1.06, .9); }
+}
+/* Pops into being small (one frame of fade at most), then drops into its nest growing to full size and squashes. */
+@keyframes dino-settle {
+  0% { transform: translateY(calc(var(--drop) * -1)) scale(.8); opacity: 0; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  4% { opacity: 1; }
+  55% { transform: translateY(0) scale(1); animation-timing-function: ease-out; }
+  70% { transform: scale(1.1, .88); }
+  86% { transform: scale(.97, 1.03); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes dino-rock {
+  0% { transform: none; animation-timing-function: cubic-bezier(0, .6, .4, 1); }
+  7% { transform: translateY(-3%) rotate(5deg); animation-timing-function: ease-in-out; }
+  15% { transform: rotate(-1deg); animation-timing-function: cubic-bezier(0, .6, .4, 1); }
+  22% { transform: translateY(-3%) rotate(-5deg); animation-timing-function: ease-in-out; }
+  31% { transform: rotate(1deg); }
+  42% { transform: none; animation-timing-function: cubic-bezier(0, .6, .4, 1); }
+  52% { transform: translateY(-2.5%) rotate(4.5deg); animation-timing-function: ease-in-out; }
+  60% { transform: rotate(-1deg); animation-timing-function: cubic-bezier(0, .6, .4, 1); }
+  67% { transform: translateY(-2.5%) rotate(-4.5deg); animation-timing-function: ease-in-out; }
+  76% { transform: rotate(2deg); }
+  84% { transform: rotate(-1.2deg); }
+  92% { transform: rotate(.5deg); }
+  100% { transform: none; }
+}
+@keyframes dino-jolt { 0% { transform: none; } 22% { transform: translateY(5%) scale(1.05, .93); } 58% { transform: translateY(-2%) scale(.99, 1.02); } 100% { transform: none; } }
+
+/* The baby's head: mint dome with cheeks; eyes and happy arcs are siblings, never children.
+   --eye never drops below 6.5 px, so the faces still read in the smallest Today cells. */
+.dino-face { inset: 5% 6% 3% 6%; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(ellipse 34% 20% at 40% 16%, rgba(236, 255, 246, .75), rgba(236, 255, 246, 0)), radial-gradient(ellipse 80% 55% at 42% 30%, #a9edcd, #86d9b4 70%, #6cc9a3); box-shadow: inset 0 0 0 var(--line) #2f4f45, inset calc(var(--egg-w) * -.05) 0 0 rgba(47, 120, 92, .18); }
+.dino-face::before, .dino-face::after { content: ''; position: absolute; top: 31%; width: 13%; height: 6.5%; border-radius: 50%; background: #ff9fae; opacity: .85; left: 9%; }
+.dino-face::after { left: auto; right: 9%; }
+.dino-eyes, .dino-happy { --eye: max(6.5px, calc(var(--egg-w) * .13)); left: calc(30% - var(--eye) / 2); right: calc(30% - var(--eye) / 2); height: var(--eye); top: calc(29% - var(--eye) / 2); }
+.dino-eyes::before, .dino-eyes::after { content: ''; position: absolute; top: 0; left: 0; width: var(--eye); height: 100%; border-radius: 50%; background: radial-gradient(circle at 64% 30%, #fff 0 17%, rgba(255, 255, 255, 0) 21%), radial-gradient(ellipse 50% 28% at 50% 84%, #6d5c96 60%, rgba(109, 92, 150, 0) 100%), #2a2130; transform: scaleY(0); animation: dino-eye 440ms calc(var(--ts) + var(--dino-eyes, 180ms)) both; }
+.dino-eyes::after { left: auto; right: 0; }
+@keyframes dino-eye { 0% { transform: scaleY(0); } 10% { transform: scaleY(1.12); } 18%, 42% { transform: scaleY(1); } 48% { transform: scaleY(.1); } 56%, 58% { transform: scaleY(1); opacity: 1; } 59%, 100% { transform: scaleY(1); opacity: 0; } }
+/* Happy ^^ eyes plus a little smile: the lower half of an elliptical ring, clipped by its own background box. */
+.dino-happy { opacity: 0; animation: dino-show 1ms calc(var(--ts) + var(--dino-happy, 440ms)) both; height: calc(var(--eye) * 1.46);
+  background: radial-gradient(ellipse 50% 100% at 50% 0, rgba(42, 33, 48, 0) 50%, #2a2130 57% 82%, rgba(42, 33, 48, 0) 89%) 50% 100% / calc(var(--eye) * 1.15) calc(var(--eye) * .46) no-repeat; }
+.dino-happy::before, .dino-happy::after { content: ''; position: absolute; top: calc(var(--eye) * .1); left: 0; width: calc(var(--eye) * 1.08); height: calc(var(--eye) * .8); border: max(2px, calc(var(--egg-h) * .024)) solid #2a2130; border-color: #2a2130 transparent transparent; border-radius: 50%; }
+.dino-happy::after { left: auto; right: 0; }
+
+.dino-shell { inset: 0; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background:
+    radial-gradient(ellipse 22% 15% at 32% 22%, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0)),
+    radial-gradient(ellipse 5.5% 4.2% at 28% 30%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 4% 3.2% at 62% 16%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 6.5% 5% at 72% 30%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 4.5% 3.4% at 16% 56%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 7% 5.2% at 40% 70%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 5% 4% at 76% 66%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 3.5% 2.8% at 56% 86%, var(--team-color, #e8a33d) 90%, transparent 100%),
+    radial-gradient(ellipse 3% 2.4% at 46% 28%, rgba(94, 70, 54, .35) 90%, transparent 100%),
+    radial-gradient(ellipse 2.4% 2% at 84% 56%, rgba(94, 70, 54, .3) 90%, transparent 100%),
+    radial-gradient(ellipse 2.4% 2% at 24% 80%, rgba(94, 70, 54, .3) 90%, transparent 100%),
+    linear-gradient(rgba(255, 250, 238, .76), rgba(255, 250, 238, .76)),
+    var(--team-color, #e8a33d);
+  box-shadow: inset 0 0 0 var(--line) #5e4636, inset calc(var(--egg-w) * -.08) calc(var(--egg-h) * -.07) 0 rgba(120, 80, 40, .1); }
+/* Symmetric zigzag seam: x 0..100% in tenths, y 44,38,49,38,...,44%; both eyes sit under a 38% peak. */
+.dino-shell-top { -webkit-clip-path: polygon(0 0, 100% 0, 100% 44%, 90% 38%, 80% 49%, 70% 38%, 60% 49%, 50% 38%, 40% 49%, 30% 38%, 20% 49%, 10% 38%, 0 44%); clip-path: polygon(0 0, 100% 0, 100% 44%, 90% 38%, 80% 49%, 70% 38%, 60% 49%, 50% 38%, 40% 49%, 30% 38%, 20% 49%, 10% 38%, 0 44%); transform-origin: 50% 44%; animation: dino-top var(--dino-top-dur, 800ms) var(--ts) both; }
+.dino-shell-bottom { -webkit-clip-path: polygon(0 calc(44% - 1.5px), 10% calc(38% - 1.5px), 20% calc(49% - 1.5px), 30% calc(38% - 1.5px), 40% calc(49% - 1.5px), 50% calc(38% - 1.5px), 60% calc(49% - 1.5px), 70% calc(38% - 1.5px), 80% calc(49% - 1.5px), 90% calc(38% - 1.5px), 100% calc(44% - 1.5px), 100% 100%, 0 100%); clip-path: polygon(0 calc(44% - 1.5px), 10% calc(38% - 1.5px), 20% calc(49% - 1.5px), 30% calc(38% - 1.5px), 40% calc(49% - 1.5px), 50% calc(38% - 1.5px), 60% calc(49% - 1.5px), 70% calc(38% - 1.5px), 80% calc(49% - 1.5px), 90% calc(38% - 1.5px), 100% calc(44% - 1.5px), 100% 100%, 0 100%); }
+/* The 2.0 s hairline crack: on the bottom shell just under the seam, right half only. The element appears at
+   2.0 s and its drawing goes as the lid lifts (two one-shot opacity switches). */
+.dino-crack { inset: 0; opacity: 0; animation: dino-show 1ms var(--dino-crack, 2000ms) both; }
+.dino-crack::after { content: ''; position: absolute; inset: 0; background: #5e4636; -webkit-clip-path: polygon(50% 38%, 60% 49%, 70% 38%, 80% 49%, 90% 38%, 100% 44%, 100% calc(44% + max(1.6px, 2.2%)), 90% calc(38% + max(1.6px, 2.2%)), 80% calc(49% + max(1.6px, 2.2%)), 70% calc(38% + max(1.6px, 2.2%)), 60% calc(49% + max(1.6px, 2.2%)), 50% calc(38% + max(1.6px, 2.2%))); clip-path: polygon(50% 38%, 60% 49%, 70% 38%, 80% 49%, 90% 38%, 100% 44%, 100% calc(44% + max(1.6px, 2.2%)), 90% calc(38% + max(1.6px, 2.2%)), 80% calc(49% + max(1.6px, 2.2%)), 70% calc(38% + max(1.6px, 2.2%)), 60% calc(49% + max(1.6px, 2.2%)), 50% calc(38% + max(1.6px, 2.2%)));
+  animation: dino-hide 1ms calc(var(--ts) + 60ms) both; }
+/* The lid lifts while the eyes peek out, then (as the head pops) it is tossed in a short spinning arc to
+   the side and shrinks away as it falls: a quick flip-off, never a big wedge hanging over a neighbour. */
+@keyframes dino-top {
+  0% { transform: none; animation-timing-function: cubic-bezier(0, .6, .4, 1); }
+  7.5% { transform: translate(0, -3%) rotate(-1deg) scale(1); }
+  25% { transform: translate(0, -18%) rotate(-2deg) scale(1); }
+  60% { transform: translate(0, -19%) rotate(-3deg) scale(1); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  74% { transform: translate(calc(var(--dir) * 44%), -40%) rotate(calc(var(--dir) * 75deg - 12deg)) scale(.9); animation-timing-function: cubic-bezier(.45, 0, .75, .6); }
+  88% { transform: translate(calc(var(--dir) * 64%), -34%) rotate(calc(var(--dir) * 150deg - 22deg)) scale(.55); animation-timing-function: linear; }
+  96% { transform: translate(calc(var(--dir) * 72%), -26%) rotate(calc(var(--dir) * 190deg - 30deg)) scale(.22); opacity: 1; }
+  100% { transform: translate(calc(var(--dir) * 75%), -22%) rotate(calc(var(--dir) * 200deg - 32deg)) scale(.12); opacity: 0; }
+}
+.dino-chips { inset: 0; }
+.dino-chips::before, .dino-chips::after { content: ''; position: absolute; left: 36%; top: 40%; width: 11%; height: 9%; background: #fff4e2; box-shadow: inset 0 0 0 1.5px #5e4636; -webkit-clip-path: polygon(0 30%, 60% 0, 100% 70%, 30% 100%); clip-path: polygon(0 30%, 60% 0, 100% 70%, 30% 100%); opacity: 0; animation: dino-chip-l 420ms calc(var(--ts) + 40ms) both; }
+.dino-chips::after { left: 56%; animation-name: dino-chip-r; }
+/* Chips pop out, arc, and shrink away as they fall (opaque until the last frames). */
+@keyframes dino-chip-l { 0% { opacity: 0; transform: none; } 1% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(0, .6, .4, 1); } 40% { transform: translate(-120%, -160%) rotate(-120deg) scale(1); animation-timing-function: cubic-bezier(.6, 0, 1, .5); } 96% { opacity: 1; } 100% { opacity: 0; transform: translate(-220%, 120%) rotate(-260deg) scale(.2); } }
+@keyframes dino-chip-r { 0% { opacity: 0; transform: none; } 1% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(0, .6, .4, 1); } 40% { transform: translate(130%, -180%) rotate(140deg) scale(1); animation-timing-function: cubic-bezier(.6, 0, 1, .5); } 96% { opacity: 1; } 100% { opacity: 0; transform: translate(240%, 110%) rotate(280deg) scale(.2); } }

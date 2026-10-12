@@ -41,14 +41,13 @@ jobs:
           tagName: v__VERSION__
           releaseName: Student Grouper v__VERSION__
           releaseBody: |
-            A confetti student picker and a reveal display fix for Student Grouper 0.3.3.
+            Thirteen redesigned classroom reveals for Student Grouper 0.4.0.
 
-            - Open Student view and choose Pick a student for a quick random choice with a large name display and a confetti reveal.
-            - Every present student has an equal chance on each draw, including students who are not assigned to a group. Absent students are excluded, and Pick again starts a fresh draw.
-            - Move between Groups, Today, and Pick a student without leaving student view. The picker keeps the shared reveal-sound mute preference and respects reduced motion without changing the selected effect for groups or rotations.
-            - Reveal animations no longer produce an unwanted horizontal scrollbar. Wide daily rotation charts still scroll normally.
+            - New reveals: Pixel Quest (a level-clear platformer), Block mine (dig and build), a hard Dot-to-dot that keeps the picture a mystery until the end, Dino egg hatch, Wizard owl with magic letters, and Squishy bounce.
+            - Rebuilt favorites: a 3-2-1 countdown and storybook Saturn V moon landing, a hungry Black-hole that burps out sparkles, Kitten & yarn, Balloon pop party, Fairy dust, Ocean wave with a surfing otter, and a bigger Confetti party for Pick a student.
+            - Every reveal has a matching sound and finishes within ten seconds. Rainbow zipper and Dragon hiccup have been retired; a saved choice for either falls back to Surprise me!.
 
-            Saved classrooms and earlier exports remain compatible. No group arrangement or planned day is needed to use the picker. All nine reveal effects and existing rotation timers and transition music remain available.
+            Saved classrooms and earlier exports remain compatible. Reduced motion, the reveal sound mute, rotation timers and transition music work as before.
 
             Mac downloads:
 

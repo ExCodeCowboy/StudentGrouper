@@ -1,0 +1,76 @@
+/* Hard dot-to-dot. The stage runs on one scene clock; the printed dots, wash and covers are CSS-timed from mount. */
+.dtd-scene { position: absolute; inset: 0; font-family: var(--font-app, "Segoe UI", system-ui, sans-serif); }
+.dtd-wash { position: absolute; inset: 0; background: #fffaf0; animation: dtd-wash 8000ms linear both; }
+.dtd-page { position: absolute; left: 16px; top: 128px; width: calc(100% - 32px); height: calc(100% - 218px); overflow: visible; }
+.dtd-layer { will-change: transform; }
+/* The page layers pop together at the snap (about the page's centre). */
+.dtd-stack { position: absolute; inset: 0; transform-origin: 50% calc(50% + 19px); will-change: transform; }
+
+/* The numbered page. Printed dots pop in once (no fill afterwards, so nothing stays animated); runs grey out once reached. */
+.dtd-pop { animation: dtd-fade 160ms var(--appear) linear backwards; }
+.dtd-pop-core, .dtd-pop-star { transform-box: fill-box; transform-origin: center; }
+.dtd-pop-core { animation: dtd-dot-sprout 280ms var(--appear) cubic-bezier(.3, 1.5, .55, 1) backwards; }
+.dtd-pop-star { animation: dtd-dot-in 300ms var(--appear) cubic-bezier(.3, 1.5, .55, 1) backwards; }
+.dtd-core { fill: #2f3150; }
+.dtd-start { fill: #f7b92f; stroke: #a8690f; stroke-width: 2; stroke-linejoin: round; }
+/* Sprouting outline dots and racing blips are timed by scene-anchored Web Animations (dotToDot.tsx). */
+.dtd-grow { transform-box: fill-box; transform-origin: center; }
+.dtd-sprout { fill: none; stroke: #ef5b3c; stroke-width: 2.5; opacity: 0; }
+.dtd-blip { fill: #2f3150; opacity: 0; }
+.dtd-dots text, .dtd-pulses text { font-size: 13px; font-weight: 700; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: #fffaf0; stroke-width: 3.5px; stroke-linejoin: round; }
+.dtd-dots text { fill: #4d516b; }
+.dtd-dots .is-done text { fill: #b9bbcb; }
+.dtd-pulses text { fill: #ef5b3c; }
+.dtd-lines polyline { fill: none; stroke: #2f3150; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+.dtd-lines .dtd-trail { stroke: #ffcf4a; stroke-width: 16; }
+
+/* The pencil and the big number: small sprites placed by transforms in the page box. */
+.dtd-frame { pointer-events: none; }
+.dtd-sprite-box { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
+.dtd-sprite { position: absolute; overflow: visible; }
+.dtd-callout { font-size: 48px; font-weight: 900; fill: #ef5b3c; stroke: #fffaf0; stroke-width: 11px; paint-order: stroke; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central; }
+
+.dtd-banner { position: absolute; left: 20px; top: 78px; display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border: 3px solid #2f3150; border-radius: 16px; background: #fffdf6; box-shadow: 0 5px 0 #2f3150; color: #2f3150; font-size: clamp(17px, 1.7vw, 26px); font-weight: 850; line-height: 1.1; white-space: nowrap; transform-origin: 20% 50%; }
+.dtd-banner.is-done { background: #ffe79c; }
+.dtd-banner-pencil { width: 2.4em; height: .5em; overflow: visible; }
+.dtd-banner.is-guess { background: #fff4d6; }
+.dtd-chip { padding: 4px 11px 5px; border-radius: 999px; background: #ef5b3c; color: #fffdf6; font-size: .78em; }
+/* While the class guesses, the "?" gives a little nod every half second (a compositor animation). */
+.dtd-chip.is-guess { display: inline-grid; place-items: center; width: 1.45em; height: 1.45em; padding: 0; background: #2f3150; color: #ffd166; font-size: .9em; animation: dtd-nod 500ms linear infinite; }
+.dtd-hard { display: inline-flex; align-items: center; gap: 2px; color: #a8690f; font-size: .66em; letter-spacing: .1em; text-transform: uppercase; }
+.dtd-hard svg { width: 1.25em; height: 1.25em; fill: #f7b92f; stroke: #a8690f; stroke-width: 1.6; stroke-linejoin: round; }
+.dtd-hard svg:first-of-type { margin-left: 5px; }
+
+/* Covers: a sheet from a hard activity book. Fixed, so it can leave the Today table's scroll box. */
+.dtd-cover { position: fixed; left: var(--reveal-cover-left); top: var(--reveal-cover-top); width: var(--reveal-cover-width); height: var(--reveal-cover-height); border-radius: 14px; --dtd-stagger: var(--reveal-order, .5); --dtd-delay: calc(var(--dtd-exit-start) + var(--dtd-stagger) * var(--dtd-exit-spread)); }
+.dtd-cover.by-radial { --dtd-stagger: max(calc((var(--reveal-order, .5) - .5) * 2), calc((.5 - var(--reveal-order, .5)) * 2)); }
+.dtd-sheet { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; border-radius: inherit; background-color: #fffdf6; background-image: radial-gradient(circle, #c9d1e3 1.3px, transparent 1.7px); background-size: 18px 18px; background-position: 9px 9px; box-shadow: inset 0 0 0 2px #e4dcc8, 0 3px 0 #ded3bb; animation: dtd-shiver 320ms 6000ms ease-in-out both; }
+.dtd-sheet::before { content: ''; position: absolute; inset: 7px; border: 2px dashed #ddd2b6; border-radius: 10px; }
+/* The dotted "?" says "a puzzle is coming", then steps back to a whisper so it never competes with the real page. */
+.dtd-sheet-question { position: relative; height: calc(var(--reveal-question-size, 60px) * 1.2); width: auto; overflow: visible; animation: dtd-question-fade 500ms 300ms ease-out both; }
+.dtd-sheet-question > path:first-child { fill: none; stroke: #b0925a; stroke-width: 5; stroke-linecap: round; stroke-dasharray: .1 9.2; }
+.dtd-sheet-question circle { fill: #b0925a; }
+.dtd-sheet-doodle { position: absolute; right: 12px; bottom: 10px; width: 22px; height: 22px; fill: none; stroke: #e3a79c; stroke-width: 2.4; stroke-linejoin: round; transform: rotate(-14deg); }
+
+/* Each picture clears the sheets its own way; times come from COVER_EXITS (inline vars on .dtd-cover). */
+/* Whale: washed off by the splash as it dives (starts on the splash, per COVER_EXITS). */
+.dtd-cover.is-whale { transform-origin: 50% 0; animation: dtd-exit-wash var(--dtd-exit-duration) var(--dtd-delay) linear both; }
+.dtd-cover.is-whale .dtd-sheet::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 22% 30%, #8fd3f7 0 7px, transparent 8px), radial-gradient(circle at 70% 18%, #8fd3f7 0 5px, transparent 6px), radial-gradient(circle at 58% 64%, #8fd3f7 0 9px, transparent 10px), radial-gradient(circle at 30% 80%, #8fd3f7 0 5px, transparent 6px), radial-gradient(circle at 84% 72%, #8fd3f7 0 6px, transparent 7px), linear-gradient(#bfe6fa55, #bfe6fa55); animation: dtd-drops 260ms calc(var(--dtd-delay) - 130ms) ease-out both; }
+.dtd-cover.is-train { transform-origin: 0 100%; animation: dtd-exit-wake var(--dtd-exit-duration) var(--dtd-delay) cubic-bezier(.5, 0, .75, .35) both; }
+.dtd-cover.is-rocket { transform-origin: 50% 50%; animation: dtd-exit-blast var(--dtd-exit-duration) var(--dtd-delay) cubic-bezier(.3, 0, .7, .45) both; }
+.dtd-cover.is-butterfly { transform-origin: 50% 40%; animation: dtd-exit-flutter var(--dtd-exit-duration) var(--dtd-delay) cubic-bezier(.4, 0, .6, 1) both; }
+
+/* The wash: in by 0.3 s, holds while the page is up, out as the sheets leave (6.76-7.43 s). */
+@keyframes dtd-wash { 0% { opacity: 0; } 3.8% { opacity: .62; } 84.5% { opacity: .62; } 92.9%, 100% { opacity: 0; } }
+@keyframes dtd-fade { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes dtd-dot-sprout { 0% { opacity: 0; transform: scale(0); } 55% { opacity: 1; transform: scale(1.9); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes dtd-dot-in { 0% { opacity: 0; transform: scale(0); } 60% { opacity: 1; transform: scale(1.6); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes dtd-nod { 0%, 100% { transform: rotate(0deg); animation-timing-function: ease-out; } 25% { transform: rotate(7deg); animation-timing-function: ease-in-out; } 75% { transform: rotate(-7deg); animation-timing-function: ease-in; } }
+@keyframes dtd-shiver { 0%, 100% { transform: none; } 30% { transform: scale(1.03) rotate(-1deg); } 65% { transform: scale(.99) rotate(.8deg); } }
+@keyframes dtd-question-fade { 0% { opacity: 1; } 100% { opacity: .15; } }
+@keyframes dtd-drops { 0% { opacity: 0; transform: translateY(-14px); } 100% { opacity: 1; transform: none; } }
+@keyframes dtd-exit-wash { 0% { transform: none; animation-timing-function: ease-out; } 14% { transform: translateY(-4%) skewX(1.5deg); animation-timing-function: cubic-bezier(.4, 0, .75, .6); } 100% { transform: translateY(125vh) rotate(9deg); } }
+@keyframes dtd-exit-wake { 0% { transform: none; } 20% { transform: translateX(-3%) skewX(5deg); } 100% { transform: translate(115vw, -20vh) rotate(26deg) skewX(-10deg); } }
+/* Rocket: the blast blows the sheets down and outward, spinning, right off the bottom (no fade; the names at the top clear first). */
+@keyframes dtd-exit-blast { 0% { transform: none; } 14% { transform: translateY(-2%) scale(1.02); } 100% { transform: translate(calc(var(--reveal-target-x, 0px) * -1.1), 125vh) rotate(calc((var(--reveal-order, .5) - .5) * 160deg + 12deg)) scale(.75); } }
+@keyframes dtd-exit-flutter { 0% { transform: none; } 20% { transform: translateY(-6%) rotate(-6deg); } 45% { transform: translate(3vw, -34vh) rotate(9deg); } 72% { transform: translate(-3vw, -72vh) rotate(-8deg); } 100% { transform: translate(4vw, -118vh) rotate(13deg); } }

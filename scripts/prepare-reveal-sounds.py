@@ -1,11 +1,16 @@
 """Prepare bundled CC0 clips; development dependencies: numpy and soundfile.
 
 Usage: python scripts/prepare-reveal-sounds.py work/open-sounds
-Every audible sample comes from a credited clip; no generated tones or noise.
+       python scripts/prepare-reveal-sounds.py work/open-sounds --only pixel-quest --recipe work/sound-recipes/pixel-quest.json --preview work/sound-preview
+Every audible sample comes from a credited clip. Recorded clips cover real-world
+sounds; only electronic sounds (a video game's chiptune, arcade bleeps) may be
+authored by the deterministic scripts in scripts/authored-sounds/, dedicated CC0.
+--preview writes just the WAVs to a scratch folder, leaving the bundled files,
+manifests and version fingerprints untouched.
 """
+import argparse
 import hashlib
 import json
-import sys
 from pathlib import Path
 import numpy as np
 import soundfile as sf
@@ -32,8 +37,8 @@ def speaker_rumble(samples, rate):
     return base + .45 * texture
 
 
-def prepare(source_root, recipe):
-    output = ROOT / "public/sounds/reveals"
+def prepare(source_root, recipe, preview=None):
+    output = preview or ROOT / "public/sounds/reveals"
     output.mkdir(parents=True, exist_ok=True)
     manifest = []
     for name, profile in recipe.items():
@@ -95,6 +100,8 @@ def prepare(source_root, recipe):
                  "peak": round(float(np.max(np.abs(track))), 6), "rms": round(float(np.sqrt(np.mean(track * track))), 6)}
         manifest.append(entry)
         print(f"{name}: {target.stat().st_size:,} bytes; peak {entry['peak']}; RMS {entry['rms']}")
+    if preview:
+        return
     (output / "CUES.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     source_path = output / "SOURCES.json"
     sources = json.loads(source_path.read_text(encoding="utf-8"))
@@ -114,4 +121,23 @@ def prepare(source_root, recipe):
     (ROOT / "src/revealEffects/revealSoundVersions.json").write_text(json.dumps(versions, indent=2) + "\n", encoding="utf-8")
 
 if __name__ == "__main__":
-    prepare(Path(sys.argv[1]).resolve(), json.loads((ROOT / "scripts/reveal-sound-cues.json").read_text()))
+    parser = argparse.ArgumentParser(description="Build the reveal sound tracks from credited source clips.")
+    parser.add_argument("source_root", help="folder holding the downloaded/authored source clips (work/open-sounds)")
+    parser.add_argument("--recipe", default=str(ROOT / "scripts/reveal-sound-cues.json"))
+    parser.add_argument("--only", help="comma-separated reveal ids to build")
+    parser.add_argument("--preview", help="write only these WAVs to this folder; no manifests or bundled files")
+    options = parser.parse_args()
+    recipe = json.loads(Path(options.recipe).read_text(encoding="utf-8"))
+    if options.only:
+        wanted = options.only.split(",")
+        missing = [name for name in wanted if name not in recipe]
+        if missing:
+            raise SystemExit(f"Not in recipe: {missing}")
+        recipe = {name: recipe[name] for name in wanted}
+    elif options.preview is None:
+        full = json.loads((ROOT / "scripts/reveal-sound-cues.json").read_text(encoding="utf-8"))
+        if set(recipe) != set(full):
+            raise SystemExit("A full build must use the complete recipe")
+    if options.only and options.preview is None:
+        raise SystemExit("--only requires --preview; full builds rewrite the shared manifests")
+    prepare(Path(options.source_root).resolve(), recipe, Path(options.preview).resolve() if options.preview else None)

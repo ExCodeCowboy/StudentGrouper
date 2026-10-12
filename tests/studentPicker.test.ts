@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { confettiEffect } from '../src/revealEffects/confetti';
+import { CONFETTI_BURST_MS, COVER_POP_MS, POP_SKIN, coverPopMs } from '../src/revealEffects/confettiTimeline';
 import { eligiblePickerStudents, pickStudent } from '../src/studentPicker';
 import { student } from './fixtures';
 
@@ -63,4 +66,15 @@ void test('repeat picks are independent and never shuffle or remove students fro
   assert.equal(pickStudent(pool, () => 0.4)?.id, 'b');
   assert.equal(pickStudent(pool, () => 0.9)?.id, 'c');
   assert.equal(JSON.stringify(pool), before);
+});
+
+void test('the picker always plays the confetti party and its lockout stays short', () => {
+  const view = readFileSync('src/views/StudentPickerView.tsx', 'utf8');
+  assert.match(view, /useRevealEffects\('confetti'\)/);
+  assert.equal(confettiEffect.id, 'confetti');
+  assert.equal(confettiEffect.sound, 'confetti');
+  assert.ok(confettiEffect.durationMs <= 4500, 'Pick again unlocks within four and a half seconds');
+  // The cover's balloon skin is gone POP_SKIN[1] of the way into its pop: the name is clear at about 2.16 s.
+  assert.ok(coverPopMs(.5) + POP_SKIN[1] * COVER_POP_MS <= 2160, 'the centred picked name is uncovered by 2.16 s');
+  assert.ok(coverPopMs(.5) + COVER_POP_MS - CONFETTI_BURST_MS <= 340, 'and within 0.34 s of the drum hit');
 });

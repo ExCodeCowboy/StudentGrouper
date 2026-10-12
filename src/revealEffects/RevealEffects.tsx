@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { ChevronDown, Volume2, VolumeX } from 'lucide-react';
 import { revealEffects } from './registry';
+import { measureRevealCovers } from './revealTargets';
 import type { RevealEffect, RevealPlayback } from './types';
 import './revealEffects.css';
 
@@ -35,16 +36,8 @@ export function RevealEffectLayer({ playback }: { playback: RevealPlayback | nul
 export function RevealCover({ effect }: { effect: RevealEffect }) {
   const cover = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    const element = cover.current;
-    if (!element) return;
-    const rect = element.getBoundingClientRect();
-    element.style.setProperty('--reveal-cover-left', `${rect.left}px`);
-    element.style.setProperty('--reveal-cover-top', `${rect.top}px`);
-    element.style.setProperty('--reveal-cover-width', `${rect.width}px`);
-    element.style.setProperty('--reveal-cover-height', `${rect.height}px`);
-    element.style.setProperty('--reveal-target-x', `${window.innerWidth * .5 - rect.left - rect.width / 2}px`);
-    element.style.setProperty('--reveal-target-y', `${window.innerHeight * .46 - rect.top - rect.height / 2}px`);
-    element.style.setProperty('--reveal-left', `${Math.max(0, Math.min(1, rect.left / window.innerWidth))}`);
+    // The first cover of a reveal measures them all, batching reads before writes.
+    if (cover.current && !cover.current.dataset.revealMeasured) measureRevealCovers();
   }, []);
   const Cover = effect.Cover;
   return <div ref={cover} className="reveal-cover" data-reveal-effect={effect.id} aria-hidden="true"><Cover /></div>;

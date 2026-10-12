@@ -1,16 +1,212 @@
-.lift-off-balloon { position: absolute; left: var(--balloon-x); bottom: -190px; width: 70px; height: 100px; animation: balloon-float 2500ms var(--balloon-delay) ease-in both; }
-.lift-off-balloon > i { position: absolute; width: 70px; height: 85px; border-radius: 50% 50% 45% 45%; background: radial-gradient(ellipse at 30% 25%, #ffffff85, transparent 45%), var(--balloon-color); box-shadow: inset -8px -8px 0 #0000000a; }
-.lift-off-balloon > i::after { content: ''; position: absolute; left: 28px; bottom: -6px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 10px solid var(--balloon-color); }
-.lift-off-balloon > span { position: absolute; top: 90px; left: 34px; height: 100px; width: 18px; border-left: 2px solid #a6b8b2; border-radius: 50%; }
-.balloon-cover-lift { position: absolute; inset: 0; animation: balloon-cover-lift 2200ms ease-in both; transform-origin: center top; }
-.balloon-cover-paper { position: absolute; inset: 0; border: 2px dashed #d5be8b; border-radius: 20px; background: repeating-linear-gradient(-45deg, #fff2d2 0 12px, #fff7e4 12px 24px); display: grid; place-items: center; }
-.balloon-cover-paper > strong { font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; color: #a7854d; }
-.balloon-cover-paper > span { position: absolute; bottom: 10%; right: 12%; font-size: 36px; color: #d1ab59; }
-.balloon-cover-bunch { position: absolute; left: 50%; top: -85px; width: 120px; height: 120px; transform: translateX(-50%); z-index: 1; }
-.balloon-cover-bunch > i { position: absolute; width: 58px; height: 70px; border-radius: 50%; background: radial-gradient(ellipse at 30% 25%, #ffffff88, transparent 55%), #d989ae; left: 0; top: 20px; transform: rotate(-15deg); }
-.balloon-cover-bunch > i:nth-child(2) { background-color: #76b8cf; left: 62px; transform: rotate(15deg); }
-.balloon-cover-bunch > i:nth-child(3) { background-color: #e5b758; left: 32px; top: -10px; }
-.balloon-cover-bunch > span { position: absolute; left: 32px; top: 85px; width: 44px; height: 45px; border-left: 2px solid #a4b1a8; transform: rotate(-27deg); }
-.balloon-cover-bunch > span:last-child { left: 61px; transform: rotate(27deg); }
-@keyframes balloon-float { 0% { transform: translateY(0) rotate(-8deg); opacity: 0; } 8% { opacity: 1; } 55% { transform: translate(var(--balloon-sway), -65vh) rotate(8deg); } 100% { transform: translate(0, -140vh) rotate(-5deg); opacity: 0; } }
-@keyframes balloon-cover-lift { 0% { transform: translateY(0) rotate(0); opacity: 1; } 14% { transform: translateY(-8px) rotate(-3deg); } 25% { transform: translateY(-3px) rotate(3deg); } 45% { transform: translateY(-70px) rotate(-4deg); opacity: 1; } 100% { transform: translateY(-120vh) rotate(9deg); opacity: 0; } }
+/* Balloon pop party. Beat times mirror balloonsTimeline.ts (checked by tests/reveal-balloons.test.ts). */
+
+/* ---- Stage ---- */
+.bp-stage { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* The rig box sits at the top left; RigPainter moves it (px) so the face lands on the scene's focal point. */
+.bp-rig { position: absolute; left: 0; top: 0; width: 52vmin; height: 56vmin; transform-origin: 26vmin 40vmin; transform: translateY(200vh); will-change: transform; }
+.bp-rig svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+/* The bunch, the heart, the body and the feather move as compositor layers; only changing features repaint. */
+.bp-layer { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+.bp-feather { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; transform: scale(0); will-change: transform; }
+.bp-feather > svg { position: absolute; left: -3vmin; top: -10vmin; width: 6vmin; height: 11.2vmin; overflow: visible; }
+
+/* The sneeze ring: scale is linear so it crosses each hero balloon exactly when that balloon pops.
+   One element: a bright band with a warm edge, a thin veil of air inside it, and tapered wind streaks on the band.
+   It is drawn at a third of its final size and scaled up 3x (the soft gradient hides the upscale), so its layer is
+   cheap to rasterize; the rig's clock creates its animation (data-live) 200 ms before the sneeze, so the layer is
+   ready before the payoff frame. */
+.bp-ring {
+  position: absolute; box-sizing: border-box; border-radius: 50%;
+  background: radial-gradient(closest-side, #ffffff00, #ffffff08 60%, #ffffff26 85%, #fffffff0 92%, #fff 95.5%, #ffcf7a 97.6%, #ffcf7a00);
+  opacity: 0; transform: scale(0); animation: bp-ring 500ms linear calc(3660ms - var(--bp-t0, 0ms)) forwards;
+}
+.bp-ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+@keyframes bp-ring { 0% { opacity: 1; transform: scale(0); } 88% { opacity: .9; } 100% { opacity: 0; transform: scale(3); } }
+
+/* One card's confetti; its pieces only get their animation when the rig's clock arms the group (data-live). */
+.bp-bits { position: static; }
+.bp-confetto { position: absolute; width: 1vmin; height: 1.6vmin; margin: -.8vmin 0 0 -.5vmin; transform: scale(0); animation: bp-confetti 1000ms ease-out calc(3660ms - var(--bp-t0, 0ms)) forwards; }
+.bp-confetto.is-rect, .bp-confetto.is-dot { border-radius: 2px; background: currentColor; }
+.bp-confetto.is-dot { width: 1.1vmin; height: 1.1vmin; margin: -.55vmin 0 0 -.55vmin; }
+.bp-confetto.is-dot { border-radius: 50%; }
+.bp-confetto.is-sparkle { width: 1.8vmin; height: 1.8vmin; margin: -.9vmin 0 0 -.9vmin; }
+.bp-confetto.is-streamer { width: 4.6vmin; height: 1.7vmin; margin: -.85vmin 0 0 -2.3vmin; }
+.bp-confetto > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* Burst out, then flutter down: the fall follows gravity (s squared) and the paper flips (scaleY); each piece
+   shrinks away at the end (never a see-through fade). */
+@keyframes bp-confetti {
+  0% { transform: translate(0, 0) rotate(var(--tilt)) scale(.4); animation-timing-function: cubic-bezier(.12, .75, .3, 1); }
+  18% { transform: translate(var(--bx), var(--by)) rotate(calc(var(--tilt) + var(--spin) * .3)) scale(1, 1); animation-timing-function: linear; }
+  34% { transform: translate(calc(var(--bx) + var(--sway) * .6), calc(var(--by) + var(--fall) * .04)) rotate(calc(var(--tilt) + var(--spin) * .44)) scale(1, .25); animation-timing-function: linear; }
+  50% { transform: translate(calc(var(--bx) + var(--sway) * .1), calc(var(--by) + var(--fall) * .15)) rotate(calc(var(--tilt) + var(--spin) * .57)) scale(1, 1); animation-timing-function: linear; }
+  66% { transform: translate(calc(var(--bx) - var(--sway) * .4), calc(var(--by) + var(--fall) * .34)) rotate(calc(var(--tilt) + var(--spin) * .71)) scale(1, .25); animation-timing-function: linear; }
+  82% { transform: translate(calc(var(--bx) + var(--sway) * .3), calc(var(--by) + var(--fall) * .61)) rotate(calc(var(--tilt) + var(--spin) * .86)) scale(1, 1); animation-timing-function: ease-in; }
+  100% { transform: translate(calc(var(--bx) + var(--sway)), calc(var(--by) + var(--fall))) rotate(calc(var(--tilt) + var(--spin))) scale(0, 0); }
+}
+
+/* ---- Cover ---- */
+.bp-cover { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; --bp-in: calc(100ms + var(--reveal-order, .5) * 300ms); --bp-pop: 3910ms; }
+/* Where the rig's clock arms them, late delays count from the arm time: the inhale for every card (INHALE_ARM_MS),
+   and the pops of a card that could not be measured (popArmMs of the default --bp-pop; a measured card sets its own). */
+.bp-cover[data-lazy] { --bp-ti: 2420ms; --bp-tp: 3630ms; }
+/* Once every piece of a card has popped and flown, the rig's clock takes the whole cover away (nothing is left to see). */
+.bp-cover[data-done] { display: none; }
+/* The paper and its "?" never move, so nothing under the cover can peek out; only the balloons above it are drawn in. */
+.bp-paper {
+  position: absolute; inset: 0; box-sizing: border-box; border: 2px dashed #e2c68e; border-radius: inherit;
+  background-color: #fff4d8;
+  background-image: radial-gradient(circle, #ffb3c766 0 3px, transparent 3.5px), radial-gradient(circle, #9fd3ff66 0 3px, transparent 3.5px), radial-gradient(circle, #ffe08a88 0 3px, transparent 3.5px);
+  background-size: 36px 36px; background-position: 0 0, 12px 12px, 24px 24px;
+  animation: bp-out 1ms linear calc(var(--bp-pop) + 30ms - var(--bp-tp, 0ms)) forwards;
+}
+.bp-paper-q { position: absolute; left: 50%; top: 44%; width: 0; height: 0; }
+/* The "?" shows until its balloon starts to fill, then is sucked in; its resting style is hidden, so once the cover
+   settles (data-settled, below) the finished animation is removed and it is no longer a compositor layer. */
+.bp-paper-q > b { position: absolute; left: 0; top: 0; font-size: var(--reveal-question-size, 64px); font-weight: 850; line-height: 1; color: #b0864a; transform: translate(-50%, -50%) scale(0); animation: bp-q-out 60ms ease-in var(--bp-in) both; }
+.bp-float, .bp-hop { position: absolute; inset: 0; }
+.bp-float { animation: bp-pull 1000ms ease-in-out calc(2620ms - var(--bp-ti, 0ms)) both; }
+.bp-hop { transform-origin: 50% 100%; animation: bp-hop 520ms ease-in-out calc(var(--bp-in) + 280ms) both; }
+
+/* Inhale air: streaks slide across the paper towards the hedgehog on each "ah" (clipped to the card). */
+.bp-air { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.bp-air > i { position: absolute; width: 0; height: 0; }
+.bp-air svg { position: absolute; left: 0; top: 0; overflow: visible; opacity: 0; animation: bp-air 1000ms linear calc(2620ms - var(--bp-ti, 0ms)) both; }
+@keyframes bp-air {
+  0% { opacity: 0; transform: translateX(0); }
+  6% { opacity: .85; }
+  24% { opacity: 0; transform: translateX(var(--air)); }
+  34% { opacity: 0; transform: translateX(0); }
+  40% { opacity: .9; }
+  58% { opacity: 0; transform: translateX(var(--air)); }
+  66% { opacity: 0; transform: translateX(0); }
+  72% { opacity: 1; }
+  92% { opacity: 0; transform: translateX(calc(var(--air) * 1.4)); }
+  100% { opacity: 0; transform: translateX(calc(var(--air) * 1.4)); }
+}
+
+/* Tall and box bunches lean as one. Nothing fades: every balloon appears in its own inflate, its string shoots up from
+   the bow to the knot and the bow pops in, so there is never a see-through balloon (or a paper "?" floating over one). */
+.bp-lean, .bp-sway { position: absolute; inset: 0; }
+/* The whole bunch sways on its bow; only the hero adds its own bob (cheap: two animations per bunch). */
+.bp-sway { transform-origin: inherit; animation: bp-sway 1900ms ease-in-out calc(var(--reveal-index, 0) * -410ms) infinite alternate; }
+.bp-lean.is-group { animation: bp-lean 1000ms ease-in-out calc(2620ms - var(--bp-ti, 0ms)) both; }
+.bp-b, .bp-b-lean, .bp-b-bob, .bp-b-inflate, .bp-b-pop, .bp-burst, .bp-qfly, .bp-strand, .bp-bow-drop { position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform-origin: 0 0; }
+/* Day-table cells: only the hero leans and bobs; the little companions stay put. */
+.bp-cover[data-shape="strip"] .bp-b.is-hero .bp-b-lean { animation: bp-lean 1000ms ease-in-out calc(2620ms - var(--bp-ti, 0ms)) both; }
+.bp-b.is-hero .bp-b-bob { animation: bp-bob 850ms ease-in-out calc(var(--reveal-index, 0) * -230ms) infinite alternate; }
+/* Day-table cells are small: no hop, and the strings live inside each balloon (they inflate and pop with it). */
+.bp-cover[data-shape="strip"] .bp-hop, .bp-cover[data-shape="strip"] .bp-lean { animation: none; }
+.bp-b-inflate { animation: bp-inflate 420ms cubic-bezier(.3, .6, .4, 1) calc(var(--bp-in) + var(--i) * 60ms) both; }
+.bp-b-pop { animation: bp-pop 140ms linear calc(var(--bp-pop) - 80ms + var(--i) * 45ms - var(--bp-tp, 0ms)) both; }
+.bp-art, .bp-string, .bp-bow, .bp-burst > svg, .bp-qfly > svg { position: absolute; overflow: visible; }
+/* A string shoots up from the bow to its knot as the balloon starts to fill; the bow pops in with the first balloon. */
+.bp-string { left: 0; top: 0; animation: bp-grow 160ms ease-out calc(var(--bp-in) + var(--i) * 60ms) both; }
+.bp-bow { left: 0; top: 0; animation: bp-bow-in 240ms ease-out var(--bp-in) both; }
+/* Once every balloon has filled and hopped (data-settled), those finished animations are removed: each ends exactly at
+   its element's resting style, so nothing moves, and a finished animation that still fills is a compositor layer. */
+.bp-cover[data-settled] .bp-paper-q > b, .bp-cover[data-settled] .bp-hop, .bp-cover[data-settled] .bp-b-inflate,
+.bp-cover[data-settled] .bp-string, .bp-cover[data-settled] .bp-bow { animation: none; }
+/* After the pop the strings and the bow drop away and shrink to nothing (their own wrappers, so each element has one
+   animation and stays on the compositor). */
+.bp-strand { animation: bp-drop 300ms linear calc(var(--bp-pop) + var(--i) * 45ms - var(--bp-tp, 0ms)) forwards; }
+.bp-bow-drop { animation: bp-drop 300ms linear calc(var(--bp-pop) - var(--bp-tp, 0ms)) forwards; }
+.bp-burst { transform: scale(0); animation: bp-burst 170ms linear calc(var(--bp-pop) + var(--i) * 45ms - var(--bp-tp, 0ms)) forwards; }
+.bp-qfly { transform: scale(0); animation: bp-qfly 340ms linear calc(var(--bp-pop) - var(--bp-tp, 0ms)) forwards; }
+/* Shards stay inside their own card, so a neighbour's paper never looks bitten. */
+.bp-shards { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.bp-defs { position: absolute; width: 0; height: 0; }
+.bp-shard > svg { display: block; overflow: visible; }
+.bp-shard { position: absolute; transform: scale(0); animation: bp-shard 320ms linear calc(var(--bp-pop) + 30ms - var(--bp-tp, 0ms)) forwards; }
+
+/* Late animations are not created until the rig's clock arms them, 200 ms before they first move (data-inhale for the
+   inhale, data-pop for the pops, data-live on the stage's ring and each card's confetti): a waiting animation is a
+   compositor layer, and hundreds of them would make every frame of the build-up expensive. The arm times are known in
+   advance (--bp-ti, --bp-tp, --bp-t0; the delays above subtract them), so arming only flips an attribute and just the
+   gated pieces are restyled; the rig then puts each new animation on its own start time, so it is exact (revealArmer
+   in balloons.tsx). data-lazy is only set where script can arm them; without it, plain CSS runs everything from the
+   start (the arm-time variables are then unset, so every delay counts from the reveal's start). */
+.bp-cover[data-lazy]:not([data-inhale]) .bp-float, .bp-cover[data-lazy]:not([data-inhale]) .bp-air svg,
+.bp-cover[data-lazy]:not([data-inhale]) .bp-lean, .bp-cover[data-lazy]:not([data-inhale]) .bp-b-lean { animation: none !important; }
+.bp-cover[data-lazy]:not([data-pop]) .bp-paper, .bp-cover[data-lazy]:not([data-pop]) .bp-b-pop, .bp-cover[data-lazy]:not([data-pop]) .bp-burst,
+.bp-cover[data-lazy]:not([data-pop]) .bp-qfly, .bp-cover[data-lazy]:not([data-pop]) .bp-strand, .bp-cover[data-lazy]:not([data-pop]) .bp-bow-drop,
+.bp-cover[data-lazy]:not([data-pop]) .bp-shard { animation: none !important; }
+.bp-stage[data-lazy] .bp-ring:not([data-live]), .bp-stage[data-lazy] .bp-bits:not([data-live]) > .bp-confetto { animation: none !important; }
+/* The torn paper covers the whole card above the swaying balloons' layer (an invisible piece over a moving balloon still
+   gets a compositor layer), and the air streaks only show during the inhale, so neither is laid out until its group is
+   armed. The bursts and the flying "?" sit inside the balloon layer at size 0, so they stay laid out: arming them only
+   restyles the animated elements. */
+.bp-cover[data-lazy]:not([data-inhale]) .bp-air, .bp-cover[data-lazy]:not([data-pop]) .bp-shards { display: none; }
+
+/* Long day tables (DENSE_COVERS or more cells): one hero balloon per cell and a simple paper puff. */
+.bp-cover[data-dense] .bp-hop, .bp-cover[data-dense] .bp-lean, .bp-cover[data-dense] .bp-sway, .bp-cover[data-dense] .bp-b-lean, .bp-cover[data-dense] .bp-b.is-hero .bp-b-bob { animation: none; }
+.bp-cover[data-dense] .bp-paper { animation: bp-paper-puff 180ms linear calc(var(--bp-pop) + 30ms - var(--bp-tp, 0ms)) forwards; }
+/* The paper puffs out a touch, then collapses to nothing (no see-through fade over the names). */
+@keyframes bp-paper-puff { 0% { transform: none; animation-timing-function: ease-out; } 30% { transform: scale(1.04); animation-timing-function: ease-in; } 100% { transform: scale(0); } }
+
+/* The paper "?" is sucked into the growing balloon: it slides to the balloon's own "?" and shrinks to nothing. */
+@keyframes bp-q-out { from { transform: translate(-50%, -50%) translate(0px, 0px) scale(1); } to { transform: translate(-50%, -50%) translate(var(--qx, 0px), var(--qy, 0px)) scale(0); } }
+@keyframes bp-inflate {
+  0% { opacity: 0; transform: scale(.15); }
+  8% { opacity: 1; }
+  45% { transform: scale(1.1, .92); }
+  62% { transform: scale(.95, 1.06); }
+  80% { transform: scale(1.02, .99); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes bp-grow { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes bp-bow-in { 0% { transform: scale(0); } 65% { transform: scale(1.2); } 100% { transform: scale(1); } }
+/* The freshly filled balloons tug upwards on their strings (the paper stays put). */
+@keyframes bp-hop { 0% { transform: none; } 35% { transform: translateY(-2.6%) scaleY(1.015); } 65% { transform: translateY(.8%); } 100% { transform: none; } }
+@keyframes bp-bob { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+@keyframes bp-sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+
+/* Three inhales draw the balloons towards him: stops at (t - 2.62 s) / 1 s for 2.86, 2.96, 3.20, 3.28, 3.54 and 3.62 s. */
+@keyframes bp-pull {
+  0% { transform: translate(0, 0); }
+  24% { transform: translate(clamp(-5px, calc(var(--bp-tx, 0px) * .02), 5px), clamp(-5px, calc(var(--bp-ty, 0px) * .02), 5px)); }
+  34% { transform: translate(clamp(-5px, calc(var(--bp-tx, 0px) * .008), 5px), clamp(-5px, calc(var(--bp-ty, 0px) * .008), 5px)); }
+  58% { transform: translate(clamp(-9px, calc(var(--bp-tx, 0px) * .04), 9px), clamp(-9px, calc(var(--bp-ty, 0px) * .04), 9px)); }
+  66% { transform: translate(clamp(-9px, calc(var(--bp-tx, 0px) * .025), 9px), clamp(-9px, calc(var(--bp-ty, 0px) * .025), 9px)); }
+  92% { transform: translate(clamp(-13px, calc(var(--bp-tx, 0px) * .07), 13px), clamp(-13px, calc(var(--bp-ty, 0px) * .07), 13px)); }
+  95% { transform: translate(calc(clamp(-13px, calc(var(--bp-tx, 0px) * .07), 13px) + 1px), clamp(-13px, calc(var(--bp-ty, 0px) * .07), 13px)); }
+  97% { transform: translate(calc(clamp(-13px, calc(var(--bp-tx, 0px) * .07), 13px) - 1px), clamp(-13px, calc(var(--bp-ty, 0px) * .07), 13px)); }
+  100% { transform: translate(clamp(-13px, calc(var(--bp-tx, 0px) * .07), 13px), clamp(-13px, calc(var(--bp-ty, 0px) * .07), 13px)); }
+}
+@keyframes bp-lean {
+  0% { transform: rotate(0deg); }
+  24% { transform: rotate(calc(var(--bp-fdx, 0) * 5deg)); }
+  34% { transform: rotate(calc(var(--bp-fdx, 0) * 2deg)); }
+  58% { transform: rotate(calc(var(--bp-fdx, 0) * 9deg)); }
+  66% { transform: rotate(calc(var(--bp-fdx, 0) * 5deg)); }
+  92% { transform: rotate(calc(var(--bp-fdx, 0) * 14deg)); }
+  100% { transform: rotate(calc(var(--bp-fdx, 0) * 14deg)); }
+}
+
+/* The pop: squashed by the arriving blast, then gone in a frame (scaled to nothing, never faded). */
+@keyframes bp-pop {
+  0% { transform: scale(1, 1) rotate(0deg); }
+  57% { transform: scale(1.14, .86) rotate(calc(var(--bp-fdx, 0) * -12deg)); }
+  58% { transform: scale(0, 0) rotate(calc(var(--bp-fdx, 0) * -12deg)); }
+  100% { transform: scale(0, 0) rotate(calc(var(--bp-fdx, 0) * -12deg)); }
+}
+/* The cartoon pop flashes out, holds for a moment, then snaps back to nothing (a few frames, so the names show at once). */
+@keyframes bp-burst {
+  0% { transform: scale(.35) rotate(0deg); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  35% { transform: scale(1.08) rotate(9deg); animation-timing-function: linear; }
+  60% { transform: scale(1) rotate(13deg); animation-timing-function: cubic-bezier(.6, 0, .9, .5); }
+  100% { transform: scale(0) rotate(24deg); }
+}
+/* Strings and bows fall slack and shrink away. */
+@keyframes bp-drop { 0% { transform: translateY(0) scale(1); animation-timing-function: cubic-bezier(.5, 0, .9, .6); } 100% { transform: translateY(26px) scale(0); } }
+@keyframes bp-out { from { opacity: 1; } to { opacity: 0; } }
+/* Torn scraps burst apart and shrink as they go, most of it at once, so the names under them clear quickly. */
+@keyframes bp-shard {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); animation-timing-function: cubic-bezier(.15, .6, .35, 1); }
+  100% { transform: translate(var(--tx), var(--ty)) rotate(var(--sr)) scale(0); }
+}
+/* The balloon's "?" hops off to the card's empty side with a little pop and a spin, then shrinks away. */
+@keyframes bp-qfly {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); animation-timing-function: cubic-bezier(.2, .8, .4, 1); }
+  20% { transform: translate(calc(var(--qx) * .3), calc(var(--qy) * .3)) rotate(10deg) scale(1.12); animation-timing-function: cubic-bezier(.25, .5, .5, 1); }
+  100% { transform: translate(var(--qx), var(--qy)) rotate(44deg) scale(0); }
+}

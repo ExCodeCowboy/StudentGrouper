@@ -1,18 +1,894 @@
-/* One shared drumroll beat holds every cover closed, independent of card count. */
-.confetti-reveal-paper { position: absolute; inset: 0; display: grid; place-items: center; background: #fff2c9; border: 2px dashed #dbc37c; border-radius: inherit; transform-origin: top center; animation: reveal-paper-flip 800ms 1000ms cubic-bezier(.4,0,.3,1) both; }
-.confetti-reveal-paper > span { font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; color: #aa7c3b; }
-.confetti-reveal-paper i { position: absolute; color: #e6af30; font-size: 44px; top: 12%; left: 14%; }
-.confetti-reveal-paper i:last-child { top: auto; left: auto; right: 14%; bottom: 12%; }
-@keyframes reveal-paper-flip { 0% { transform: perspective(600px) rotateX(0); opacity: 1; } 100% { transform: perspective(600px) rotateX(100deg) translateY(-50px); opacity: 0; } }
+/*
+ * Confetti party (storyboard: work/design/confetti.md; numbers: confettiTimeline.ts).
+ * 0-1.85 s drumroll: lights down, a follow-spot searches, catches Pip's early little "pop",
+ *   creeps, fakes out onto Pop ("not me!"), whips back and focuses; both poppers squeeze.
+ * 1.85 s POP: poppers fire, lights snap on, covers pop from the edges inward; the poppers duck away by 2.28 s.
+ * 1.9-4.2 s: two confetti fountains frame the names, streamers drape the upper corners and fall away,
+ *   then a gold star shower drops out behind the footer. Gone by 4.24 s; the reveal ends at 4.3 s.
+ * Transform/opacity only (plus tiny SVG face swaps); no filters or per-frame JS. Per-piece paths
+ * (jets, streamers, stars, puff) are Web Animations started once at mount (see StudentConfetti.tsx).
+ * Blocks between "generated" markers are written by work/build/confetti/gen-css.cjs from
+ * the tables in confettiTimeline.ts; the tests check they still match.
+ */
 
-.student-confetti { position: fixed; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
-.student-confetti i { position: absolute; top: 62%; left: var(--piece-start); width: 11px; height: 17px; border-radius: 2px; background: var(--piece-color); opacity: 0; animation: student-confetti-flight 2500ms var(--piece-delay) cubic-bezier(.15,.65,.4,1) both; }
-.reveal-effects-layer[data-reveal-effect="confetti"] .student-confetti i { animation-delay: calc(1000ms + var(--piece-delay)); }
-.student-confetti .confetti-star { width: 21px; height: 21px; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 94%, 50% 72%, 21% 94%, 32% 57%, 2% 35%, 39% 35%); }
-@keyframes student-confetti-flight {
-  0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }
-  5% { opacity: 1; }
-  35% { transform: translate3d(calc(var(--piece-x) * .7), var(--piece-y), 0) rotate(calc(var(--piece-turn) * .45)); }
-  70% { opacity: 1; }
-  100% { opacity: 0; transform: translate3d(var(--piece-x), 48vh, 0) rotate(var(--piece-turn)); }
+/* ---------- Stage root ---------- */
+.student-confetti.cf-stage { position: absolute; inset: 0; overflow: hidden; pointer-events: none; --cf-burst: 1850ms; --pp: min(30vmin, 24vw, 300px);
+  animation: cf-stage 4300ms linear both; }
+.cf-stage i, .cf-stage b { display: block; }
+/* A safety net only: everything has left the screen before 98.5% (4.24 s). */
+@keyframes cf-stage { 0%, 98.5% { opacity: 1; } 99.5%, 100% { opacity: 0; } }
+
+/* ---------- Lights down: one veil layer with a warm-rimmed pool, a vignette and a hanging beam ---------- */
+.cf-veil { position: absolute; left: -38vw; top: -36vh; width: 176vw; height: 150vh; transform-origin: 50% 54.667%; opacity: 0;
+  background: radial-gradient(circle at 50% 54.667%, rgba(255, 247, 216, .1) 0, rgba(255, 238, 186, .08) 16vmin, rgba(255, 216, 136, .34) 19.6vmin,
+    rgba(44, 22, 84, .52) 22.2vmin, rgba(36, 18, 76, .64) 29vmin, rgba(22, 10, 54, .78) 66vmin);
+  animation: cf-spot 2000ms linear both; }
+/* The beam hangs from the pool centre toward a source above the header; it rotates to follow the pool. */
+.cf-veil > .cf-beam { position: absolute; left: calc(50% - 20vh); top: calc(54.667% - 112vh); width: 40vh; height: 112vh; transform-origin: 50% 100%;
+  background: conic-gradient(from 171deg at 50% 0, rgba(255, 236, 186, 0) 0deg, rgba(255, 236, 186, .1) 5deg, rgba(255, 242, 206, .15) 9deg, rgba(255, 236, 186, .1) 13deg, rgba(255, 236, 186, 0) 18deg, rgba(255, 236, 186, 0) 360deg);
+  animation: cf-beam 2000ms linear both; }
+/* t = percent x 2 s; translate = (x - 50) vw, (y - 46) vh; beam angle aims at the source for a 16:10 screen. */
+/* generated:spot (SPOT_KEYS) */
+@keyframes cf-spot {
+  0% { transform: translate(-36vw, -6vh) scale(1); opacity: 0; }
+  2.5% { transform: translate(-36vw, -6vh) scale(1); opacity: 0; animation-timing-function: ease-out; }
+  16% { transform: translate(-26vw, -2vh) scale(1); opacity: 1; animation-timing-function: ease-in-out; }
+  29% { transform: translate(-6vw, 4vh) scale(1); opacity: 1; animation-timing-function: cubic-bezier(.5, 0, .2, 1); }
+  36% { transform: translate(-32vw, 30vh) scale(1); opacity: 1; animation-timing-function: ease-in-out; }
+  40% { transform: translate(-31vw, 29vh) scale(1); opacity: 1; animation-timing-function: linear; }
+  59% { transform: translate(-31vw, 29vh) scale(1); opacity: 1; animation-timing-function: cubic-bezier(.55, 0, .25, 1); }
+  67% { transform: translate(31vw, 26vh) scale(1); opacity: 1; animation-timing-function: linear; }
+  79% { transform: translate(31vw, 26vh) scale(1); opacity: 1; animation-timing-function: cubic-bezier(.6, 0, .3, 1); }
+  85% { transform: translate(-1.5vw, 1vh) scale(1); opacity: 1; animation-timing-function: ease-out; }
+  86% { transform: translate(0vw, 0vh) scale(1); opacity: 1; animation-timing-function: ease-in-out; }
+  90.5% { transform: translate(0vw, 0vh) scale(0.8); opacity: 1; animation-timing-function: linear; }
+  92.5% { transform: translate(0vw, 0vh) scale(0.8); opacity: 1; animation-timing-function: ease-out; }
+  98.5% { transform: translate(0vw, 0vh) scale(1.8); opacity: 0; }
+  100% { transform: translate(0vw, 0vh) scale(1.8); opacity: 0; }
 }
+@keyframes cf-beam {
+  0% { transform: rotate(46.8deg); }
+  2.5% { transform: rotate(46.8deg); animation-timing-function: ease-out; }
+  16% { transform: rotate(35.6deg); animation-timing-function: ease-in-out; }
+  29% { transform: rotate(8.5deg); animation-timing-function: cubic-bezier(.5, 0, .2, 1); }
+  36% { transform: rotate(29.6deg); animation-timing-function: ease-in-out; }
+  40% { transform: rotate(29.1deg); animation-timing-function: linear; }
+  59% { transform: rotate(29.1deg); animation-timing-function: cubic-bezier(.55, 0, .25, 1); }
+  67% { transform: rotate(-30deg); animation-timing-function: linear; }
+  79% { transform: rotate(-30deg); animation-timing-function: cubic-bezier(.6, 0, .3, 1); }
+  85% { transform: rotate(2.3deg); animation-timing-function: ease-out; }
+  86% { transform: rotate(0deg); animation-timing-function: ease-in-out; }
+  90.5% { transform: rotate(0deg); animation-timing-function: linear; }
+  92.5% { transform: rotate(0deg); animation-timing-function: ease-out; }
+  98.5% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+/* /generated:spot */
+.cf-flash { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 46%, #fffbea 0, rgba(255, 243, 196, .75) 35%, rgba(255, 243, 196, 0) 75%); animation: cf-flash 320ms var(--cf-burst) ease-out both; }
+@keyframes cf-flash { 0% { opacity: 0; } 10% { opacity: .5; } 100% { opacity: 0; } }
+
+/* Everything below the footer's top edge is clipped, so the cone tips never ghost through the 96% footer. */
+.cf-clip { position: absolute; left: 0; top: 0; right: 0; bottom: 60px; overflow: hidden; }
+.cf-world { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% + 60px); }
+
+/* ---------- Pip and Pop: party poppers rising from behind the footer (pivot = cone tip) ---------- */
+.cf-popper { position: absolute; bottom: 34px; width: calc(var(--pp) * .6); height: var(--pp); transform-origin: 50% 100%; }
+.cf-popper.is-left { left: 4vw; animation: cf-pip 2280ms linear both; }
+.cf-popper.is-right { right: 4vw; animation: cf-pop 2280ms linear both; }
+.cf-popper svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cf-popper.is-right svg { transform: scaleX(-1); }
+/* t = percent x 2.28 s. 81.14% = 1.85 s, the POP pose; a little hop at 2.0 s, then they duck away (2.05-2.28 s). */
+/* generated:poppers (PIP_KEYS, POP_KEYS) */
+@keyframes cf-pip {
+  0% { transform: translateY(118%) rotate(38deg) scale(1, 1); animation-timing-function: cubic-bezier(.34, 1.45, .64, 1); }
+  2.19% { transform: translateY(118%) rotate(38deg) scale(1, 1); animation-timing-function: cubic-bezier(.34, 1.45, .64, 1); }
+  17.54% { transform: translateY(0%) rotate(38deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  20.18% { transform: translateY(0%) rotate(38deg) scale(1.04, 0.95); animation-timing-function: ease-in-out; }
+  22.81% { transform: translateY(-1.5%) rotate(38deg) scale(0.98, 1.03); animation-timing-function: ease-in-out; }
+  25.44% { transform: translateY(0%) rotate(38deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  28.07% { transform: translateY(-1%) rotate(36deg) scale(0.97, 1.04); animation-timing-function: ease-in-out; }
+  30.7% { transform: translateY(0%) rotate(38deg) scale(1.02, 0.98); animation-timing-function: ease-in-out; }
+  34.21% { transform: translateY(0%) rotate(38deg) scale(1.1, 0.85); animation-timing-function: linear; }
+  35.96% { transform: translateY(0%) rotate(38.8deg) scale(1.1, 0.85); animation-timing-function: linear; }
+  37.28% { transform: translateY(0%) rotate(37.2deg) scale(1.11, 0.84); animation-timing-function: ease-in; }
+  38.6% { transform: translateY(0%) rotate(38deg) scale(1.1, 0.85); animation-timing-function: ease-out; }
+  40.79% { transform: translateY(-3%) rotate(39deg) scale(0.9, 1.15); animation-timing-function: linear; }
+  44.74% { transform: translateY(-3%) rotate(39deg) scale(0.91, 1.14); animation-timing-function: ease-in-out; }
+  48.25% { transform: translateY(0%) rotate(38deg) scale(1, 1); animation-timing-function: ease-out; }
+  50% { transform: translateY(0.5%) rotate(37deg) scale(1.05, 0.94); animation-timing-function: ease-in-out; }
+  55.26% { transform: translateY(0%) rotate(30deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  62.28% { transform: translateY(0%) rotate(31deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  67.54% { transform: translateY(0%) rotate(38deg) scale(1, 1); animation-timing-function: linear; }
+  69.3% { transform: translateY(0%) rotate(40deg) scale(1.03, 0.94); }
+  71.05% { transform: translateY(0%) rotate(36deg) scale(1.05, 0.91); }
+  72.81% { transform: translateY(0%) rotate(40.5deg) scale(1.07, 0.88); }
+  74.56% { transform: translateY(0%) rotate(35.5deg) scale(1.09, 0.85); }
+  76.32% { transform: translateY(0%) rotate(40.5deg) scale(1.11, 0.82); }
+  78.51% { transform: translateY(0%) rotate(36deg) scale(1.13, 0.8); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  81.14% { transform: translateY(7%) rotate(38deg) scale(0.88, 1.24); animation-timing-function: ease-out; }
+  84.65% { transform: translateY(4%) rotate(33deg) scale(1.06, 0.92); animation-timing-function: ease-in-out; }
+  87.72% { transform: translateY(-1.5%) rotate(40deg) scale(0.97, 1.05); animation-timing-function: ease-out; }
+  89.91% { transform: translateY(0%) rotate(38deg) scale(1, 1); animation-timing-function: cubic-bezier(.45, 0, .85, .45); }
+  100% { transform: translateY(118%) rotate(38deg) scale(1, 1); }
+}
+@keyframes cf-pop {
+  0% { transform: translateY(118%) rotate(-38deg) scale(1, 1); animation-timing-function: cubic-bezier(.34, 1.45, .64, 1); }
+  2.19% { transform: translateY(118%) rotate(-38deg) scale(1, 1); animation-timing-function: cubic-bezier(.34, 1.45, .64, 1); }
+  17.54% { transform: translateY(0%) rotate(-38deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  21.93% { transform: translateY(0%) rotate(-38deg) scale(1.04, 0.95); animation-timing-function: ease-in-out; }
+  24.56% { transform: translateY(-1.5%) rotate(-38deg) scale(0.98, 1.03); animation-timing-function: ease-in-out; }
+  27.19% { transform: translateY(0%) rotate(-38deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  39.47% { transform: translateY(0%) rotate(-38deg) scale(1, 1); animation-timing-function: ease-out; }
+  41.23% { transform: translateY(-2%) rotate(-35deg) scale(0.96, 1.05); animation-timing-function: ease-in-out; }
+  44.74% { transform: translateY(0%) rotate(-38deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  57.46% { transform: translateY(0%) rotate(-38deg) scale(1, 1); animation-timing-function: ease-out; }
+  59.21% { transform: translateY(-2.5%) rotate(-37deg) scale(0.95, 1.06); animation-timing-function: ease-in-out; }
+  60.53% { transform: translateY(0%) rotate(-38deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  63.16% { transform: translateY(0%) rotate(-45deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  65.79% { transform: translateY(0%) rotate(-31deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  68.42% { transform: translateY(0%) rotate(-44deg) scale(1, 1); animation-timing-function: ease-in-out; }
+  71.05% { transform: translateY(0%) rotate(-37deg) scale(1, 1); animation-timing-function: linear; }
+  72.37% { transform: translateY(0%) rotate(-33deg) scale(1.04, 0.93); }
+  74.12% { transform: translateY(0%) rotate(-35deg) scale(1.07, 0.88); }
+  75.44% { transform: translateY(0%) rotate(-30deg) scale(1.09, 0.85); }
+  77.19% { transform: translateY(0%) rotate(-32.5deg) scale(1.11, 0.82); }
+  78.51% { transform: translateY(0%) rotate(-29deg) scale(1.13, 0.8); animation-timing-function: cubic-bezier(.6, 0, 1, .6); }
+  81.14% { transform: translateY(7%) rotate(-28deg) scale(0.88, 1.24); animation-timing-function: ease-out; }
+  84.65% { transform: translateY(4%) rotate(-23deg) scale(1.06, 0.92); animation-timing-function: ease-in-out; }
+  87.72% { transform: translateY(-1.5%) rotate(-16deg) scale(0.97, 1.05); animation-timing-function: ease-out; }
+  89.91% { transform: translateY(0%) rotate(-14deg) scale(1, 1); animation-timing-function: cubic-bezier(.45, 0, .85, .45); }
+  100% { transform: translateY(118%) rotate(-14deg) scale(1, 1); }
+}
+/* /generated:poppers */
+
+/* Faces: discrete expression swaps (step-end) plus eased glances, blush and the tuft. All tracks end by 2.0 s. */
+.pp-eyes-blink, .pp-eyes-squint, .pp-eyes-happy, .pp-lids, .pp-blush-lines, .pp-mouth-o, .pp-mouth-mm, .pp-mouth-hmm, .pp-mouth-grit, .pp-mouth-grin { opacity: 0; }
+.is-left .pp-eyes-open { animation: pp-eyes-open-l 2000ms step-end both; }
+.is-right .pp-eyes-open { animation: pp-eyes-open-r 2000ms step-end both; }
+.is-left .pp-eyes-blink { animation: pp-blink-l 2000ms step-end both; }
+.is-right .pp-eyes-blink { animation: pp-blink-r 2000ms step-end both; }
+.is-right .pp-lids { animation: pp-lids-r 2000ms step-end both; }
+.pp-eyes-squint, .pp-mouth-grit { animation: pp-squint 2000ms step-end both; }
+.pp-eyes-happy, .pp-mouth-grin { animation: pp-after 2000ms step-end both; }
+.is-left .pp-mouth-smile { animation: pp-smile-l 2000ms step-end both; }
+.is-left .pp-mouth-mm { animation: pp-mm-l 2000ms step-end both; }
+.is-left .pp-mouth-o { animation: pp-o-l 2000ms step-end both; }
+.is-left .pp-blush-lines { animation: pp-blush-lines-l 2000ms step-end both; }
+.is-right .pp-mouth-smile { animation: pp-smile-r 2000ms step-end both; }
+.is-right .pp-mouth-hmm { animation: pp-hmm-r 2000ms step-end both; }
+.is-left .pp-pupils { animation: pp-look-l 2000ms ease-in-out both; }
+.is-right .pp-pupils { animation: pp-look-r 2000ms ease-in-out both; }
+.pp-cheek { opacity: .65; }
+.is-left .pp-cheek { animation: pp-blush 2000ms ease-in-out both; }
+.pp-tuft { transform-box: fill-box; transform-origin: 50% 100%; opacity: 0; animation: pp-tuft 2000ms linear both; }
+/* generated:faces (FACE_STEPS, LOOK_KEYS, BLUSH_KEYS, TUFT_KEYS) */
+@keyframes pp-eyes-open-l {
+  0% { opacity: 1; }
+  22% { opacity: 0; }
+  24.5% { opacity: 1; }
+  55% { opacity: 0; }
+  57.5% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-blink-l {
+  0% { opacity: 0; }
+  22% { opacity: 1; }
+  24.5% { opacity: 0; }
+  55% { opacity: 1; }
+  57.5% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-eyes-open-r {
+  0% { opacity: 1; }
+  30% { opacity: 0; }
+  32.5% { opacity: 1; }
+  67% { opacity: 0; }
+  69% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-blink-r {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  32.5% { opacity: 0; }
+  67% { opacity: 1; }
+  69% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-lids-r {
+  0% { opacity: 0; }
+  69% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-squint {
+  0% { opacity: 0; }
+  80% { opacity: 1; }
+  96.5% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-after {
+  0% { opacity: 0; }
+  96.5% { opacity: 1; }
+  100% { opacity: 1; }
+}
+@keyframes pp-smile-l {
+  0% { opacity: 1; }
+  36% { opacity: 0; }
+  56% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-mm-l {
+  0% { opacity: 0; }
+  36% { opacity: 1; }
+  44% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-o-l {
+  0% { opacity: 0; }
+  44% { opacity: 1; }
+  56% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-blush-lines-l {
+  0% { opacity: 0; }
+  57% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-smile-r {
+  0% { opacity: 1; }
+  69% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-hmm-r {
+  0% { opacity: 0; }
+  69% { opacity: 1; }
+  80% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes pp-look-l {
+  0% { transform: translate(0px, 0px); }
+  16% { transform: translate(-1.5px, -3.5px); }
+  29% { transform: translate(1.5px, -3.5px); }
+  34% { transform: translate(0px, 1.5px); }
+  55% { transform: translate(0px, 1.5px); }
+  58% { transform: translate(0px, -4.5px); }
+  73% { transform: translate(0px, -4.5px); }
+  78% { transform: translate(2px, 0px); }
+  100% { transform: translate(2px, 0px); }
+}
+@keyframes pp-look-r {
+  0% { transform: translate(0px, 0px); }
+  16% { transform: translate(3px, -2px); }
+  29% { transform: translate(2px, -1px); }
+  35% { transform: translate(4.5px, 1.5px); }
+  80% { transform: translate(4.5px, 1.5px); }
+  83% { transform: translate(2px, 0px); }
+  100% { transform: translate(2px, 0px); }
+}
+@keyframes pp-blush {
+  0% { opacity: 0.65; }
+  57% { opacity: 0.65; }
+  62% { opacity: 1; }
+  80% { opacity: 1; }
+  96.5% { opacity: 0.75; }
+  100% { opacity: 0.75; }
+}
+@keyframes pp-tuft {
+  0% { transform: translate(0px, 30px) rotate(0deg) scale(0.3, 0.3); opacity: 0; }
+  44% { transform: translate(0px, 30px) rotate(0deg) scale(0.3, 0.3); opacity: 0; animation-timing-function: ease-out; }
+  44.25% { transform: translate(0px, 29px) rotate(-4deg) scale(0.34, 0.34); opacity: 1; animation-timing-function: ease-out; }
+  49% { transform: translate(-6px, -30px) rotate(-70deg) scale(1, 1); opacity: 1; animation-timing-function: ease-in; }
+  55% { transform: translate(0px, 0px) rotate(0deg) scale(1, 1); opacity: 1; animation-timing-function: ease-out; }
+  57% { transform: translate(0px, 2px) rotate(0deg) scale(1.35, 0.55); opacity: 1; animation-timing-function: ease-in-out; }
+  59.5% { transform: translate(0px, -1px) rotate(0deg) scale(0.86, 1.18); opacity: 1; animation-timing-function: ease-in-out; }
+  62% { transform: translate(0px, 0px) rotate(0deg) scale(1.06, 0.94); opacity: 1; animation-timing-function: ease-in-out; }
+  65% { transform: translate(0px, 0px) rotate(0deg) scale(1, 1); opacity: 1; animation-timing-function: linear; }
+  92.5% { transform: translate(0px, 0px) rotate(0deg) scale(1, 1); opacity: 1; animation-timing-function: ease-out; }
+  98.5% { transform: translate(16px, -80px) rotate(140deg) scale(1, 1); opacity: 0; }
+  100% { transform: translate(16px, -80px) rotate(140deg) scale(1, 1); opacity: 0; }
+}
+/* /generated:faces */
+
+/* ---------- POP: muzzle flash and hit in FRONT of the rim, POP! badges ---------- */
+.cf-muzzle { position: absolute; width: 22vmin; height: 22vmin; margin: 0 0 -11vmin -11vmin; opacity: 0;
+  clip-path: polygon(50% 0, 58% 30%, 85% 15%, 70% 42%, 100% 50%, 70% 58%, 85% 85%, 58% 70%, 50% 100%, 42% 70%, 15% 85%, 30% 58%, 0 50%, 30% 42%, 15% 15%, 42% 30%);
+  background: radial-gradient(circle, #fffdf0 0 22%, #ffe066 45%, #ffb21a 70%); animation: cf-muzzle 340ms var(--cf-burst) ease-out both; }
+/* Centred 5vmin out along each cone's axis (38 degrees from vertical). */
+.cf-muzzle.is-left { left: calc(4vw + var(--pp) * .768 + 3.1vmin); bottom: calc(34px + var(--pp) * .6 + 3.9vmin); }
+/* Pop fires from its 28-degree aim: its mouth is at (pp * .6615, pp * .68) and its axis leans 28 degrees. */
+.cf-muzzle.is-right { right: calc(4vw + var(--pp) * .6615 + 2.35vmin); bottom: calc(34px + var(--pp) * .68 + 4.41vmin); margin: 0 -11vmin -11vmin 0; }
+@keyframes cf-muzzle { 0% { transform: scale(.55) rotate(0deg); opacity: 0; } 3% { transform: scale(.6) rotate(1deg); opacity: 1; } 30% { transform: scale(1) rotate(12deg); opacity: 1; } 100% { transform: scale(1.5) rotate(20deg); opacity: 0; } }
+.cf-hit { position: absolute; width: 14vmin; height: 14vmin; margin: 0 0 -7vmin -7vmin; opacity: 0; border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0 30%, #fff6c2 48%, rgba(255, 232, 120, 0) 70%); animation: cf-hit 90ms var(--cf-burst) linear both; }
+.cf-hit.is-left { left: calc(4vw + var(--pp) * .768 + 1.2vmin); bottom: calc(34px + var(--pp) * .6 + 1.6vmin); }
+.cf-hit.is-right { right: calc(4vw + var(--pp) * .6615 + .94vmin); bottom: calc(34px + var(--pp) * .68 + 1.77vmin); margin: 0 -7vmin -7vmin 0; }
+@keyframes cf-hit { 0% { transform: scale(.6); opacity: 0; } 2% { transform: scale(.62); opacity: 1; } 55% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
+.cf-badge { position: absolute; width: 17vmin; height: 10.625vmin; bottom: calc(34px + var(--pp) * .6 + 16vmin); opacity: 0; }
+.cf-badge svg, .cf-pip-badge svg { display: block; width: 100%; height: 100%; overflow: visible; font-family: inherit; }
+/* Both badges sit 7vmin right of their popper's mid-line: names and labels are left-aligned, so that is the empty
+   right side of the corner cards (inward for Pip, outward for Pop). */
+.cf-badge.is-left { left: calc(4vw + var(--pp) * .6 + 7vmin); margin: 0 0 -5.3125vmin -8.5vmin; animation: cf-badge-l 300ms calc(var(--cf-burst) + 20ms) linear both; }
+.cf-badge.is-right { right: calc(4vw + var(--pp) * .6 - 7vmin); margin: 0 -8.5vmin -5.3125vmin 0; animation: cf-badge-r 300ms calc(var(--cf-burst) + 20ms) linear both; }
+/* In with an overshoot (already readable on the first frame), a short hold, then a quick shrink to nothing while
+   drifting up: solid all the way (the opacity only drops once it is a speck), gone by 2.17 s. */
+@keyframes cf-badge-l {
+  0% { transform: translate(0, 0) scale(.35) rotate(-24deg); opacity: 0; animation-timing-function: cubic-bezier(.3, 1.6, .6, 1); }
+  3% { transform: translate(0, 0) scale(.42) rotate(-23deg); opacity: 1; animation-timing-function: cubic-bezier(.3, 1.6, .6, 1); }
+  26% { transform: translate(0, 0) scale(1.15) rotate(-10deg); opacity: 1; animation-timing-function: ease-in-out; }
+  38% { transform: translate(0, 0) scale(1) rotate(-12deg); opacity: 1; }
+  64% { transform: translate(0, 0) scale(1) rotate(-12deg); opacity: 1; animation-timing-function: ease-in; }
+  92% { transform: translate(-1.5vmin, -4vmin) scale(.12) rotate(-28deg); opacity: 1; }
+  100% { transform: translate(-1.6vmin, -4.4vmin) scale(0) rotate(-30deg); opacity: 0; }
+}
+@keyframes cf-badge-r {
+  0% { transform: translate(0, 0) scale(.35) rotate(24deg); opacity: 0; animation-timing-function: cubic-bezier(.3, 1.6, .6, 1); }
+  3% { transform: translate(0, 0) scale(.42) rotate(23deg); opacity: 1; animation-timing-function: cubic-bezier(.3, 1.6, .6, 1); }
+  26% { transform: translate(0, 0) scale(1.15) rotate(10deg); opacity: 1; animation-timing-function: ease-in-out; }
+  38% { transform: translate(0, 0) scale(1) rotate(12deg); opacity: 1; }
+  64% { transform: translate(0, 0) scale(1) rotate(12deg); opacity: 1; animation-timing-function: ease-in; }
+  92% { transform: translate(1.5vmin, -4vmin) scale(.12) rotate(28deg); opacity: 1; }
+  100% { transform: translate(1.6vmin, -4.4vmin) scale(0) rotate(30deg); opacity: 0; }
+}
+
+/* ---------- Pip's too-early little "pop": a fanned puff and a mini badge, lit by the spotlight ---------- */
+.cf-pip-badge { position: absolute; width: 12vmin; height: 7.5vmin; left: calc(4vw + var(--pp) * .768 - 4vmin); bottom: calc(34px + var(--pp) * .6 + 11vmin); margin: 0 0 -3.75vmin -6vmin; opacity: 0;
+  animation: cf-pip-badge 400ms 880ms linear both; }
+@keyframes cf-pip-badge {
+  0% { transform: translate(0, 0) scale(.3) rotate(-18deg); opacity: 0; animation-timing-function: cubic-bezier(.3, 1.6, .6, 1); }
+  4% { transform: translate(0, 0) scale(.36) rotate(-17deg); opacity: 1; animation-timing-function: cubic-bezier(.3, 1.6, .6, 1); }
+  26% { transform: translate(0, 0) scale(1.15) rotate(-6deg); opacity: 1; animation-timing-function: ease-in-out; }
+  40% { transform: translate(0, 0) scale(1) rotate(-8deg); opacity: 1; }
+  70% { transform: translate(0, 0) scale(1) rotate(-8deg); opacity: 1; animation-timing-function: ease-in; }
+  100% { transform: translate(2vmin, -3vmin) scale(.6) rotate(-14deg); opacity: 0; }
+}
+.cf-puff { position: absolute; left: calc(-1vmin * var(--s)); top: calc(-1.4vmin * var(--s)); width: calc(2vmin * var(--s)); height: calc(2.8vmin * var(--s)); border-radius: .3vmin; opacity: 0;
+  background: linear-gradient(160deg, var(--c1) 0 56%, var(--c2) 56% 100%); }
+
+/* ---------- Confetti fountains, streamers and the star shower ----------
+   Every piece has its own path, so these tracks are Web Animations with px keyframes built once at mount by
+   confettiTimeline.ts (jetTrack, streamerTracks, starTracks, puffTracks). CSS keyframes would need var() here, and
+   Chromium then re-styles each of those ~120 elements on every frame. Until its animation starts each piece rests
+   invisible at its mouth. */
+.cf-emitter { position: absolute; width: 0; height: 0; bottom: calc(34px + var(--pp) * .6); }
+.cf-emitter.is-left { left: calc(4vw + var(--pp) * .768); }
+.cf-emitter.is-right { right: calc(4vw + var(--pp) * .6615); bottom: calc(34px + var(--pp) * .68); }
+.cf-piece { position: absolute; width: calc(1.7vmin * var(--s)); height: calc(2.6vmin * var(--s)); left: calc(-.85vmin * var(--s)); top: calc(-1.3vmin * var(--s)); border-radius: .3vmin; opacity: 0;
+  background: linear-gradient(160deg, var(--c1) 0 56%, var(--c2) 56% 100%); }
+.cf-piece.is-dot { height: calc(1.7vmin * var(--s)); top: calc(-.85vmin * var(--s)); border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--c1) 0 55%, var(--c2) 100%); }
+.cf-piece.is-star { width: calc(2.8vmin * var(--s)); height: calc(2.8vmin * var(--s)); left: calc(-1.4vmin * var(--s)); top: calc(-1.4vmin * var(--s)); border-radius: 0;
+  background: linear-gradient(135deg, #ffe27a 0 50%, #f5b000 50% 100%); clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 94%, 50% 72%, 21% 94%, 32% 57%, 2% 35%, 39% 35%); }
+/* Curly streamers: the node flies (up for Pip, up and out for Pop), the ribbon unfurls and swings clockwise to hang. */
+.cf-streamer { position: absolute; left: 0; top: 0; opacity: 0; }
+.cf-ribbon { position: absolute; left: 0; top: calc(var(--len) * -.1105); width: var(--len); height: calc(var(--len) * .221); overflow: visible; transform-origin: 0 50%; transform: scale(0); }
+/* The shower is clipped at the header line: stars drop out from under the header's edge instead of ghosting through it. */
+.cf-shower { position: absolute; left: 0; right: 0; top: 66px; bottom: 0; overflow: hidden; }
+.cf-star { position: absolute; top: -9vh; left: var(--x); width: var(--size); height: var(--size); margin-left: calc(var(--size) * -.5); }
+.cf-star-fall { width: 100%; height: 100%; opacity: 0; }
+.cf-star-art { display: block; width: 100%; height: 100%; overflow: visible; }
+/* Each star's sway (vw) and fall (vh, with spin and twinkle): static keyframes, no var(), so no per-frame restyle. */
+/* generated:stars (starShower) */
+.cf-star.is-s0 { animation: cf-sway-0 843ms 2308ms ease-in-out 3 alternate both; }
+.cf-star.is-s0 > .cf-star-fall { animation: cf-fall-0 1699ms 2308ms linear both; }
+@keyframes cf-sway-0 {
+  0% { transform: translateX(1.77vw); }
+  100% { transform: translateX(-1.77vw); }
+}
+@keyframes cf-fall-0 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.7deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-18.7deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-37.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-56.2deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-75deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-93.7deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-112.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-131.2deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-150deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s1 { animation: cf-sway-1 996ms 2339ms ease-in-out 2 alternate both; }
+.cf-star.is-s1 > .cf-star-fall { animation: cf-fall-1 1711ms 2339ms linear both; }
+@keyframes cf-sway-1 {
+  0% { transform: translateX(-1.01vw); }
+  100% { transform: translateX(1.01vw); }
+}
+@keyframes cf-fall-1 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(1deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(24.8deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(49.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(74.3deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(99deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(123.8deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(148.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(173.3deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(198deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s2 { animation: cf-sway-2 1002ms 2391ms ease-in-out 2 alternate both; }
+.cf-star.is-s2 > .cf-star-fall { animation: cf-fall-2 1741ms 2391ms linear both; }
+@keyframes cf-sway-2 {
+  0% { transform: translateX(-2.85vw); }
+  100% { transform: translateX(2.85vw); }
+}
+@keyframes cf-fall-2 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.6deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-15.9deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-31.7deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-47.6deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-63.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-79.4deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-95.2deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-111.1deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-127deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s3 { animation: cf-sway-3 945ms 2389ms ease-in-out 2 alternate both; }
+.cf-star.is-s3 > .cf-star-fall { animation: cf-fall-3 1752ms 2389ms linear both; }
+@keyframes cf-sway-3 {
+  0% { transform: translateX(1.17vw); }
+  100% { transform: translateX(-1.17vw); }
+}
+@keyframes cf-fall-3 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(19.3deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(38.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(57.8deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(77deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(96.3deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(115.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(134.8deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(154deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s4 { animation: cf-sway-4 1053ms 2415ms ease-in-out 2 alternate both; }
+.cf-star.is-s4 > .cf-star-fall { animation: cf-fall-4 1723ms 2415ms linear both; }
+@keyframes cf-sway-4 {
+  0% { transform: translateX(2.25vw); }
+  100% { transform: translateX(-2.25vw); }
+}
+@keyframes cf-fall-4 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-19.7deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-39.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-59.2deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-79deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-98.7deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-118.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-138.2deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-158deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s5 { animation: cf-sway-5 733ms 2460ms ease-in-out 3 alternate both; }
+.cf-star.is-s5 > .cf-star-fall { animation: cf-fall-5 1757ms 2460ms linear both; }
+@keyframes cf-sway-5 {
+  0% { transform: translateX(-2.06vw); }
+  100% { transform: translateX(2.06vw); }
+}
+@keyframes cf-fall-5 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(1.1deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(27.5deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(55deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(82.5deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(110deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(137.5deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(165deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(192.5deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(220deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s6 { animation: cf-sway-6 782ms 2460ms ease-in-out 3 alternate both; }
+.cf-star.is-s6 > .cf-star-fall { animation: cf-fall-6 1778ms 2460ms linear both; }
+@keyframes cf-sway-6 {
+  0% { transform: translateX(2.5vw); }
+  100% { transform: translateX(-2.5vw); }
+}
+@keyframes cf-fall-6 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.6deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-15.5deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-31deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-46.5deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-62deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-77.5deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-93deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-108.5deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-124deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s7 { animation: cf-sway-7 746ms 2489ms ease-in-out 3 alternate both; }
+.cf-star.is-s7 > .cf-star-fall { animation: cf-fall-7 1756ms 2489ms linear both; }
+@keyframes cf-sway-7 {
+  0% { transform: translateX(-2.28vw); }
+  100% { transform: translateX(2.28vw); }
+}
+@keyframes cf-fall-7 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(18.8deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(37.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(56.3deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(75deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(93.8deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(112.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(131.3deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(150deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s8 { animation: cf-sway-8 755ms 2538ms ease-in-out 3 alternate both; }
+.cf-star.is-s8 > .cf-star-fall { animation: cf-fall-8 1539ms 2538ms linear both; }
+@keyframes cf-sway-8 {
+  0% { transform: translateX(-1.41vw); }
+  100% { transform: translateX(1.41vw); }
+}
+@keyframes cf-fall-8 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.9deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-21.9deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-43.7deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-65.6deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-87.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-109.4deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-131.2deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-153.1deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-175deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s9 { animation: cf-sway-9 854ms 2571ms ease-in-out 2 alternate both; }
+.cf-star.is-s9 > .cf-star-fall { animation: cf-fall-9 1508ms 2571ms linear both; }
+@keyframes cf-sway-9 {
+  0% { transform: translateX(-2.58vw); }
+  100% { transform: translateX(2.58vw); }
+}
+@keyframes cf-fall-9 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(19.3deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(38.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(57.8deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(77deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(96.3deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(115.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(134.8deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(154deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s10 { animation: cf-sway-10 846ms 2580ms ease-in-out 2 alternate both; }
+.cf-star.is-s10 > .cf-star-fall { animation: cf-fall-10 1526ms 2580ms linear both; }
+@keyframes cf-sway-10 {
+  0% { transform: translateX(1.9vw); }
+  100% { transform: translateX(-1.9vw); }
+}
+@keyframes cf-fall-10 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-18.9deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-37.7deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-56.6deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-75.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-94.4deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-113.2deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-132.1deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-151deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s11 { animation: cf-sway-11 871ms 2623ms ease-in-out 2 alternate both; }
+.cf-star.is-s11 > .cf-star-fall { animation: cf-fall-11 1587ms 2623ms linear both; }
+@keyframes cf-sway-11 {
+  0% { transform: translateX(1.1vw); }
+  100% { transform: translateX(-1.1vw); }
+}
+@keyframes cf-fall-11 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(20.8deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(41.5deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(62.3deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(83deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(103.8deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(124.5deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(145.3deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(166deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s12 { animation: cf-sway-12 948ms 2637ms ease-in-out 2 alternate both; }
+.cf-star.is-s12 > .cf-star-fall { animation: cf-fall-12 1526ms 2637ms linear both; }
+@keyframes cf-sway-12 {
+  0% { transform: translateX(-1.45vw); }
+  100% { transform: translateX(1.45vw); }
+}
+@keyframes cf-fall-12 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.7deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-18.4deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-36.7deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-55.1deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-73.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-91.9deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-110.2deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-128.6deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-147deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s13 { animation: cf-sway-13 935ms 2646ms ease-in-out 2 alternate both; }
+.cf-star.is-s13 > .cf-star-fall { animation: cf-fall-13 1552ms 2646ms linear both; }
+@keyframes cf-sway-13 {
+  0% { transform: translateX(-2.35vw); }
+  100% { transform: translateX(2.35vw); }
+}
+@keyframes cf-fall-13 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.9deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(21.6deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(43.3deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(64.9deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(86.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(108.1deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(129.8deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(151.4deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(173deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s14 { animation: cf-sway-14 924ms 2702ms ease-in-out 2 alternate both; }
+.cf-star.is-s14 > .cf-star-fall { animation: cf-fall-14 1529ms 2702ms linear both; }
+@keyframes cf-sway-14 {
+  0% { transform: translateX(1.5vw); }
+  100% { transform: translateX(-1.5vw); }
+}
+@keyframes cf-fall-14 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-1.1deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-27.9deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-55.7deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-83.6deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-111.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-139.4deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-167.2deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-195.1deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-223deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s15 { animation: cf-sway-15 795ms 2719ms ease-in-out 2 alternate both; }
+.cf-star.is-s15 > .cf-star-fall { animation: cf-fall-15 1509ms 2719ms linear both; }
+@keyframes cf-sway-15 {
+  0% { transform: translateX(2.78vw); }
+  100% { transform: translateX(-2.78vw); }
+}
+@keyframes cf-fall-15 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(1.1deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(27.5deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(55deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(82.5deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(110deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(137.5deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(165deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(192.5deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(220deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s16 { animation: cf-sway-16 978ms 2739ms ease-in-out 2 alternate both; }
+.cf-star.is-s16 > .cf-star-fall { animation: cf-fall-16 1341ms 2739ms linear both; }
+@keyframes cf-sway-16 {
+  0% { transform: translateX(1.45vw); }
+  100% { transform: translateX(-1.45vw); }
+}
+@keyframes cf-fall-16 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.9deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-23deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-46deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-69deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-92deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-115deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-138deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-161deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-184deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s17 { animation: cf-sway-17 931ms 2751ms ease-in-out 2 alternate both; }
+.cf-star.is-s17 > .cf-star-fall { animation: cf-fall-17 1331ms 2751ms linear both; }
+@keyframes cf-sway-17 {
+  0% { transform: translateX(2.52vw); }
+  100% { transform: translateX(-2.52vw); }
+}
+@keyframes cf-fall-17 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(1.2deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(29.4deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(58.8deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(88.1deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(117.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(146.9deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(176.3deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(205.6deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(235deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s18 { animation: cf-sway-18 704ms 2770ms ease-in-out 2 alternate both; }
+.cf-star.is-s18 > .cf-star-fall { animation: cf-fall-18 1332ms 2770ms linear both; }
+@keyframes cf-sway-18 {
+  0% { transform: translateX(2.71vw); }
+  100% { transform: translateX(-2.71vw); }
+}
+@keyframes cf-fall-18 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.8deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-20.6deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-41.2deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-61.9deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-82.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-103.1deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-123.7deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-144.4deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-165deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s19 { animation: cf-sway-19 803ms 2820ms ease-in-out 2 alternate both; }
+.cf-star.is-s19 > .cf-star-fall { animation: cf-fall-19 1291ms 2820ms linear both; }
+@keyframes cf-sway-19 {
+  0% { transform: translateX(1.57vw); }
+  100% { transform: translateX(-1.57vw); }
+}
+@keyframes cf-fall-19 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(1.1deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(27.9deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(55.8deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(83.6deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(111.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(139.4deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(167.3deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(195.1deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(223deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s20 { animation: cf-sway-20 954ms 2848ms ease-in-out 2 alternate both; }
+.cf-star.is-s20 > .cf-star-fall { animation: cf-fall-20 1337ms 2848ms linear both; }
+@keyframes cf-sway-20 {
+  0% { transform: translateX(-2.98vw); }
+  100% { transform: translateX(2.98vw); }
+}
+@keyframes cf-fall-20 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-0.7deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-16.6deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-33.2deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-49.9deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-66.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-83.1deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-99.7deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-116.4deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-133deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s21 { animation: cf-sway-21 1064ms 2871ms ease-in-out 2 alternate both; }
+.cf-star.is-s21 > .cf-star-fall { animation: cf-fall-21 1278ms 2871ms linear both; }
+@keyframes cf-sway-21 {
+  0% { transform: translateX(-1.26vw); }
+  100% { transform: translateX(1.26vw); }
+}
+@keyframes cf-fall-21 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.7deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(16.6deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(33.3deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(49.9deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(66.5deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(83.1deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(99.8deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(116.4deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(133deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s22 { animation: cf-sway-22 1054ms 2898ms ease-in-out 2 alternate both; }
+.cf-star.is-s22 > .cf-star-fall { animation: cf-fall-22 1290ms 2898ms linear both; }
+@keyframes cf-sway-22 {
+  0% { transform: translateX(-2.09vw); }
+  100% { transform: translateX(2.09vw); }
+}
+@keyframes cf-fall-22 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(-1.1deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(-26.5deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(-53deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(-79.5deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(-106deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(-132.5deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(-159deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(-185.5deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(-212deg) scale(0.88); opacity: 1; }
+}
+.cf-star.is-s23 { animation: cf-sway-23 1095ms 2929ms ease-in-out 2 alternate both; }
+.cf-star.is-s23 > .cf-star-fall { animation: cf-fall-23 1351ms 2929ms linear both; }
+@keyframes cf-sway-23 {
+  0% { transform: translateX(2.82vw); }
+  100% { transform: translateX(-2.82vw); }
+}
+@keyframes cf-fall-23 {
+  0% { transform: translate3d(0, 0vh, 0) rotate(0deg) scale(0.88); opacity: 0; }
+  0.5% { transform: translate3d(0, 0.52vh, 0) rotate(0.9deg) scale(0.8896); opacity: 1; }
+  12.5% { transform: translate3d(0, 13vh, 0) rotate(21.5deg) scale(1.12); opacity: 1; }
+  25% { transform: translate3d(0, 26vh, 0) rotate(43deg) scale(0.88); opacity: 1; }
+  37.5% { transform: translate3d(0, 39vh, 0) rotate(64.5deg) scale(1.12); opacity: 1; }
+  50% { transform: translate3d(0, 52vh, 0) rotate(86deg) scale(0.88); opacity: 1; }
+  62.5% { transform: translate3d(0, 65vh, 0) rotate(107.5deg) scale(1.12); opacity: 1; }
+  75% { transform: translate3d(0, 78vh, 0) rotate(129deg) scale(0.88); opacity: 1; }
+  87.5% { transform: translate3d(0, 91vh, 0) rotate(150.5deg) scale(1.12); opacity: 1; }
+  100% { transform: translate3d(0, 104vh, 0) rotate(172deg) scale(0.88); opacity: 1; }
+}
+/* /generated:stars */
+.cf-glint { position: absolute; left: var(--x); top: calc(var(--y) - 66px); width: var(--size); height: var(--size); margin: calc(var(--size) * -.5) 0 0 calc(var(--size) * -.5); opacity: 0;
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); background: radial-gradient(circle, #fff 0 25%, #fff1a8 45%, #ffc83d 75%); animation: cf-glint 480ms var(--delay) ease-out both; }
+@keyframes cf-glint { 0% { transform: scale(0) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 45% { transform: scale(1.1) rotate(45deg); opacity: 1; } 100% { transform: scale(0) rotate(90deg); opacity: 0; } }
+
+/* ---------- Covers: trembling party paper over a still backing; POP = balloon vanish + ring + bits ----------
+   The cover clips everything to the card, so nothing it draws can grow a scroll box (the Today table), and the
+   finished layers fall back to opacity 0 / scale(0) (fill: backwards), which releases them. */
+.cf-cover { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; --cf-burst: 1850ms;
+  --cf-dist: max(var(--reveal-center-x, .5) - .5, .5 - var(--reveal-center-x, .5));
+  --cf-pop: calc(var(--cf-burst) + 30ms + (.5 - var(--cf-dist)) * 360ms);
+  --burst-size: min(calc(min(var(--reveal-cover-width, 240px), var(--reveal-cover-height, 240px)) * .96), 50vmin);
+  /* 1 for up to 24 covers, 0 above: a big Today table (up to 48 small cells) skips the ring and bits and just pops. */
+  --cf-fx-on: clamp(0, calc((24.5 - var(--reveal-count, 1)) * 100), 1); }
+.cf-cover i { display: block; }
+/* The balloon pop: the skin swells a little more, holds, then is cut in one step (never a see-through frame); the gold ring
+   and the paper bits carry the burst. */
+.cf-cover-pop { position: absolute; inset: 0; border-radius: inherit; opacity: 0; transform: scale(0); animation: cf-cover-pop 120ms var(--cf-pop) linear backwards; }
+@keyframes cf-cover-pop { 0% { transform: scale(1); opacity: 1; animation-timing-function: ease-out; } 30% { transform: scale(1.07); opacity: 1; animation-timing-function: step-end; } 38% { transform: scale(1.09); opacity: 0; } 100% { transform: scale(1.09); opacity: 0; } }
+.cf-cover-backing { position: absolute; inset: 0; border-radius: inherit; background: #fff2c9; }
+.cf-cover-paper { position: absolute; inset: 0; border-radius: inherit; animation: cf-tremble 1550ms calc(300ms + var(--reveal-order, .5) * 50ms) linear both; }
+.cf-sheet { position: absolute; inset: 0; box-sizing: border-box; display: grid; place-items: center; border-radius: inherit; border: 2px dashed #d8be72;
+  background: radial-gradient(circle at 22% 28%, #ff6f7d8c 0 3.2px, transparent 3.8px) 0 0 / 46px 46px, radial-gradient(circle at 68% 62%, #4fb3f28c 0 3.2px, transparent 3.8px) 0 0 / 46px 46px,
+    radial-gradient(circle at 82% 18%, #3fc9a58c 0 2.8px, transparent 3.4px) 0 0 / 46px 46px, radial-gradient(circle at 40% 84%, #ffc83da6 0 2.8px, transparent 3.4px) 0 0 / 46px 46px, #fff2c9; }
+.cf-sheet > span { font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; color: #a8793a; text-shadow: 0 3px 0 #fffbea; }
+.cf-sheet-star { position: absolute; width: clamp(16px, 3.4vmin, 38px); height: clamp(16px, 3.4vmin, 38px); background: linear-gradient(135deg, #ffd95a 0 50%, #eda821 50%);
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 94%, 50% 72%, 21% 94%, 32% 57%, 2% 35%, 39% 35%); }
+.cf-sheet-star.is-a { top: 11%; left: 12%; }
+.cf-sheet-star.is-b { bottom: 11%; right: 12%; transform: rotate(18deg) scale(.8); }
+.cf-cover-ring { position: absolute; inset: 0; border-radius: inherit; border: 6px solid #ffd447; box-shadow: inset 0 0 0 4px #fff6d0; opacity: 0; transform: scale(0);
+  animation: cf-ring 460ms var(--cf-pop) ease-out backwards; animation-duration: calc(460ms * var(--cf-fx-on)); }
+/* The card's rim lights up gold and settles: it stays on the edge band, never crossing the heading just revealed. */
+@keyframes cf-ring { 0% { transform: scale(1); opacity: 0; } 12% { transform: scale(1); opacity: 1; } 100% { transform: scale(.985); opacity: 0; } }
+.cf-cover-burst { position: absolute; left: 50%; top: 50%; width: var(--burst-size); height: var(--burst-size); margin: calc(var(--burst-size) * -.5) 0 0 calc(var(--burst-size) * -.5); overflow: visible; opacity: 0; transform: scale(0);
+  animation: cf-burst 420ms var(--cf-pop) cubic-bezier(.15, .75, .35, 1) backwards; animation-duration: calc(420ms * var(--cf-fx-on)); }
+/* The bits fly out solid and only drop out over the last 22%, while still spreading (like sparks, not a ghost). */
+@keyframes cf-burst { 0% { transform: scale(.25) rotate(0deg); opacity: 0; } 6% { opacity: 1; } 78% { opacity: 1; } 100% { transform: scale(1) rotate(34deg); opacity: 0; } }
+/* Every card's burst differs: a golden-angle turn per card index and a size nudge by screen order (static). */
+.cf-bits { position: absolute; inset: 0; transform: rotate(calc(var(--reveal-index, 0) * 137.5deg)) scale(calc(.9 + var(--reveal-order, .5) * .2)); }
+/* Bits are two-tone paper like the stage confetti, sized in vmin (at most 3.4% of the sprite per vmin, so small Today cells get small bits). */
+.cf-bit, .cf-spark { position: absolute; left: var(--x); top: var(--y); width: min(calc(var(--w) * 1vmin), calc(var(--w) * 3.4%)); height: min(calc(var(--h) * 1vmin), calc(var(--h) * 3.4%));
+  transform: translate(-50%, -50%) rotate(var(--r)); }
+.cf-bit { border-radius: .25vmin; background: linear-gradient(160deg, var(--c1) 0 56%, var(--c2) 56% 100%); }
+.cf-spark { clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); background: radial-gradient(circle, #fffdf0 0 22%, #ffe27a 55%, #f5b000 100%); }
+/* The picker: one wide card with the name in its middle. The sprite is the whole card, the bits sit around the name
+   (outer side strips and the two top corners) and the burst only grows (.66 to 1.04, no turn), so no bit ever crosses
+   the name or the "A moment to shine" caption. */
+.student-picker-card .cf-cover-burst { left: 0; top: 0; width: 100%; height: 100%; margin: 0; animation-name: cf-burst-wide; }
+.student-picker-card .cf-bits { transform: none; }
+.student-picker-card .cf-bit, .student-picker-card .cf-spark { left: var(--px); top: var(--py); }
+@keyframes cf-burst-wide { 0% { transform: translate(0, 0) scale(.66); opacity: 0; } 6% { opacity: 1; } 78% { opacity: 1; } 100% { transform: translate(0, 4%) scale(1.04); opacity: 0; } }
+
+/* Tremble: one stop every 50 ms (trembleStops() in confettiTimeline.ts), ending centred and inflated at the drum hit. */
+/* generated:tremble (trembleStops) */
+@keyframes cf-tremble {
+  0% { transform: translate(0px, 0px) rotate(0deg) scale(1); }
+  3.23% { transform: translate(0.52px, -0.26px) rotate(-0.15deg) scale(1); }
+  6.45% { transform: translate(-0.56px, 0.17px) rotate(0.16deg) scale(1); }
+  9.68% { transform: translate(0.61px, -0.12px) rotate(-0.18deg) scale(1); }
+  12.9% { transform: translate(-0.66px, 0px) rotate(0.19deg) scale(1); }
+  16.13% { transform: translate(0.73px, -0.36px) rotate(-0.21deg) scale(1); }
+  19.35% { transform: translate(-0.8px, 0.24px) rotate(0.22deg) scale(1); }
+  22.58% { transform: translate(0.88px, -0.18px) rotate(-0.24deg) scale(1); }
+  25.81% { transform: translate(-0.96px, 0px) rotate(0.26deg) scale(1); }
+  29.03% { transform: translate(1.05px, -0.52px) rotate(-0.28deg) scale(1); }
+  32.26% { transform: translate(-1.14px, 0.34px) rotate(0.31deg) scale(1); }
+  35.48% { transform: translate(1.24px, -0.25px) rotate(-0.33deg) scale(1); }
+  38.71% { transform: translate(-1.34px, 0px) rotate(0.35deg) scale(1); }
+  41.94% { transform: translate(1.45px, -0.73px) rotate(-0.38deg) scale(1); }
+  45.16% { transform: translate(-1.56px, 0.47px) rotate(0.41deg) scale(1); }
+  48.39% { transform: translate(1.68px, -0.34px) rotate(-0.44deg) scale(1); }
+  51.61% { transform: translate(-1.8px, 0px) rotate(0.47deg) scale(1); }
+  54.84% { transform: translate(1.92px, -0.96px) rotate(-0.5deg) scale(1); }
+  58.06% { transform: translate(-2.05px, 0.61px) rotate(0.53deg) scale(1); }
+  61.29% { transform: translate(2.18px, -0.44px) rotate(-0.56deg) scale(1); }
+  64.52% { transform: translate(-2.31px, 0px) rotate(0.59deg) scale(1); }
+  67.74% { transform: translate(2.45px, -1.23px) rotate(-0.62deg) scale(1); }
+  70.97% { transform: translate(-2.59px, 0.78px) rotate(0.66deg) scale(1); }
+  74.19% { transform: translate(2.74px, -0.55px) rotate(-0.69deg) scale(1); }
+  77.42% { transform: translate(-2.88px, 0px) rotate(0.73deg) scale(1); }
+  80.65% { transform: translate(3.03px, -1.52px) rotate(-0.77deg) scale(1); }
+  83.87% { transform: translate(-3.19px, 0.96px) rotate(0.8deg) scale(1); }
+  87.1% { transform: translate(3.34px, -0.67px) rotate(-0.84deg) scale(1); }
+  90.32% { transform: translate(-3.5px, 0px) rotate(0.88deg) scale(1.0068); }
+  93.55% { transform: translate(3.67px, -1.83px) rotate(-0.92deg) scale(1.0162); }
+  96.77% { transform: translate(-3.83px, 1.15px) rotate(0.96deg) scale(1.0256); }
+  100% { transform: translate(0px, 0px) rotate(0deg) scale(1.035); }
+}
+/* /generated:tremble */

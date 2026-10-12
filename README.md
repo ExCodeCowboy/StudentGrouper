@@ -8,7 +8,7 @@ Student Grouper is a local-first classroom tool for making student groups, conti
 
 ## Project status
 
-Version 0.3.3 adds **Pick a student** to student view for quick classroom choices, with a large name display and a confetti reveal. Each fresh draw gives every present student an equal chance, including students who have not been assigned to a group. Teachers can move between Groups, Today, and Pick a student while keeping the projector in student view. This release also prevents an unwanted horizontal scrollbar during reveal animations while preserving scrolling within the daily rotation chart. The application has 250 tests, including picker eligibility and selection, legacy backup imports, planner validation, pair starters, timer behavior, and sound playback.
+Version 0.4.0 redesigns the classroom reveals: thirteen short animations, each with its own sound, play when teams or the day are revealed. Six are new (Pixel Quest, Block mine, a hard Dot-to-dot, Dino egg hatch, Wizard owl and Squishy bounce), and the Saturn V moon landing, Black-hole, Kitten & yarn, Balloon, Fairy, Ocean wave and Confetti reveals were rebuilt. Version 0.3.3 added **Pick a student** to student view, with a large name display and the confetti reveal. The application has 553 tests, including reveal choreography and timing, sound provenance and levels, picker eligibility, planner validation, timer behavior, and sound playback.
 
 For follow-up work, start with [the project handoff](docs/PROJECT_HANDOFF.md). The product rules that should not change accidentally are in [the product contract](PRODUCT_SPEC.md), and the build and release details are in [the development guide](docs/DEVELOPMENT.md).
 
@@ -29,7 +29,7 @@ This was made for the small, repetitive planning decisions that consume a surpri
 - Pin multiple groups for a daily station visit and let the planner choose their rounds.
 - Plan activities and reusable classroom locations separately.
 - Print group routes with activity pictures, words, colors, and symbols.
-- Project daily rotations or reveal all teams together with nine playful visual effects.
+- Project daily rotations or reveal all teams together with thirteen playful reveal animations, each with a gentle soundtrack that can be muted.
 - Pick one present student at random with a confetti reveal, even before assigning groups or planning a day.
 - Run a quiet rotation timer, then play a YouTube transition song or built-in music lasting up to two minutes.
 - Choose woodland, space, ocean, garden, dinosaur, weather, storybook, or builder names and symbols for groups.
@@ -80,8 +80,6 @@ npm run tauri:dev
 The public information site lives in `website/` and has its own lockfile and scripts. A static copy in `public-site/` is published with the browser app on GitHub Pages.
 
 The application is intentionally split into pure domain modules in `src/` and React views in `src/views/`. Read [the development guide](docs/DEVELOPMENT.md) before changing persistence, deployment, or release packaging.
-
-[Motion Desk](tooling/animation-workbench/README.md) is a separate local animation workbench for posing and retiming the cat reveal. Run `npm run animation:dev` to use its timeline, onion skins, synchronized comparisons, and JSON/SVG exports. It is excluded from the classroom app build.
 
 ## Product boundaries
 

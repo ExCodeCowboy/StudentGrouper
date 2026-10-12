@@ -1,251 +1,696 @@
-import { useId } from 'react';
-import { fadeWindow, mix, MOON_DURATION_MS, progress, smooth } from './sceneMotion';
-import { useSceneTime } from './useSceneTime';
+import { memo, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useRevealTargets } from './revealTargets';
 import type { RevealEffect } from './types';
+import { ForegroundPalmsArt, GLINT_PATH, INK, MOON_ART, PadLayerArt, SPARKLE, STAR5, StarsArt, r1, r2 } from './moonArt';
+import { APOLLO_ART, AstronautActor, FlagActor, FlagGroundMarks, Footprint, LM_HATCH, LM_SHADOW, LanderLegs } from './apolloIllustration';
+import { FrameContext, attr, createFrameBus, css, shown, useFrame, useMoonClock, useNodes } from './moonFrame';
+import {
+  MOON_ASTRO_TURN, MOON_BEATS, MOON_DURATION_MS, MOON_FAR_REST, MOON_FLAG_POLE, MOON_FLAG_SCALE, MOON_FLAG_SPOT, MOON_FLAG_W, MOON_FLAG_WINDOWS,
+  MOON_DISC_FILL, MOON_FOOTPRINTS, MOON_GLINT_SIZE, MOON_GLINT_WORLD, MOON_LM_PIVOT_Y, MOON_NEAR_FINAL, MOON_PAD_PUFF_COUNT, MOON_PAD_UNMOUNT, MOON_PILE_BASE,
+  MOON_PREMOUNT, MOON_RIM_STAR, MOON_SKY_EARTH, MOON_SUN, MOON_VENTS, RIG_ORIGIN, moonCamLayer, moonCamPoint, moonCamTransform, moonCaption, moonColumbia,
+  moonDeckFlash, moonDepthScale, moonDive, moonDust,
+  moonDustStreaks, moonFarCam, moonFit, moonGlobe, moonGroundDrop, moonHatch, moonHopGrains, moonIris, moonIrisCenter, moonIrisLift, moonIrisRadius, moonLanderPose,
+  moonLaunchOverlay, moonLegs, moonLmFlameScale, moonLmShadow, moonNearCam, moonPadGlow, moonPadPuffs, moonPopLayout, moonRcsPuffs, moonRigScale,
+  moonRocketPose, moonShake, moonSkies, moonSpace, moonStagePoses, moonStructureKey, moonToScreen, moonTrenchFire, moonTwinkleSchedule,
+  moonVentWisps, moonViewBox, type MoonFit, type MoonTwinkleTarget,
+} from './moonTimeline';
 import './moon.css';
-import { Astronaut, LunarLander } from './apolloIllustration';
 
-// Generate once so camera motion keeps the sky steady. Independent random
-// coordinates avoid the diagonal bands produced by modular arithmetic.
-const stars = (() => {
-  let seed = 0x41504f4c;
-  const random = () => {
-    seed += 0x6d2b79f5;
-    let value = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-  return Array.from({ length: 82 }, () => ({
-    x: 16 + random() * 1568,
-    y: 16 + random() * 728,
-    radius: .75 + random() ** 2 * 1.4,
-    opacity: .25 + random() * .65,
-    glint: random() < .07,
-  }));
+/*
+ * Saturn V · Moon landing, the storybook rebuild.
+ *
+ * Layers: CSS skies and stars → a shaken "rig" of compositor layers (pad,
+ * globe, far and near ground, sky Earth, palms) around one world SVG that
+ * holds only the moving actors → overlays that never shake (CSS keyframes,
+ * mounted at T = 0 so the lab can seek them) → an iris clip onto the groups.
+ *
+ * React renders only the structure (moonStructureKey); per frame, writers
+ * registered with useFrame set transforms and a few light opacities (sky,
+ * glow, flash, shading, shadows) from the pure timeline. Static art is
+ * memoized or hoisted. Nothing solid fades: it shrinks, moves, pops or is
+ * switched in one frame (the dive swap).
+ */
+
+const deg = (a: number) => a * Math.PI / 180;
+/** Hide an HTML layer, or clear the override so it inherits (a hidden parent still hides it). */
+const hideHtml = (el: HTMLElement | null, on: boolean) => css(el, 'visibility', on ? '' : 'hidden');
+const launchOn = (T: number) => T < MOON_PAD_UNMOUNT;
+
+/** Size of the stage root (the fixed, full-screen reveal layer in the app). */
+function useStageSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState(() => ({ w: typeof window === 'undefined' ? 1280 : window.innerWidth, h: typeof window === 'undefined' ? 800 : window.innerHeight }));
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const update = () => {
+      const w = element.clientWidth || window.innerWidth;
+      const h = element.clientHeight || window.innerHeight;
+      setSize((current) => (current.w === w && current.h === h ? current : { w, h }));
+    };
+    update();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
+}
+
+// ---------------------------------------------------------------- sprite pools (smoke, dust)
+type Sprite = { slot: number; href: string; transform: string };
+/**
+ * A fixed pool of <use> sprites. Each puff keeps its slot (so its shape is
+ * never re-cloned); slots without a live puff are hidden.
+ */
+const SpritePool = memo(function SpritePool({ size, sprites }: { size: number; sprites: (T: number) => Sprite[] }) {
+  const group = useRef<SVGGElement>(null);
+  const slots = useMemo(() => Array.from({ length: size }, (_, i) => <use key={i} visibility="hidden" />), [size]);
+  useFrame((T) => {
+    const nodes = group.current?.children;
+    if (!nodes) return;
+    const live: (Sprite | undefined)[] = Array.from({ length: size });
+    for (const sprite of sprites(T)) live[sprite.slot] = sprite;
+    for (let i = 0; i < nodes.length; i++) {
+      const sprite = live[i];
+      shown(nodes[i], !!sprite);
+      if (sprite) { attr(nodes[i], 'href', sprite.href); attr(nodes[i], 'transform', sprite.transform); }
+    }
+  });
+  return <g ref={group}>{slots}</g>;
+});
+/** Pad puffs keep one draw order (back to front as they are seen mid-launch), so no sprite is re-cloned per frame. */
+const PAD_ORDER = (() => {
+  const order: number[] = Array.from({ length: MOON_PAD_PUFF_COUNT }, () => 0);
+  moonPadPuffs(2.45).forEach((p, rank) => { order[p.id] = rank; });
+  return order;
 })();
-
-function SaturnV({ time, id }: { time: number; id: string }) {
-  const separation = progress(time, 2.25, 3.45);
-  const secondSeparation = smooth(progress(time, 2.98, 3.56));
-  const ignition = smooth(progress(time, .12, .75));
-  const towerJettison = smooth(progress(time, 2.72, 3.25));
-  const flicker = 1 + Math.sin(time * 72) * .08 + Math.cos(time * 43) * .05;
-  const upperPlume = Math.max(0, Math.min(.85, (separation * 270 - 16) / 132));
-  const thirdPlume = Math.max(0, Math.min(.85, (secondSeparation * 155 - 14) / 100));
-  return <g strokeLinejoin="round" transform="scale(.8 1)">
-    <g transform={`translate(${-separation * separation * 16} ${separation * 270}) rotate(${-separation * separation * 9} 0 -70)`} opacity={1 - smooth(progress(time, 3, 3.6))}>
-      <g transform={`scale(1 ${ignition * flicker * (1 - smooth(progress(time, 2.12, 2.27)))})`}>
-        <path d="M-28 1Q-48 94-38 213L-53 367Q0 409 53 367L39 214Q49 95 28 1Z" fill={`url(#${id}-exhaust)`} />
-        <path d="M-20 2Q-28 95-16 194L-25 317Q0 341 25 317L16 194Q29 96 20 2Z" fill={`url(#${id}-exhaust-core)`} />
-        <path d="M-12 3-15 136-5 188 2 158 12 193 15 132 12 3Z" fill="#fffef6" />
-      </g>
-      <g stroke="#394755" strokeWidth="2">
-        <path d="M-27-157H27V-10H-27Z" fill={`url(#${id}-white)`} />
-        <path d="M-27-152H27V-126H-27Z" fill="#243140" />
-        <path d="M-27-57h10v42h-10Zm19 0h16v42H-8Zm26 0h9v42h-9Z" fill="#293139" />
-        <path d="M-15-126V-43M16-126V-43" stroke="#e2ddd0" strokeWidth="4" />
-        <path d="M-22-119v61M-19-119v61M22-119v61M19-119v61M-23-18h46M-23-22h46" stroke="#8b9393" strokeWidth=".6" opacity=".7" />
-        <path d="M-27-44-48-1-25-10M27-44 48-1 25-10" fill="#dee3e5" />
-        {[-18, 0, 18].map((x) => <path key={x} d={`M${x - 5}-10h10l4 17h-18Z`} fill="#485768" />)}
-        <path d="M-31-8H31" stroke="#bec4c7" strokeWidth="4" />
-      </g>
-      <text x="3" y="-109" textAnchor="middle" fill="#ad4339" fontSize="8" fontWeight="700"><tspan x="3">U</tspan><tspan x="3" dy="10">S</tspan><tspan x="3" dy="10">A</tspan></text>
-    </g>
-    <g transform={`translate(${-secondSeparation * secondSeparation * 9} ${secondSeparation * 155}) rotate(${-secondSeparation * 5} 0 -218)`} opacity={1 - smooth(progress(time, 3.4, 3.75))}>
-    <g stroke="#394755" strokeWidth="2">
-      <path d="M-27-284H27V-157H-27Z" fill={`url(#${id}-white)`} />
-      <path d="M-27-276H27V-253H-27Z" fill="#263342" />
-      <path d="M-20-275V-253M0-275V-253M20-275V-253" stroke="#eef0e9" strokeWidth="8" />
-      <path d="M-27-170H27M-27-178H27M-27-247H27" stroke="#88939b" />
-      <path d="M-24-241v57M-21-241v57M21-241v57M24-241v57" stroke="#949c9d" strokeWidth=".6" />
-      <path d="M-27-284-19-309H19L27-284Z" fill="#d7dde0" />
-    </g>
-    <text transform="translate(3 -188) rotate(-90)" fill="#253746" fontSize="7" fontWeight="700" letterSpacing="2">UNITED STATES</text>
-    <g opacity={smooth(progress(time, 2.35, 2.49)) * (1 - smooth(progress(time, 2.88, 3.02)))} transform={`translate(0 -154) scale(.67 ${upperPlume * flicker})`}>
-      <path d="M-17-5h9l3 8h-15Zm25 0h9l3 8H5ZM-4-5h8l3 8H-7Z" fill="#687277" />
-      <path d="M-21 0Q-25 44 0 106Q25 44 21 0Z" fill={`url(#${id}-exhaust)`} /><path d="M-10 0 0 64 10 0" fill="#ffffe8" />
-    </g>
-    </g>
-    <g stroke="#394755" strokeWidth="2">
-      <path d="M-19-359H19V-309H-19Z" fill={`url(#${id}-white)`} />
-      <path d="M-19-328H19V-309H-19Z" fill="#2b3846" />
-      <path d="M-19-359-11-385H11L19-359Z" fill="#efeee4" />
-      <path d="M-11-385 0-407 11-385Z" fill="#dde1de" />
-      <g transform={`translate(${towerJettison * 66} ${-towerJettison * 84}) rotate(${towerJettison * 12} 0 -429)`} opacity={1 - towerJettison}>
-        <path d="M-5-407V-431H5V-407M0-431V-451" fill="#e7e5de" stroke="#e7e5de" />
-        <path d="M-6-408 6-428M6-408-6-428" stroke="#6a7782" strokeWidth="1.5" />
-      </g>
-    </g>
-    <g opacity={smooth(progress(time, 3.1, 3.22))} transform={`translate(0 -308) scale(1 ${thirdPlume * flicker})`}>
-      <path d="M-5-3H5L8 7H-8Z" fill="#687277" />
-      <path d="M-8 7Q-18 49 0 92Q18 49 8 7Z" fill={`url(#${id}-exhaust)`} /><path d="M-4 7 0 60 4 7Z" fill="#fffbe4" />
-    </g>
-  </g>;
+const PAD_SLOTS = MOON_VENTS.length + MOON_PAD_PUFF_COUNT;
+function padSprites(T: number): Sprite[] {
+  const out: Sprite[] = moonVentWisps(T).map((v) => ({ slot: v.id, href: `#mn-smoke${v.shape}`, transform: `translate(${r1(v.x)} ${r1(v.y)}) scale(${r2(v.flip * v.s)} ${r2(v.s)})` }));
+  for (const p of moonPadPuffs(T)) out.push({ slot: MOON_VENTS.length + PAD_ORDER[p.id], href: `#${p.warm ? 'mn-warm' : 'mn-smoke'}${p.shape}`, transform: `translate(${r1(p.x)} ${r1(p.y)}) scale(${r2(p.s * p.flip)} ${r2(p.s)})` });
+  return out;
+}
+const DUST_SLOTS = 24;
+function dustSprites(T: number): Sprite[] {
+  return moonDust(T, moonLanderPose(T).x).map((p) => ({ slot: p.id, href: `#mn-dust${p.shape}`, transform: `translate(${r1(p.x)} ${r1(p.y)}) scale(${r2(p.s * p.flip)} ${r2(p.s * .56)})` }));
+}
+const RCS_SLOTS = 4;
+function rcsSprites(T: number): Sprite[] {
+  return moonRcsPuffs(T).map((p) => ({ slot: p.id, href: '#mn-smoke2', transform: `translate(${r1(p.x)} ${p.y}) scale(${r2(p.dir * p.s)} ${r2(p.s)})` }));
 }
 
-function LaunchTower({ time }: { time: number }) {
-  const retract = smooth(progress(time, .22, .68));
-  return <g stroke="#995d54" strokeWidth="5" fill="none">
-    <path d="M666 630V180H712V630M656 630H722" />
-    {Array.from({ length: 9 }, (_, i) => <g key={i}><path d={`M666 ${185 + i * 48}l46 48m-46 0 46-48M666 ${185 + i * 48}h46`} /><g transform={`translate(712 ${197 + i * 44}) scale(${mix(1, .32, retract)} 1)`}><path d="M0 0h65v10H0Z" fill="#b27b65" strokeWidth="2" /><path d="M3 0v-6h59v6M18-6v6m19-6v6m18-6v6" stroke="#c2b7aa" strokeWidth="1.2" /></g></g>)}
-    <path d="M684 180V150M675 167h20" stroke="#bbc7c7" strokeWidth="3" />
-    <path d="M634 630H837L856 648H617Z" fill="#43556b" stroke="#728499" />
-  </g>;
+// ---------------------------------------------------------------- launch
+const Skies = memo(function Skies() {
+  const blue = useRef<HTMLDivElement>(null);
+  const dawn = useRef<HTMLDivElement>(null);
+  const dawnStars = useRef<HTMLDivElement>(null);
+  useFrame((T) => {
+    const s = moonSkies(T);
+    css(blue.current, 'opacity', r2(s.blue)); hideHtml(blue.current, s.blue > 0);
+    css(dawn.current, 'opacity', r2(s.dawn)); hideHtml(dawn.current, s.dawn > 0);
+    css(dawnStars.current, 'opacity', r2(s.dawn)); hideHtml(dawnStars.current, s.dawn > 0);
+  });
+  return <>
+    <div ref={blue} className="moon-sky moon-blue" />
+    <div ref={dawn} className="moon-sky moon-dawn" />
+    <div ref={dawnStars} className="moon-stars">{MOON_ART.dawnTwinkles}</div>
+  </>;
+});
+const StarField = memo(function StarField({ viewBox }: { viewBox: string }) {
+  const stars = useRef<HTMLDivElement>(null);
+  useFrame((T) => { const o = moonSkies(T).stars; css(stars.current, 'opacity', r2(o)); hideHtml(stars.current, o > 0); });
+  return <div ref={stars} className="moon-stars"><StarsArt viewBox={viewBox} />{MOON_ART.twinkles}</div>;
+});
+/**
+ * Compositor camera: shake, countdown push-in and release pull-back pivot on
+ * the pad; during the iris the whole scene rises with the closing window.
+ */
+function Rig({ fit, children }: { fit: MoonFit; children: ReactNode }) {
+  const rig = useRef<HTMLDivElement>(null);
+  const iris = useMemo(() => moonIris(fit), [fit]);
+  useFrame((T) => {
+    if (T >= 3.4) {
+      const lift = moonIrisLift(T, iris);
+      css(rig.current, 'transform', lift > 0 ? `translate3d(0, ${r1(-lift)}px, 0)` : 'none');
+      return;
+    }
+    const o = moonToScreen(fit, RIG_ORIGIN.x, RIG_ORIGIN.y);
+    const shake = moonShake(T);
+    css(rig.current, 'transform-origin', `${r1(o.x)}px ${r1(o.y)}px`);
+    css(rig.current, 'transform', `translate3d(${r1(shake.x * fit.k)}px, ${r1(shake.y * fit.k)}px, 0) scale(${moonRigScale(T).toFixed(4)})`);
+  });
+  return <div ref={rig} className="moon-rig">{children}</div>;
 }
-
-function Earth({ id }: { id: string }) {
-  return <g>
-    <circle r="65" fill="#8bd3ed" opacity=".14" /><circle r="60" fill={`url(#${id}-earth)`} />
-    <g clipPath={`url(#${id}-earth-clip)`}>
-      <path d="M-57-28-39-44-25-42-18-31-28-20-14-15-10 1-23 12-38 2-43-12-59-13ZM-19 9-2 17 4 29-5 42-13 63-21 48-19 32-28 19ZM16-55 45-45 61-23 46-15 26-24 16-12 8-25ZM35-9 62 4 48 30 28 35 19 17Z" fill="#8ab69c" />
-      <g fill="none" stroke="#edf5ee" strokeWidth="4" opacity=".85"><path d="M-64-18Q-32-47-6-29T58-13M-51 22Q-35 3-19 12M-4 50Q18 33 57 38M-9-54Q19-60 45-41" /><path d="M-48-31Q-20-38-7-23M17 2Q38-9 62 5" strokeWidth="2" /></g>
-      <ellipse cx="29" cy="20" rx="52" ry="64" fill={`url(#${id}-earth-shadow)`} />
+const PadLayer = memo(function PadLayer({ fit, viewBox }: { fit: MoonFit; viewBox: string }) {
+  const layer = useRef<HTMLDivElement>(null);
+  useFrame((T) => {
+    hideHtml(layer.current, launchOn(T));
+    if (launchOn(T)) css(layer.current, 'transform', `translate3d(0, ${r1(moonGroundDrop(T) * fit.k)}px, 0)`);
+  });
+  return <div ref={layer} className="moon-layer"><PadLayerArt viewBox={viewBox} /></div>;
+});
+/** Light, so it may fade: the warm wash over the whole frame and the glow around the pad. */
+const PadLight = memo(function PadLight({ fit }: { fit: MoonFit }) {
+  const wash = useRef<HTMLDivElement>(null);
+  const glow = useRef<HTMLDivElement>(null);
+  const at = moonToScreen(fit, 740 - 440, 764 - 170);
+  useFrame((T) => {
+    const g = Math.min(1, moonPadGlow(T));
+    for (const el of [wash.current, glow.current]) { css(el, 'opacity', r2(g)); hideHtml(el, g > 0); }
+    if (g > 0) css(glow.current, 'transform', `translate3d(0, ${r1(moonGroundDrop(T) * fit.k)}px, 0)`);
+  });
+  return <>
+    <div ref={wash} className="moon-wash" />
+    <div ref={glow} className="moon-padglow" style={{ left: r1(at.x), top: r1(at.y), width: r1(880 * fit.k), height: r1(340 * fit.k) }} />
+  </>;
+});
+const Palms = memo(function Palms({ fit, viewBox }: { fit: MoonFit; viewBox: string }) {
+  const layer = useRef<HTMLDivElement>(null);
+  useFrame((T) => {
+    hideHtml(layer.current, launchOn(T));
+    if (launchOn(T)) css(layer.current, 'transform', `translate3d(0, ${r1(moonGroundDrop(T) * 1.3 * fit.k)}px, 0)`);
+  });
+  return <div ref={layer} className="moon-layer"><ForegroundPalmsArt viewBox={viewBox} /></div>;
+});
+/** Pad-layer actors in the world SVG ride the falling ground with the same drop. */
+function PadGroup({ children }: { children: ReactNode }) {
+  const g = useRef<SVGGElement>(null);
+  useFrame((T) => {
+    shown(g.current, launchOn(T));
+    if (launchOn(T)) attr(g.current, 'transform', `translate(0 ${r1(moonGroundDrop(T))})`);
+  });
+  return <g ref={g}>{children}</g>;
+}
+const TrenchFire = memo(function TrenchFire() {
+  const { nodes: flames, bind: bindflames } = useNodes();
+  useFrame((T) => {
+    const fire = moonTrenchFire(T);
+    [-1, 1].forEach((s, i) => {
+      shown(flames[i], !!fire);
+      if (fire) attr(flames[i], 'transform', `translate(${740 + s * 170} 806) rotate(${-s * 90}) scale(${r2(.42 * fire.fl)} ${r2(.62 * fire.a * (2 - fire.fl))})`);
+    });
+  });
+  return <g>{[0, 1].map((i) => <g key={i} ref={bindflames(i)} visibility="hidden">{MOON_ART.plume}</g>)}</g>;
+});
+const PadFront = memo(function PadFront() {
+  const hot = useRef<SVGEllipseElement>(null);
+  const flash = useRef<SVGGElement>(null);
+  const streak = useRef<SVGEllipseElement>(null);
+  const streak2 = useRef<SVGEllipseElement>(null);
+  useFrame((T) => {
+    const g = Math.min(1, moonPadGlow(T));
+    shown(hot.current, g > 0); attr(hot.current, 'opacity', r2(g));
+    const f = moonDeckFlash(T);
+    shown(flash.current, !!f);
+    if (f) {
+      attr(flash.current, 'opacity', r2(f.f));
+      attr(streak.current, 'rx', r1(260 + 520 * f.e));
+      attr(streak2.current, 'rx', r1(120 + 220 * f.e));
+    }
+  });
+  return <>
+    <SpritePool size={PAD_SLOTS} sprites={padSprites} />
+    <ellipse ref={hot} cx="740" cy="769" rx="210" ry="90" fill="url(#mn-hotsmoke)" visibility="hidden" />
+    <g ref={flash} visibility="hidden">
+      <ellipse cx="740" cy="760" rx="230" ry="70" fill="url(#mn-flash)" />
+      <ellipse ref={streak} cx="740" cy="760" ry="4.5" fill="#fffbe8" opacity=".9" />
+      <ellipse ref={streak2} cx="740" cy="760" ry="9" fill="#fff3c4" opacity=".7" />
     </g>
-    <circle r="60" fill="none" stroke="#c9ebf0" strokeOpacity=".5" strokeWidth="2" />
+  </>;
+});
+/** A kid-readable "pop!": a bright ring and four little puffs that shrink away. */
+const RingPuff = memo(function RingPuff({ y, which }: { y: number; which: 'ring1' | 'ring2' }) {
+  const root = useRef<SVGGElement>(null);
+  const { nodes: els, bind } = useNodes();
+  useFrame((T) => {
+    const t = moonStagePoses(T)[which];
+    shown(root.current, t !== null);
+    if (t === null) return;
+    const e = 1 - (1 - t) ** 3;
+    const w = Math.sqrt(1 - t);
+    const [back, front, ...puffs] = [0, 1, 2, 3, 4, 5].map((i) => els[i]);
+    for (const el of [back, front]) { attr(el, 'rx', r1(34 + 90 * e)); attr(el, 'ry', r1(12 + 28 * e)); }
+    attr(back, 'stroke-width', r1(18 * w + 1));
+    attr(front, 'stroke-width', r1(12 * w));
+    [[-1, 0], [1, 0], [-.6, -1], [.6, 1]].forEach(([sx, sy], i) => attr(puffs[i], 'transform', `translate(${r1(sx * (50 + 90 * e))} ${r1(sy * (14 + 26 * e))}) scale(${r2(Math.sign(sx) * (.46 - .12 * e) * w)} ${r2((.46 - .12 * e) * w)})`));
+  });
+  return <g ref={root} transform={`translate(0 ${y})`} visibility="hidden">
+    <ellipse ref={bind(0)} fill="none" stroke="#8f82ad" />
+    <ellipse ref={bind(1)} fill="none" stroke="#fffaf0" />
+    {[2, 3, 4, 5].map((i) => <use key={i} ref={bind(i)} href="#mn-smoke1" />)}
   </g>;
-}
-
-function LunarFlag({ id }: { id: string }) {
-  const cloth = 'M1-89H56L59-54Q30-58 1-54Z';
-  const stripeHeight = 35 / 13;
-  const star = 'M0 -1 .2245 -.309 .9511 -.309 .3633 .118 .5878 .809 0 .382 -.5878 .809 -.3633 .118 -.9511 -.309 -.2245 -.309Z';
-  return <g>
-    <defs><clipPath id={`${id}-flag-cloth`}><path d={cloth} /></clipPath></defs>
-    <g clipPath={`url(#${id}-flag-cloth)`}>
-      <path d={cloth} fill="#f5f0df" />
-      {Array.from({ length: 7 }, (_, stripe) => <rect key={stripe} x="1" y={-89 + stripe * 2 * stripeHeight} width="59" height={stripeHeight} fill="#b83c43" />)}
-      <rect x="1" y="-89" width="22" height={stripeHeight * 7} fill="#233d65" />
-      {Array.from({ length: 9 }, (_, row) => Array.from({ length: row % 2 ? 5 : 6 }, (_, column) => <path key={`${row}-${column}`} d={star} fill="#fff8e5" transform={`translate(${1 + (column + .5 + row % 2 * .5) * 22 / 6} ${-89 + (row + 1) * stripeHeight * .7}) scale(.8)`} />))}
+});
+/** The Saturn V: burns and stage separations are transforms on memoized art. */
+const SaturnV = memo(function SaturnV() {
+  const { nodes: e, bind } = useNodes();
+  useFrame((T) => {
+    shown(e.root, T < MOON_BEATS.glintCut);
+    if (T >= MOON_BEATS.glintCut) return;
+    const r = moonRocketPose(T);
+    attr(e.root, 'transform', `translate(${r1(r.x)} ${r1(r.y)}) rotate(${r1(r.rot)}) scale(${Math.round(r.s * 1000) / 1000})`);
+    const p = moonStagePoses(T);
+    const f = p.flicker;
+    shown(e.s3, p.s3Burn > 0);
+    if (p.s3Burn > 0) attr(e.s3, 'transform', `translate(0 -355) scale(${r2(.51 * f)} ${r2(.74 * p.s3Burn * f)})`);
+    shown(e.tower, !!p.tower);
+    if (p.tower) {
+      attr(e.tower, 'transform', `translate(${r1(p.tower.x)} ${r1(p.tower.y)}) rotate(${r1(p.tower.rot)} 0 -578) translate(0 -578) scale(${r2(p.tower.s)}) translate(0 578)`);
+      shown(e.towerFlame, p.tower.flame);
+    }
+    for (const [key, stage] of [['stage1', p.stage1], ['stage2', p.stage2]] as const) {
+      shown(e[key], !!stage);
+      if (stage) attr(e[key], 'transform', `translate(${r1(stage.x)} ${r1(stage.y)}) rotate(${r1(stage.rot)} 0 ${stage.pivot}) translate(0 ${stage.pivot}) scale(${r2(stage.s)}) translate(0 ${-stage.pivot})`);
+    }
+    shown(e.s2, p.s2Burn > 0);
+    if (p.s2Burn > 0) attr(e.s2, 'transform', `translate(0 -204) scale(${r2(1.06 * f)} ${r2(1.03 * p.s2Burn * f)})`);
+    shown(e.s1, p.s1Burn > 0);
+    if (p.s1Burn > 0) attr(e.s1, 'transform', `scale(${r2(.925 * (.94 + .06 * p.s1Burn) * (2 - f))} ${r2(.98 * p.s1Burn * f)})`);
+    shown(e.seed, p.seed > 0);
+    if (p.seed > 0) attr(e.seed, 'transform', `scale(.65 ${r2(p.seed)})`);
+    shown(e.underglow, p.underglow > 0);
+    attr(e.underglow, 'opacity', r2(p.underglow));
+  });
+  return <g ref={bind('root')}>
+    <g ref={bind('s3')} visibility="hidden">{MOON_ART.smallPlume}</g>
+    {MOON_ART.stageThree}
+    <g ref={bind('tower')}><g ref={bind('towerFlame')} transform="translate(0 -576) scale(.17 .3)" visibility="hidden">{MOON_ART.smallPlume}</g>{MOON_ART.tower}</g>
+    <g ref={bind('stage2')}><g ref={bind('s2')} visibility="hidden">{MOON_ART.smallPlume}</g>{MOON_ART.stageTwo}</g>
+    <g ref={bind('stage1')}>
+      <g ref={bind('s1')} visibility="hidden">{MOON_ART.plume}</g>
+      <g ref={bind('seed')} visibility="hidden">{MOON_ART.plume}</g>
+      {MOON_ART.stageOne}
+      <path ref={bind('underglow')} d="M-48-94H48V6H-48Z" fill="url(#mn-underglow)" visibility="hidden" />
     </g>
-    <path d={cloth} fill="none" stroke="#d4d0c2" strokeWidth="1" />
+    <RingPuff y={-221} which="ring1" />
+    <RingPuff y={-355} which="ring2" />
   </g>;
+});
+const SUN_AT = `translate(${MOON_SUN.x} ${MOON_SUN.y})`;
+const Space = memo(function Space() {
+  const flare = useRef<SVGGElement>(null);
+  const core = useRef<SVGGElement>(null);
+  const earth = useRef<SVGGElement>(null);
+  const moon = useRef<SVGGElement>(null);
+  const group = useRef<SVGGElement>(null);
+  useFrame((T) => {
+    const on = T > 3.0 && T < MOON_BEATS.glintCut;
+    shown(group.current, on);
+    if (!on) return;
+    const s = moonSpace(T);
+    // Light fades in; the solid disc blooms in by scale, at full strength.
+    attr(flare.current, 'opacity', r2(s.flare));
+    shown(core.current, s.sunCore > 0);
+    attr(core.current, 'transform', s.sunCore === 1 ? SUN_AT : `${SUN_AT} scale(${r2(Math.max(0, s.sunCore))})`);
+    attr(earth.current, 'transform', `translate(${r1(s.earth.x)} ${r1(s.earth.y)}) scale(${r2(s.earth.s)})`);
+    shown(moon.current, s.moonSmall.show > 0);
+    attr(moon.current, 'transform', `translate(${r1(s.moonSmall.x)} ${r1(s.moonSmall.y)}) scale(${r2(s.moonSmall.s * (.4 + .6 * s.moonSmall.show))})`);
+  });
+  return <g ref={group} visibility="hidden">
+    <g ref={flare} transform={SUN_AT}>{MOON_ART.sunLight}</g>
+    <g ref={core} transform={SUN_AT} visibility="hidden">{MOON_ART.sunCore}</g>
+    <g ref={earth}>{MOON_ART.earth}</g>
+    <g ref={moon} visibility="hidden">{MOON_ART.moonGlobe}</g>
+  </g>;
+});
+
+// ---------------------------------------------------------------- the Moon
+/**
+ * The Moon globe from the sparkle cut to the horizon. Nothing on it fades:
+ * during the dive its maria and craters rush out past the rim (clipped to the
+ * disc) and only the terminator shading, which is light, lifts.
+ */
+const GlobeLayer = memo(function GlobeLayer({ viewBox }: { viewBox: string }) {
+  const layer = useRef<HTMLDivElement>(null);
+  const { nodes: e, bind } = useNodes();
+  useFrame((T) => {
+    const dive = moonDive(T);
+    hideHtml(layer.current, dive.globe);
+    if (!dive.globe) return;
+    const globe = moonGlobe(T);
+    attr(e.root, 'transform', `translate(${r1(globe.cx)} ${r1(globe.cy)}) scale(${Math.round(globe.r / 100 * 1000) / 1000})`);
+    attr(e.disc, 'fill', dive.disc);
+    shown(e.decals, dive.decals !== null);
+    if (dive.decals !== null) attr(e.decals, 'transform', dive.decals === 1 ? null : `translate(0 -100) scale(${r2(dive.decals)}) translate(0 100)`);
+    shown(e.night, dive.night > 0);
+    attr(e.night, 'opacity', r2(dive.night));
+  });
+  return <div ref={layer} className="moon-layer" style={{ visibility: 'hidden' }}><svg viewBox={viewBox} preserveAspectRatio="none"><g ref={bind('root')}>
+    <circle ref={bind('disc')} r="100" fill={MOON_DISC_FILL[0]} />
+    <g clipPath="url(#mn-globe-clip)"><g ref={bind('decals')}>{MOON_ART.moonDecals}</g></g>
+    <circle ref={bind('night')} r="100" fill="url(#mn-moon-night)" />
+    {MOON_ART.moonRim}
+  </g></svg></div>;
+});
+/** During the dive, the ground layers are seen through the growing globe (just inside its rim line, which stays whole). */
+function diveClip(fit: MoonFit, T: number) {
+  if (T >= 5.95) return 'none';
+  const globe = moonGlobe(T);
+  return `circle(${r1(Math.max(0, globe.r * fit.k - 1.5))}px at ${r1(fit.ox + globe.cx * fit.k)}px ${r1(fit.oy + globe.cy * fit.k)}px)`;
+}
+const FAR_CAM = moonCamTransform(MOON_FAR_REST);
+const FarLayer = memo(function FarLayer({ fit, viewBox }: { fit: MoonFit; viewBox: string }) {
+  const layer = useRef<HTMLDivElement>(null);
+  useFrame((T) => {
+    const el = layer.current;
+    const on = moonDive(T).far;
+    hideHtml(el, on);
+    if (!on) return;
+    const cam = moonCamLayer(fit, MOON_FAR_REST, moonFarCam(T));
+    css(el, 'transform-origin', cam.origin);
+    css(el, 'transform', cam.transform);
+    const clip = diveClip(fit, T);
+    css(el, 'clip-path', clip); css(el, '-webkit-clip-path', clip);
+  });
+  return <div ref={layer} className="moon-layer" style={{ visibility: 'hidden' }}><svg viewBox={viewBox} preserveAspectRatio="none"><g transform={FAR_CAM}>{APOLLO_ART.far}</g></svg></div>;
+});
+const NearLayer = memo(function NearLayer({ fit, viewBox }: { fit: MoonFit; viewBox: string }) {
+  const layer = useRef<HTMLDivElement>(null);
+  const cam = useRef<SVGGElement>(null);
+  const pile = useRef<SVGGElement>(null);
+  useFrame((T) => {
+    const el = layer.current;
+    const dive = moonDive(T);
+    hideHtml(el, dive.near);
+    if (!dive.near) return;
+    attr(cam.current, 'transform', moonCamTransform(moonNearCam(T)));
+    // The boulder pile pops up from its base on the swap frame (an object arriving, not a ghost).
+    const { x, y } = MOON_PILE_BASE;
+    attr(pile.current, 'transform', dive.pile === 1 ? null : `translate(${x} ${y}) scale(${r2(dive.pile)}) translate(${-x} ${-y})`);
+    const clip = diveClip(fit, T);
+    css(el, 'clip-path', clip); css(el, '-webkit-clip-path', clip);
+  });
+  return <div ref={layer} className="moon-layer" style={{ visibility: 'hidden' }}><svg viewBox={viewBox} preserveAspectRatio="none"><g ref={cam}>{APOLLO_ART.near}<g ref={pile}>{APOLLO_ART.boulders}</g></g></svg></div>;
+});
+const SkyEarth = memo(function SkyEarth({ fit }: { fit: MoonFit }) {
+  const layer = useRef<HTMLDivElement>(null);
+  const size = 248 * MOON_SKY_EARTH.r / 100 * fit.k;
+  const at = moonToScreen(fit, MOON_SKY_EARTH.x, MOON_SKY_EARTH.y);
+  useFrame((T) => hideHtml(layer.current, T >= MOON_BEATS.glintCut));
+  return <div ref={layer} className="moon-sky-earth" style={{ visibility: 'hidden', left: r1(at.x - size / 2), top: r1(at.y - size / 2), width: r1(size), height: r1(size) }}><svg viewBox="-124 -124 248 248">{MOON_ART.earth}</svg></div>;
+});
+/** Near-ground camera for the lunar actors (the orbit shots before 5.30 use world space). */
+function NearGroup({ children }: { children: ReactNode }) {
+  const g = useRef<SVGGElement>(null);
+  useFrame((T) => attr(g.current, 'transform', T > 5.3 ? moonCamTransform(moonNearCam(T)) : null));
+  return <g ref={g}>{children}</g>;
+}
+const LmShadow = memo(function LmShadow() {
+  const path = useRef<SVGPathElement>(null);
+  useFrame((T) => {
+    shown(path.current, T > 5.35);
+    if (T <= 5.35) return;
+    const s = moonLmShadow(T);
+    attr(path.current, 'transform', `translate(${r1(s.x)} ${r1(s.y)}) scale(${r2(s.s)})`);
+    attr(path.current, 'opacity', r2(s.o));
+  });
+  return <path ref={path} d={LM_SHADOW} fill="#5f574b" visibility="hidden" />;
+});
+const DustStreaks = memo(function DustStreaks() {
+  const { nodes: paths, bind: bindpaths } = useNodes();
+  useFrame((T) => {
+    const streaks = moonDustStreaks(T, moonLanderPose(T).x);
+    for (let i = 0; i < 8; i++) {
+      const s = streaks.find((item) => item.id === `${i < 4 ? -1 : 1}${i % 4}`);
+      shown(paths[i], !!s);
+      if (s) attr(paths[i], 'd', `M${r1(s.x)} ${s.y}h${r1(s.len)}`);
+    }
+  });
+  return <g stroke="#f6f0e2" strokeWidth="5" strokeLinecap="round">{Array.from({ length: 8 }, (_, i) => <path key={i} ref={bindpaths(i)} visibility="hidden" />)}</g>;
+});
+const Lander = memo(function Lander() {
+  const { nodes: e, bind } = useNodes();
+  useFrame((T) => {
+    shown(e.root, T >= MOON_BEATS.glintCut);
+    const lm = moonLanderPose(T);
+    attr(e.root, 'transform', `translate(${r1(lm.x)} ${r1(lm.y)}) scale(${Math.round(lm.s * 1000) / 1000}) rotate(${r1(lm.r)} 0 ${MOON_LM_PIVOT_Y})`);
+    const flame = moonLmFlameScale(T);
+    shown(e.flame, flame.y > 0);
+    if (flame.y > 0) attr(e.flame, 'transform', `translate(0 -64) scale(${r2(flame.x)} ${r2(flame.y)})`);
+    attr(e.body, 'transform', `translate(0 ${moonLegs(T).compress})`);
+    const hatch = moonHatch(T);
+    // The hatch swings open: the dark doorway widens from its hinge edge (solid, so it never fades).
+    shown(e.hatch, hatch > 0);
+    attr(e.hatch, 'transform', hatch >= 1 ? null : `translate(-28 0) scale(${r2(Math.max(.02, hatch))} 1) translate(28 0)`);
+    const c = moonColumbia(T);
+    shown(e.csm, !!c);
+    if (c) attr(e.csm, 'transform', `translate(${r1(c.x)} ${r1(c.y)}) rotate(${r1(c.rot)}) scale(${r2(c.s)})`);
+  });
+  return <g ref={bind('root')} visibility="hidden">
+    <g ref={bind('flame')} visibility="hidden">{APOLLO_ART.lmFlame}</g>
+    <LanderLegs front={false} />
+    <g ref={bind('body')}>{APOLLO_ART.lmBody}<path ref={bind('hatch')} d={LM_HATCH} fill="#161a3a" stroke={INK} strokeWidth="3" visibility="hidden" /></g>
+    <LanderLegs front />
+    <g ref={bind('csm')}>{APOLLO_ART.csm}</g>
+    <SpritePool size={RCS_SLOTS} sprites={rcsSprites} />
+  </g>;
+});
+const Footprints = memo(function Footprints() {
+  const { nodes: prints, bind: bindprints } = useNodes();
+  useFrame((T) => MOON_FOOTPRINTS.forEach(([, , at], i) => shown(prints[i], T > at)));
+  return <>{MOON_FOOTPRINTS.map(([x, y], i) => <g key={i} ref={bindprints(i)} visibility="hidden"><Footprint x={x} y={y} s={moonDepthScale(y)} /></g>)}</>;
+});
+const HopGrains = memo(function HopGrains() {
+  const { nodes: dots, bind: binddots } = useNodes();
+  useFrame((T) => {
+    const grains = moonHopGrains(T);
+    for (let i = 0; i < 12; i++) {
+      const g = grains.find((item) => item.id === i);
+      shown(dots[i], !!g);
+      if (g) { attr(dots[i], 'cx', r1(g.x)); attr(dots[i], 'cy', r1(g.y)); attr(dots[i], 'r', r1(3.2 * g.s)); }
+    }
+  });
+  return <g fill="#e6decf" stroke="#8a806f" strokeWidth="1.5">{Array.from({ length: 12 }, (_, i) => <circle key={i} ref={binddots(i)} visibility="hidden" />)}</g>;
+});
+/**
+ * The flag, drawn behind the back-view astronaut (on the ladder rail) or
+ * between the front-view body and his gripping arm. Explicit visibility lets
+ * the stowed flag show before the astronaut does.
+ */
+const FlagSlot = memo(function FlagSlot({ view }: { view: 'back' | 'front' }) {
+  const slot = useRef<SVGGElement>(null);
+  useFrame((T) => attr(slot.current, 'visibility', (view === 'back' ? T >= 7.08 && T < MOON_ASTRO_TURN : T >= MOON_ASTRO_TURN) ? 'visible' : 'hidden'));
+  return <g ref={slot} visibility="hidden"><FlagActor /></g>;
+});
+const FLAG_BACK = <FlagSlot view="back" />;
+const FLAG_FRONT = <FlagSlot view="front" />;
+const PlantedMarks = memo(function PlantedMarks() {
+  const g = useRef<SVGGElement>(null);
+  useFrame((T) => shown(g.current, T >= MOON_FLAG_WINDOWS.plunge[0]));
+  return <g ref={g} visibility="hidden"><FlagGroundMarks /></g>;
+});
+/** The surface story: footprints, the flag and the astronaut (shown from the climb). */
+const Surface = memo(function Surface({ back, front, flag, marks }: { back: boolean; front: boolean; flag: boolean; marks: boolean }) {
+  const astro = useRef<SVGGElement>(null);
+  const backView = useRef<SVGGElement>(null);
+  const frontView = useRef<SVGGElement>(null);
+  useFrame((T) => {
+    shown(astro.current, T >= MOON_BEATS.climb - .04);
+    shown(backView.current, T < MOON_ASTRO_TURN);
+    shown(frontView.current, T >= MOON_ASTRO_TURN);
+  });
+  return <>
+    {marks && <Footprints />}
+    {marks && <PlantedMarks />}
+    <g ref={astro} visibility="hidden">
+      {back && <g ref={backView}><AstronautActor view="back" flag={flag ? FLAG_BACK : null} /></g>}
+      {front && <g ref={frontView} visibility="hidden"><AstronautActor view="front" flag={flag ? FLAG_FRONT : null} /></g>}
+    </g>
+    {marks && <HopGrains />}
+  </>;
+});
+
+// ---------------------------------------------------------------- overlays
+type PopLayout = ReturnType<typeof moonPopLayout>;
+/**
+ * The final POP where the window snaps shut: a big ink-outlined comic burst,
+ * then stars, sparkles and a shock ring fly out (CSS keyframes; each piece's
+ * reach comes from the fit, so none slides under the header or footer).
+ */
+const Pop = memo(function Pop({ pop }: { pop: PopLayout }) {
+  return <div className="moon-pop" style={{ left: `${pop.x}px`, top: `${pop.y}px`, '--u': `${pop.u}px` } as CSSProperties}>
+    <i className="moon-pop-ring" />
+    <i className="moon-pop-burst">{MOON_ART.popBurst}</i>
+    {pop.sparks.map((s, i) => <i key={`s${i}`} className="moon-pop-spark" style={{ '--a': `${s.a}deg`, '--d': `${s.d}px`, color: s.color } as CSSProperties}><svg viewBox="-12 -12 24 24"><path d={SPARKLE} fill="currentColor" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" /></svg></i>)}
+    {pop.stars.map((s, i) => <i key={i} className="moon-pop-star" style={{ '--a': `${s.a}deg`, '--d': `${s.d}px`, color: s.color } as CSSProperties}><svg viewBox="-1.1 -1.1 2.2 2.2"><path d={STAR5} fill="currentColor" stroke={INK} strokeWidth=".11" strokeLinejoin="round" /></svg></i>)}
+  </div>;
+});
+/** Overlays animated by CSS only; their props change only on resize. */
+const StaticOverlays = memo(function StaticOverlays({ glintX, glintY, glintSize, pop }: { glintX: number; glintY: number; glintSize: number; pop: PopLayout }) {
+  return <>
+    <div className="moon-glint" style={{ left: `${glintX}px`, top: `${glintY}px`, width: `${glintSize}px`, height: `${glintSize}px`, margin: `${-glintSize / 2}px 0 0 ${-glintSize / 2}px` }}><svg viewBox="-60 -60 120 120"><defs><radialGradient id="mn-gl"><stop stopColor="#ffffff" stopOpacity=".95" /><stop offset=".35" stopColor="#fff3c4" stopOpacity=".6" /><stop offset="1" stopColor="#fff3c4" stopOpacity="0" /></radialGradient></defs><circle r="58" fill="url(#mn-gl)" /><path d={GLINT_PATH} fill="#fff3c4" /><circle r="10" fill="#fff" /></svg></div>
+    <div className="moon-shooting" />
+    <div className="moon-shooting is-second" />
+    <Pop pop={pop} />
+  </>;
+});
+/** The flag's sparkle (CSS keyframes) rides the scene when it rises at the iris. */
+const FlagSparkle = memo(function FlagSparkle({ fit, x, y }: { fit: MoonFit; x: number; y: number }) {
+  const lift = useRef<HTMLDivElement>(null);
+  const iris = useMemo(() => moonIris(fit), [fit]);
+  useFrame((T) => { const l = moonIrisLift(T, iris); css(lift.current, 'transform', l > 0 ? `translate3d(0, ${r1(-l)}px, 0)` : 'none'); });
+  return <div ref={lift} className="moon-lift">
+    <div className="moon-flag-glint" style={{ left: `${x}px`, top: `${y}px` }}>
+      <svg viewBox="-60 -60 120 120"><defs><radialGradient id="mn-fg"><stop stopColor="#fff6c8" stopOpacity=".9" /><stop offset="1" stopColor="#ffe07a" stopOpacity="0" /></radialGradient></defs><circle r="54" fill="url(#mn-fg)" /><path d={GLINT_PATH} fill="#ffe07a" stroke="#c98a1c" strokeWidth="4" /><circle r="8" fill="#fffbe8" /></svg>
+    </div>
+    <div className="moon-flag-stars" style={{ left: `${x}px`, top: `${y}px` }}>
+      {Array.from({ length: 6 }, (_, i) => <i key={i} style={{ '--a': `${15 + i * 60}deg`, '--d': `${40 + (i % 3) * 15}px` } as CSSProperties}><svg viewBox="-1.2 -1.2 2.4 2.4"><path d={STAR5} fill="#ffe07a" stroke="#c98a1c" strokeWidth=".16" /></svg></i>)}
+    </div>
+  </div>;
+});
+type Twinkle = { index: number; start: number; x: number; y: number; size: number };
+/** Each team card sparkles as the closing ring passes it. */
+const CardTwinkles = memo(function CardTwinkles({ items }: { items: readonly Twinkle[] }) {
+  return <>{items.map((t) => <i key={t.index} className="moon-card-twinkle" style={{ left: `${r1(t.x)}px`, top: `${r1(t.y)}px`, width: `${r1(t.size)}px`, height: `${r1(t.size)}px`, margin: `${r1(-t.size / 2)}px 0 0 ${r1(-t.size / 2)}px`, animationDelay: `${Math.round(t.start * 1000)}ms` }}>
+    <svg viewBox="-12 -12 24 24"><circle r="11" fill="#ffe07a" opacity=".33" /><path d="M0-11C1-3 3-1 11 0C3 1 1 3 0 11C-1 3-3 1-11 0C-3-1-1-3 0-11Z" fill="#ffe07a" stroke="#c98a1c" strokeWidth="1.4" /><circle r="2.2" fill="#fffbe8" /></svg>
+  </i>)}</>;
+});
+/** Gold double rim riding the iris, with ten stars that ride it to the center. */
+const IrisRim = memo(function IrisRim({ fit }: { fit: MoonFit }) {
+  const { nodes: els, bind } = useNodes();
+  const iris = moonIris(fit);
+  const lw = Math.max(.7, fit.k);
+  const size = MOON_RIM_STAR * Math.min(fit.w, fit.h);
+  const svg = useRef<SVGSVGElement>(null);
+  useFrame((T) => {
+    const on = T >= MOON_BEATS.irisStart && T < MOON_BEATS.closed;
+    attr(svg.current, 'visibility', on ? null : 'hidden');
+    if (!on) return;
+    const R = moonIrisRadius(T, iris) ?? iris.R0;
+    const c = moonIrisCenter(T, iris);
+    const [outer, inner, ...stars] = Array.from({ length: 12 }, (_, i) => els[i]);
+    attr(outer, 'r', r1(Math.max(0, R + 6)));
+    attr(inner, 'r', r1(Math.max(0, R)));
+    for (const ring of [outer, inner]) attr(ring, 'cy', r1(c.y));
+    stars.forEach((star, i) => {
+      const a = deg(i * 36 + 90 * (T - MOON_BEATS.irisStart));
+      attr(star, 'transform', `translate(${r1(c.x + Math.cos(a) * R)} ${r1(c.y + Math.sin(a) * R)}) rotate(${r1(T * 120 + i * 20)}) scale(${r1(size)})`);
+    });
+  });
+  return <svg ref={svg} visibility="hidden" className="moon-rim" width={fit.w} height={fit.h} viewBox={`0 0 ${fit.w} ${fit.h}`}>
+    <circle ref={bind(0)} cx={r1(iris.cx)} cy={r1(iris.cy)} fill="none" stroke="#fffaf0" strokeWidth={r1(10 * lw)} />
+    <circle ref={bind(1)} cx={r1(iris.cx)} cy={r1(iris.cy)} fill="none" stroke="#ffc94a" strokeWidth={r1(6 * lw)} />
+    {Array.from({ length: 10 }, (_, i) => <path key={i} ref={bind(i + 2)} d={STAR5} fill="#ffe07a" stroke="#c98a1c" strokeWidth={r2(2 / size)} />)}
+  </svg>;
+});
+const Caption = memo(function Caption() {
+  const pill = useRef<HTMLDivElement>(null);
+  const text = useRef<HTMLSpanElement>(null);
+  useFrame((T) => {
+    const caption = moonCaption(T);
+    if (caption && text.current && text.current.textContent !== caption) text.current.textContent = caption;
+    pill.current?.classList.toggle('is-on', !!caption);
+  });
+  return <div ref={pill} className="moon-caption"><span ref={text}>{' '}</span></div>;
+});
+/** The iris clip is on the scene layers only; overlays stay whole. */
+function Iris({ fit, children }: { fit: MoonFit; children: ReactNode }) {
+  const el = useRef<HTMLDivElement>(null);
+  const iris = useMemo(() => moonIris(fit), [fit]);
+  useFrame((T) => {
+    const R = moonIrisRadius(T, iris);
+    const c = moonIrisCenter(T, iris);
+    const clip = R === null ? 'none' : `circle(${r1(Math.max(0, R))}px at ${r1(c.x)}px ${r1(c.y)}px)`;
+    css(el.current, 'clip-path', clip);
+    css(el.current, '-webkit-clip-path', clip);
+    // Once closed the clip stays at radius 0 (hiding the subtree instead would restyle every element in it).
+  });
+  return <div ref={el} className="moon-iris">{children}</div>;
 }
 
-/** Every phase shares one clock, including the landing dust and final aperture. */
-export function MoonScene({ time }: { time: number }) {
-  const id = useId();
-  const ascent = smooth(progress(time, .55, 2.35));
-  const orbit = smooth(progress(time, 2.35, 3.75));
-  const landing = smooth(progress(time, 4.15, 5.85));
-  const approach = smooth(progress(time, 3.05, 4.65));
-  const moonRadius = mix(155, 23000, approach);
-  const moonX = mix(1140, 800, approach);
-  const moonY = moonRadius + mix(430, 575, approach);
-  const camera = 1 + .3 * smooth(progress(time, 4, 5.55));
-  const dust = fadeWindow(time, 5.15, 5.6, 5.85, 6.28);
-  const landerX = mix(1010, 800, landing);
-  const landerY = mix(267, 501, landing);
-  const landerScale = mix(.36, 1, landing);
-  const undocking = smooth(progress(time, 3.93, 4.65));
-  const altitude = Math.max(0, 624 - landerY - landerScale * 123);
-  const opening = smooth(progress(time, 7.2, 8.65));
-  const astronautStep = smooth(progress(time, 6.43, 6.88));
-  const flag = smooth(progress(time, 6.76, 7.02));
-  const earthScale = mix(3.8, .55, smooth(progress(time, 2, 3.9)));
-  const sceneOpacity = 1 - smooth(progress(time, 8.55, 8.8));
-  const caption = time < .55 ? 'A little mission. A giant adventure.' : time < 2.2 ? 'LIFTOFF' : time < 3.6 ? 'NEXT STOP: THE MOON' : time < 4.15 ? 'EAGLE IS READY' : time < 5.85 ? 'EASY DOES IT…' : time < 7.2 ? 'THE EAGLE HAS LANDED' : '';
-  return <div className="moon-reveal-scene" style={{ opacity: sceneOpacity }}>
-    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <linearGradient id={`${id}-sky`} x2="0" y2="1"><stop stopColor="#526c91" /><stop offset=".65" stopColor="#98b8ca" /><stop offset="1" stopColor="#f8d5ad" /></linearGradient>
-        <radialGradient id={`${id}-space`} cx=".55" cy=".38" r=".8"><stop stopColor="#101722" /><stop offset=".55" stopColor="#090e16" /><stop offset="1" stopColor="#03060a" /></radialGradient>
-        <linearGradient id={`${id}-white`}><stop stopColor="#9eacb6" /><stop offset=".27" stopColor="#fffdf0" /><stop offset=".6" stopColor="#f5f0df" /><stop offset="1" stopColor="#8495a3" /></linearGradient>
-        <linearGradient id={`${id}-exhaust`} x2="0" y2="1"><stop stopColor="#fffef5" /><stop offset=".28" stopColor="#fff3c3" /><stop offset=".58" stopColor="#ffc886" stopOpacity=".75" /><stop offset="1" stopColor="#e4a16f" stopOpacity="0" /></linearGradient>
-        <linearGradient id={`${id}-exhaust-core`} x2="0" y2="1"><stop stopColor="#fffef8" /><stop offset=".58" stopColor="#fffceb" /><stop offset="1" stopColor="#fff4cf" stopOpacity="0" /></linearGradient>
-        <radialGradient id={`${id}-earth`} cx=".25" cy=".2"><stop stopColor="#8ac6d5" /><stop offset=".65" stopColor="#4179a7" /><stop offset="1" stopColor="#25455e" /></radialGradient>
-        <linearGradient id={`${id}-earth-shadow`}><stop stopColor="#102036" stopOpacity="0" /><stop offset="1" stopColor="#0d1b31" stopOpacity=".8" /></linearGradient>
-        <clipPath id={`${id}-earth-clip`}><circle r="60" /></clipPath>
-        <clipPath id={`${id}-above-pad`}><rect x="-2000" y="-2000" width="6000" height={2630 + ascent * 650} /></clipPath>
-        <clipPath id={`${id}-ground-clip`}><circle cx={moonX} cy={moonY} r={moonRadius} /></clipPath>
-        <linearGradient id={`${id}-moon`} x2=".35" y2="1"><stop stopColor="#a7a59e" /><stop offset=".2" stopColor="#95948e" /><stop offset="1" stopColor="#777973" /></linearGradient>
-        <pattern id={`${id}-regolith`} width="91" height="67" patternUnits="userSpaceOnUse">{Array.from({length:24},(_, i)=><g key={i}><path d={`m${(i*37)%91} ${(i*23)%67} ${2+i%4} -1 ${i%3+1} 2Z`} fill={i%3 ? '#494b4b' : '#d5d1c1'} opacity={.08+i%3*.04} /></g>)}</pattern>
-        <radialGradient id={`${id}-smoke`} cx=".5" cy=".3" r=".68"><stop stopColor="#f4ebd8" /><stop offset=".48" stopColor="#d9dad3" stopOpacity=".94" /><stop offset=".8" stopColor="#aeb9b8" stopOpacity=".7" /><stop offset="1" stopColor="#aeb9b8" stopOpacity="0" /></radialGradient>
-        <linearGradient id={`${id}-gold`} x2=".5" y2="1"><stop stopColor="#fff1b5" /><stop offset=".3" stopColor="#d9b367" /><stop offset=".55" stopColor="#edd18c" /><stop offset="1" stopColor="#a57940" /></linearGradient>
-        <linearGradient id={`${id}-cabin`}><stop stopColor="#aeb8be" /><stop offset=".45" stopColor="#efeee3" /><stop offset="1" stopColor="#858d97" /></linearGradient>
-        <linearGradient id={`${id}-visor`} x2=".8" y2="1"><stop stopColor="#ffe9a6" /><stop offset=".4" stopColor="#b78543" /><stop offset="1" stopColor="#4c4351" /></linearGradient>
-        <radialGradient id={`${id}-landing-flame`}><stop stopColor="#ffefbc" stopOpacity=".9" /><stop offset="1" stopColor="#ebc181" stopOpacity="0" /></radialGradient>
-        <mask id={`${id}-reveal`} maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900"><rect width="1600" height="900" fill="white" /><circle cx="898" cy="629" r={opening * 1200} fill="black" /></mask>
-      </defs>
-      <g mask={`url(#${id}-reveal)`}>
-        <g transform={`translate(800 625) scale(${camera}) translate(-800 -625)`}>
-        <rect width="1600" height="900" fill={`url(#${id}-space)`} />
-        <rect width="1600" height="900" fill={`url(#${id}-sky)`} opacity={1 - smooth(progress(time, 1.1, 2.7))} />
-        <g opacity={smooth(progress(time, 1.3, 2.5)) * (1 - .92 * landing)}>
-          {stars.map(({ x, y, radius, opacity, glint }, i) =>
-            <g key={i} opacity={opacity}><circle cx={x} cy={y} r={radius} fill="#e0e6e9" />{glint && <path d={`M${x - 5} ${y}h10m-5-5v10`} stroke="#cedee4" strokeWidth="1" />}</g>
-          )}
-        </g>
-        <g opacity={1 - smooth(progress(time, 1.7, 2.55))} transform={`translate(0 ${ascent * 650})`}>
-          <path d="M-50 630Q280 610 590 632T1660 615V1000H-50Z" fill="#667d86" /><path d="M0 671Q590 626 1600 656V950H0Z" fill="#536579" />
-          <path d="M505 640H956" stroke="#a3a999" strokeWidth="3" /><LaunchTower time={time} />
-        </g>
-        <g opacity={fadeWindow(time, .18, .75, 1.55, 2.4)} transform={`translate(0 ${ascent * 650})`}>
-          {Array.from({ length: 18 }, (_, i) => {
-            const puff = progress(time, .12 + (i % 5) * .055, 1.7);
-            const side = i % 2 ? 1 : -1;
-            const x = 800 + side * puff * (100 + i * 21);
-            const y = 642 - Math.sin(puff * Math.PI) * (15 + i % 4 * 22);
-            const radius = 15 + puff * (40 + i % 5 * 13);
-            return <g key={i} fill={`url(#${id}-smoke)`} opacity=".94"><ellipse cx={x} cy={y} rx={radius} ry={radius * .56} /><ellipse cx={x - radius * .45} cy={y - radius * .14} rx={radius * .56} ry={radius * .49} /><ellipse cx={x + radius * .32} cy={y - radius * .3} rx={radius * .55} ry={radius * .48} /></g>;
-          })}
-        </g>
-        <g clipPath={`url(#${id}-above-pad)`}><g transform={`translate(${mix(800, 1120, orbit)} ${mix(625, 300, ascent) - orbit * 10}) rotate(${orbit * 54}) scale(${mix(1, .42, ascent) * mix(1, .7, orbit)})`} opacity={1 - smooth(progress(time, 3.5, 3.72))}>
-          <SaturnV time={time} id={id} />
-        </g></g>
-        <g transform={`translate(${mix(380, 410, approach)} ${mix(700, 365, smooth(progress(time, 2, 3.8)))}) scale(${earthScale}) rotate(-18)`} opacity={smooth(progress(time, 1.9, 2.65))}><Earth id={id} /></g>
-        <g opacity={smooth(progress(time, 2.85, 3.35))}>
-          <circle cx={moonX} cy={moonY} r={moonRadius} fill={`url(#${id}-moon)`} stroke="#dbdace" strokeWidth="2" />
-          <g opacity={1 - smooth(progress(approach, 0, .16))} fill="#979daa"><ellipse cx="1110" cy="522" rx="29" ry="21" /><ellipse cx="1204" cy="579" rx="21" ry="27" /><ellipse cx="1101" cy="631" rx="41" ry="23" /></g>
-          <g opacity={smooth(progress(time, 4.15, 4.8))} clipPath={`url(#${id}-ground-clip)`}>
-            <path d="M-100 746Q445 639 760 660T1700 723V1050H-100Z" fill="#82857f" opacity=".15" />
-            <rect x="-100" y="610" width="1800" height="500" fill={`url(#${id}-regolith)`} />
-            {Array.from({ length: 7 }, (_, i) => {
-              const x = (i * 347 + 20) % 1700 - 50;
-              const y = 696 + (i * 73) % 300;
-              const r = 8 + (i * 11) % 45;
-              return <g key={i}><ellipse cx={x} cy={y} rx={r} ry={r * .2} fill="#535851" opacity=".28" /><path d={`M${x - r} ${y}a${r} ${r * .23} 0 0 1 ${r * 2} 0`} fill="none" stroke="#c2beb0" opacity=".5" strokeWidth="1.5" /><path d={`M${x - r * .7} ${y + 1}q${r * .7}-${r * .15} ${r * 1.4} 0`} fill="none" stroke="#454b46" opacity=".4" strokeWidth="1" /></g>;
-            })}
-            {Array.from({length:19},(_,i)=>{const x=(i*317+93)%1650;const y=658+(i*53)%260;const r=2+i%5*2;return <g key={i}><path d={`M${x} ${y}l${-r*3} ${r*.4} ${r*3+r} ${r*.2}Z`} fill="#3c423d" opacity=".4" /><path d={`M${x} ${y}l${r*.7} ${-r} ${r} ${r*.4} ${r*.5} ${r*.8}Z`} fill="#94968d" stroke="#c8c5b8" strokeWidth=".7" /><path d={`M${x} ${y}l${r*.7} ${-r} ${r*.3} ${r*1.2}Z`} fill="#5c635c" /></g>})}
-          </g>
-        </g>
-        {/* A short dissolve skips the multi-day coast; Columbia starts docked nose-to-hatch. */}
-        <g transform={`translate(${mix(1030.75, 1290, undocking)} ${mix(189.57, 85, undocking)}) rotate(${mix(105, -30, undocking)})`} opacity={fadeWindow(time, 3.55, 3.72, 4.65, 5.2)}>
-          <path d="M-45-14H15V14H-45Z" fill="#a2b0ba" stroke="#d5dad7" strokeWidth="2" /><path d="M15-14 42 0 15 14Z" fill="#f5efdc" /><path d="M-46-8-61-13V13L-46 8" fill="#5a677c" /><path d="M-25-14V14M-4-14V14" stroke="#e0e1d7" strokeWidth="2" />
-        </g>
-        <g clipPath={`url(#${id}-ground-clip)`}>
-          <g transform={`translate(${landerX - 800 - altitude * .4} 0)`} opacity={smooth(progress(time, 4.3, 5.8))}>
-            <path d="M682 617 738 608 862 608 918 617 855 635 746 657 702 667 578 670 621 653 661 649 740 626Z" fill="#181d1d" opacity={mix(.12, .7, landing)} />
-            <path d="M682 617 583 649m205-25-110 34m240-41-83 31" stroke="#171c1d" strokeWidth="3" opacity={landing * .65} />
-          </g>
-          <g opacity={smooth(progress(time, 5.7, 5.85))} fill="#272c29"><ellipse cx="682" cy="617" rx="20" ry="3" /><ellipse cx="918" cy="617" rx="20" ry="3" /><ellipse cx="788" cy="624" rx="22" ry="3" /></g>
-          <g opacity={dust}>
-            {Array.from({ length: 26 }, (_, i) => {
-              const spread = progress(time, 5.08 + i % 5 * .055, 6.28);
-              const direction = i % 2 ? 1 : -1;
-              const x = 800 + direction * (30 + spread * (130 + i * 13));
-              const y = 624 + i % 4 * 4 - Math.sin(spread * Math.PI) * (2 + i % 3 * 3);
-              return <path key={i} d={`M${x} ${y}q${direction * 14} -2 ${direction * (23 + spread * 23)} ${i % 3 - 1}`} fill="none" stroke={i % 2 ? '#e5dfcb' : '#bdbdb2'} strokeWidth={1 + (i % 3) * .7} opacity={.6 * (1 - spread)} />;
-            })}
-          </g>
-        </g>
-        <g transform={`translate(${landerX} ${landerY}) rotate(${mix(15, 0, landing) - Math.sin(landing * Math.PI) * 9}) scale(${landerScale})`} opacity={smooth(progress(time, 3.55, 3.72))}><LunarLander time={time} id={id} /></g>
-        <path d="M859 629 780 652 799 654 880 632 898 630 879 626Z" transform={`translate(${mix(788, 875, astronautStep) - 875} 0)`} fill="#222927" opacity={smooth(progress(time, 6.4, 6.6)) * (.7 - Math.sin(astronautStep * Math.PI) * .3)} />
-        <path d="M926 629 826 656" stroke="#242b29" strokeWidth="2" opacity={flag * .7} />
-        <g opacity={flag} transform={`translate(926 ${mix(604, 629, flag)})`}>
-          <path d="M0 0V-91H56" stroke="#e6e1c9" strokeWidth="3" fill="none" /><circle cy="-92" r="3" fill="#fce7aa" />
-          <g transform={`scale(${flag} 1)`}><LunarFlag id={id} /></g>
-        </g>
-        <Astronaut time={time} id={id} />
-        </g>
-      </g>
-      {opening > 0 && <g opacity={1 - opening}><circle cx="898" cy="629" r={opening * 1200} fill="none" stroke="#ffefd0" strokeWidth={5 + opening * 30} /><circle cx="898" cy="629" r={opening * 1200 + 11} fill="none" stroke="#f1d1a0" strokeWidth="2" opacity=".4" /></g>}
-    </svg>
-    <div className="moon-mission-caption" style={{ opacity: 1 - smooth(progress(time, 7.05, 7.25)) }}>
-      <div>{caption}</div><div className="moon-mission-progress">{[.55, 2.35, 3.95, 5.85].map(threshold => <i key={threshold} className={time >= threshold ? 'is-lit' : undefined} />)}</div>
+// ---------------------------------------------------------------- the scene (structure only)
+function Scene({ T, fit, twinkles }: { T: number; fit: MoonFit; twinkles: readonly Twinkle[] }) {
+  const viewBox = useMemo(() => moonViewBox(fit), [fit]);
+  const pop = useMemo(() => moonPopLayout(fit), [fit]);
+  const at =(step: keyof typeof MOON_PREMOUNT) => T >= MOON_PREMOUNT[step];
+  const glintAt = moonToScreen(fit, MOON_GLINT_WORLD.x, MOON_GLINT_WORLD.y);
+  const flyCorner = moonCamPoint(MOON_NEAR_FINAL, MOON_FLAG_SPOT.x + (MOON_FLAG_W + 2) * MOON_FLAG_SCALE, MOON_FLAG_SPOT.gy - (MOON_FLAG_POLE - 2) * MOON_FLAG_SCALE);
+  const flagGlintAt = moonToScreen(fit, flyCorner.x, flyCorner.y);
+  const launchStyle = useMemo(() => {
+    const o = moonLaunchOverlay(fit);
+    return { '--moon-launch-x': `${r1(o.x)}px`, '--moon-liftoff-w': `${r1(o.liftoffWidth)}px` } as CSSProperties;
+  }, [fit]);
+  return <div className="moon-scene">
+    <Iris fit={fit}>
+      <div className="moon-sky moon-space" />
+      <Skies />
+      <StarField viewBox={viewBox} />
+      <Rig fit={fit}>
+        <PadLayer fit={fit} viewBox={viewBox} />
+        <PadLight fit={fit} />
+        {at('globe') && <GlobeLayer viewBox={viewBox} />}
+        {at('far') && <FarLayer fit={fit} viewBox={viewBox} />}
+        {at('near') && <NearLayer fit={fit} viewBox={viewBox} />}
+        {at('globe') && <SkyEarth fit={fit} />}
+        <svg className="moon-world" viewBox={viewBox} preserveAspectRatio="none">
+          {MOON_ART.defs}{APOLLO_ART.groundDefs}
+          <PadGroup><TrenchFire /></PadGroup>
+          {at('space') && <Space />}
+          <SaturnV />
+          <PadGroup><PadFront /></PadGroup>
+          {at('lander') && <NearGroup>
+            <LmShadow />
+            <DustStreaks />
+            <SpritePool size={DUST_SLOTS} sprites={dustSprites} />
+            <Lander />
+            <Surface back={at('astroBack')} front={at('astroFront')} flag={at('flag')} marks={at('surface')} />
+          </NearGroup>}
+        </svg>
+        <Palms fit={fit} viewBox={viewBox} />
+      </Rig>
+    </Iris>
+    <div className="moon-overlay" style={launchStyle}>
+      {MOON_ART.countdown}
+      {MOON_ART.liftoff}
+      <StaticOverlays glintX={r1(glintAt.x)} glintY={r1(glintAt.y)} glintSize={Math.round(MOON_GLINT_SIZE * fit.k)} pop={pop} />
+      <FlagSparkle fit={fit} x={r1(flagGlintAt.x)} y={r1(flagGlintAt.y)} />
+      <CardTwinkles items={twinkles} />
+      {at('rim') && <IrisRim fit={fit} />}
+      <Caption />
     </div>
   </div>;
 }
 
-function MoonStage() { return <MoonScene time={useSceneTime(MOON_DURATION_MS)} />; }
+function useFit(ref: React.RefObject<HTMLDivElement | null>) {
+  const { w, h } = useStageSize(ref);
+  return useMemo(() => moonFit(w, h), [w, h]);
+}
+const NO_TWINKLES: readonly Twinkle[] = [];
+
+/**
+ * Renders the reveal at a fixed `time` (review tools). With `seek`, CSS
+ * keyframes inside are paused at the same moment so a still frame is exact.
+ */
+export function MoonScene({ time, seek = true }: { time: number; seek?: boolean }) {
+  const root = useRef<HTMLDivElement>(null);
+  const fit = useFit(root);
+  const T = Math.max(0, Math.min(time, MOON_DURATION_MS / 1000));
+  const bus = useMemo(() => createFrameBus(T), [T]);
+  useLayoutEffect(() => {
+    if (!seek || !root.current || typeof root.current.getAnimations !== 'function') return;
+    for (const animation of root.current.getAnimations({ subtree: true })) { animation.pause(); animation.currentTime = time * 1000; }
+  });
+  return <FrameContext.Provider value={bus}><div ref={root} className="moon-reveal-root"><Scene T={T} fit={fit} twinkles={NO_TWINKLES} /></div></FrameContext.Provider>;
+}
+
+function MoonStage() {
+  const { bus, T } = useMoonClock(MOON_DURATION_MS, moonStructureKey);
+  const root = useRef<HTMLDivElement>(null);
+  const fit = useFit(root);
+  const targets = useRevealTargets();
+  const twinkles = useMemo(() => moonTwinkleSchedule(targets as readonly MoonTwinkleTarget[], fit), [targets, fit]);
+  return <FrameContext.Provider value={bus}><div ref={root} className="moon-reveal-root"><Scene T={T} fit={fit} twinkles={twinkles} /></div></FrameContext.Provider>;
+}
 function MoonCover() { return null; }
-export const moonEffect: RevealEffect = { id: 'moon', name: 'Saturn V · Moon landing', description: 'Liftoff, separation, a gentle lunar landing, and one little astronaut opening a window onto the day.', durationMs: MOON_DURATION_MS, sound: 'moon', Stage: MoonStage, Cover: MoonCover };
+
+export const moonEffect: RevealEffect = {
+  id: 'moon',
+  name: 'Saturn V · Moon landing',
+  description: 'Shout 3-2-1, blast off through the clouds, pop the stages, fly past a boulder field, and take one giant leap. A gold iris closes in a big POP of stars over the groups.',
+  durationMs: MOON_DURATION_MS,
+  sound: 'moon',
+  Stage: MoonStage,
+  Cover: MoonCover,
+};

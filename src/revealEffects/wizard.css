@@ -1,0 +1,456 @@
+/* Wizard owl · Magic letters. Timing constants mirror wizardTimeline.ts (WIZARD_BEATS).
+   Rules: every element carries at most ONE animation. Chrome cannot run two animations of the
+   same property on one element on the compositor, so stacked timings use nested wrappers
+   (outer = later beat). Everything animates transform and opacity only, except the star burst's
+   shockwave ring's stroke-width (one small SVG, for 400 ms). Nothing fades out while big and
+   half-transparent over the night (that reads as grey): things shrink away or thin out while
+   opaque, and each card is revealed through an opaque cream bloom (see .wz-bloom).
+   No var() inside @keyframes (WebKit safety): per-element travel is the element's own inline
+   transform, reached through an implicit keyframe (wz-from-none / wz-to-none), and the stubborn
+   card's variants are separate keyframes picked by [data-wz-stuck]. Custom properties only feed
+   ordinary properties (delays, sizes, positions). */
+
+/* ---------- Cover (inside every card) ---------- */
+.reveal-cover[data-reveal-effect="wizard"] {
+  /* Fallbacks until the Stage writes exact per-card values (it does so before the first paint). */
+  --wz-land: calc(700ms + 1250ms * (var(--reveal-center-x, .5) + .12) / 1.09 + 280ms);
+  --wz-pop: 4800ms;
+  --wz-fizz: var(--wz-pop);
+  --wz-env-w: min(calc(var(--reveal-cover-width, 280px) * .84), calc(var(--reveal-cover-height, 280px) * 1.24), 300px);
+  --wz-env-h: calc(var(--wz-env-w) / 1.55);
+  --wz-seal: calc(var(--wz-env-h) * .4);
+  --wz-flash: calc(var(--reveal-cover-width, 280px) * 1.5);
+  --wz-iris: calc(var(--reveal-cover-width, 280px) + var(--reveal-cover-height, 280px) + 40px);
+  --wz-sky-x: calc(var(--wz-iris) / 2 - var(--reveal-cover-width, 280px) / 2 - var(--reveal-cover-left, 0px));
+  --wz-sky-y: calc(var(--wz-iris) / 2 - var(--reveal-cover-height, 280px) / 2 - var(--reveal-cover-top, 0px));
+}
+.wz-cover { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+
+/* Nightfall. The parchment stays fully opaque while its "?" swells and spins away into the card centre
+   (0.10–0.40); then a night iris blooms from that point (0.34–0.64) over the parchment, trailing a gold and
+   violet rim. Parchment and iris share the night group. The iris's star field is anchored to the viewport
+   (via --wz-sky-x/y) so, fully open, it lines up with the Stage veil.
+   Reveal (the mirror image): at the pop a solid cream bloom with a gold rim opens from the seal (pop +20 to
+   +200 ms), the night group switches off in one 1 ms step underneath it (+200 ms), and the bloom fades out
+   over the revealed card (+220 to +480 ms). Nothing dark and half-transparent ever sits over the card. */
+.wz-paper { position: absolute; inset: 0; display: grid; place-items: center; border: 2px dashed #d9bf85; border-radius: inherit; background: repeating-linear-gradient(-45deg, #f8ebcb 0 12px, #fbf1d8 12px 24px); }
+.wz-q { display: block; font-size: var(--reveal-question-size); font-weight: 850; line-height: 1; color: #a8814a; animation: wz-q 300ms 100ms linear both; }
+.wz-night { position: absolute; inset: 0; animation: wz-fade-out 1ms calc(var(--wz-pop) + 200ms) linear both; }
+.wz-iris {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--wz-iris); height: var(--wz-iris); margin: calc(var(--wz-iris) / -2) 0 0 calc(var(--wz-iris) / -2);
+  border-radius: 50%;
+  background-color: #23286a;
+  background-repeat: no-repeat;
+  /* background-image, -size and -position: one rule written by the Stage (SKY_RULE in wizard.tsx). */
+  box-shadow: 0 0 0 3px #ffe7a0cc, 0 0 0 7px #8f7fe0aa, 0 0 26px 12px #b9a4ff77;
+  animation: wz-iris 300ms 340ms cubic-bezier(.3,.62,.35,1) both;
+}
+/* The hills are the shared skyline image (ART_RULE in wizard.tsx), anchored to the viewport like the veil's (xMidYMax slice). */
+.wz-skyline { display: none; position: absolute; left: calc(-1 * var(--wz-left, var(--reveal-cover-left, 0px))); top: calc(76vh - 60px - var(--wz-top, var(--reveal-cover-top, 0px))); width: 100vw; height: 24vh; background-repeat: no-repeat; background-position: 50% 100%; background-size: cover; animation: wz-hills 320ms 520ms ease-out both; }
+.reveal-cover[data-wz-sky] .wz-skyline { display: block; }
+.wz-bloom {
+  position: absolute; left: 50%; top: calc(50% + var(--wz-env-h) * .04);
+  width: var(--wz-iris); height: var(--wz-iris); margin: calc(var(--wz-iris) / -2) 0 0 calc(var(--wz-iris) / -2);
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 0 0 3px #ffe7a0, 0 0 0 7px #ffd35c, 0 0 22px 10px #ffc94d99;
+  animation: wz-bloom 460ms calc(var(--wz-pop) + 20ms) linear both;
+}
+/* A warm gold glow over the bloom and the freshly revealed card (never over the night: the bloom outruns it). */
+.wz-flash {
+  position: absolute; left: 50%; top: calc(50% + var(--wz-env-h) * .04);
+  width: var(--wz-flash); height: var(--wz-flash); margin: calc(var(--wz-flash) / -2) 0 0 calc(var(--wz-flash) / -2);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff3c4 0%, #ffe08acc 24%, #ffd35c66 44%, #ffd35c00 64%);
+  animation: wz-flash 480ms calc(var(--wz-pop) + 60ms) ease-out both;
+}
+
+/* Envelope: sink away after the pop (outer) > chant wiggles (middle) > land and appear (inner). */
+.wz-env { position: absolute; left: 50%; top: 50%; width: var(--wz-env-w); height: var(--wz-env-h); margin: calc(var(--wz-env-h) / -2) 0 0 calc(var(--wz-env-w) / -2); transform-origin: 50% 80%; }
+.wz-chant, .wz-land { position: absolute; inset: 0; }
+.wz-chant { transform-origin: 50% 60%; }
+.wz-land { transform-origin: 50% 100%; }
+.wz-cover .wz-env { animation: wz-env-out 320ms calc(var(--wz-pop) + 90ms) ease-in both; }
+.wz-cover .wz-chant { animation: wz-chant 2350ms 3000ms ease-in-out both; }
+.reveal-cover[data-wz-stuck] .wz-chant { animation-name: wz-chant-stuck; }
+.wz-cover .wz-land { animation: wz-land 300ms var(--wz-land) ease-out both; }
+.wz-shadow { position: absolute; left: 6%; right: 6%; bottom: -9%; height: 16%; border-radius: 50%; background: radial-gradient(closest-side, #07082066, #07082000); }
+
+/* Shared envelope layout: used by the covers and the Stage flights, so the hand-off matches. The art is a shared
+   background image each (ART_RULE in wizard.tsx), stretched to the box like the old preserveAspectRatio="none" SVGs. */
+.wz-env-body, .wz-env-flap, .wz-seal-art, .wz-puff, .wz-burst, .wizard-spark-star { background-repeat: no-repeat; background-position: 0 0; background-size: 100% 100%; }
+.wz-env-body, .wz-env-flap { position: absolute; inset: 0; }
+.wz-env-flap { transform-origin: 50% 0; }
+.wz-seal { position: absolute; left: 50%; top: 54%; width: var(--wz-seal); height: var(--wz-seal); margin: calc(var(--wz-seal) / -2) 0 0 calc(var(--wz-seal) / -2); }
+.wz-seal-fizz, .wz-seal-swell { position: absolute; inset: 0; }
+/* The seal art is drawn in a box 116/104 of the seal (room for its lumpy edge and shadow). */
+.wz-seal-art { position: absolute; inset: -5.769%; }
+.wz-glow { position: absolute; left: -80%; top: -80%; width: 260%; height: 260%; border-radius: 50%; background: radial-gradient(circle, #fff3c0f0 0%, #ffe7a0aa 30%, #ffe7a000 68%); opacity: 0; }
+.wz-cover .wz-env-flap { animation: wz-flap 320ms calc(var(--wz-pop) + 30ms) ease-in both; }
+/* Seal: pop at --wz-pop (outer, carrying its glow away with it) > stubborn fizzle > the chant swell. */
+.wz-cover .wz-seal { animation: wz-seal-pop 180ms var(--wz-pop) ease-out both; }
+.reveal-cover[data-wz-stuck] .wz-seal { animation-name: wz-seal-pop-big; }
+.wz-cover .wz-glow { animation: wz-glow 1250ms 3000ms linear both; }
+.wz-cover .wz-seal-swell { animation: wz-swell 370ms 3880ms ease-out both; }
+.reveal-cover[data-wz-stuck] .wz-seal-fizz { animation: wz-seal-fizz 300ms var(--wz-fizz) ease-in-out both; }
+/* Until the Stage has measured the covers (the same commit, before the first frame), a cover is just its parchment
+   "?": the forced style pass of the measuring skips every other layer and all their animations. */
+.reveal-cover[data-reveal-effect="wizard"]:not([data-wz-on]) .wz-cover > :not(.wz-night),
+.reveal-cover[data-reveal-effect="wizard"]:not([data-wz-on]) .wz-night > :not(.wz-paper) { display: none; }
+.reveal-cover[data-reveal-effect="wizard"]:not([data-wz-on]) .wz-night { animation: none; }
+/* A crowded Today table (tiny envelopes): skip the purely decorative layers and their animations. The glow, swell,
+   landing puff, flash, hills and shadow are gone; the ordinary covers skip the chant wiggle and the pop burst (the
+   stubborn one keeps its head-shake "no" and its big burst at the boop); the flap simply sinks with the envelope. */
+.reveal-cover[data-wz-dense] .wz-glow, .reveal-cover[data-wz-dense] .wz-puff, .reveal-cover[data-wz-dense] .wz-flash,
+.reveal-cover[data-wz-dense] .wz-skyline, .reveal-cover[data-wz-dense] .wz-shadow,
+.reveal-cover[data-wz-dense]:not([data-wz-stuck]) .wz-burst { display: none; }
+.reveal-cover[data-wz-dense] .wz-seal-swell, .reveal-cover[data-wz-dense] .wz-env-flap,
+.reveal-cover[data-wz-dense]:not([data-wz-stuck]) .wz-chant { animation: none; }
+
+/* Landing puff and pop burst sit at the seal point in card space, so the sink-away never dims them. */
+.wz-puff, .wz-burst { position: absolute; left: 50%; top: calc(50% + var(--wz-env-h) * .04); width: calc(var(--wz-seal) * 3.2); height: calc(var(--wz-seal) * 3.2); margin: calc(var(--wz-seal) * -1.6) 0 0 calc(var(--wz-seal) * -1.6); }
+.wz-cover .wz-puff { animation: wz-puff 350ms var(--wz-land) ease-out both; }
+.wz-cover .wz-burst { animation: wz-burst 450ms var(--wz-pop) ease-out both; }
+.reveal-cover[data-wz-stuck] .wz-burst { animation-name: wz-burst-big; }
+
+@keyframes wz-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wz-fade-out { from { opacity: 1; } to { opacity: 0; } }
+/* Travel to / from an element's own inline transform (the implicit keyframe). */
+@keyframes wz-from-none { from { transform: none; } }
+@keyframes wz-to-none { to { transform: none; } }
+/* The "?" gathers itself (swell and a small counter-twist), then whirls down into the card centre. */
+@keyframes wz-q {
+  0% { transform: none; animation-timing-function: cubic-bezier(.3,.7,.4,1); }
+  33% { transform: scale(1.2) rotate(-10deg); animation-timing-function: cubic-bezier(.55,0,.8,.4); }
+  100% { transform: scale(0) rotate(170deg); }
+}
+@keyframes wz-iris { from { transform: scale(0); } to { transform: none; } }
+/* 460 ms from pop + 20 ms: open (180 ms, ease-out cubic, fully opaque), hold (20 ms), fade over the card (260 ms). */
+@keyframes wz-bloom {
+  0% { opacity: 1; transform: scale(0); animation-timing-function: cubic-bezier(.33,1,.68,1); }
+  39.13% { opacity: 1; transform: none; animation-timing-function: linear; }
+  43.48% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+  100% { opacity: 0; transform: none; }
+}
+@keyframes wz-hills { from { opacity: 0; transform: translateY(12%); } to { opacity: 1; transform: none; } }
+/* Invisible until the Stage flight lands (the 0% keyframe fills backwards), then a squash-settle. */
+@keyframes wz-land {
+  0% { opacity: 0; transform: rotate(6deg); }
+  .1% { opacity: 1; transform: rotate(6deg); }
+  25% { opacity: 1; transform: translateY(4%) rotate(-3deg) scale(1.1, .86); }
+  55% { opacity: 1; transform: translateY(-3%) rotate(2deg) scale(.96, 1.05); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes wz-env-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10%) scale(.92); } }
+/* 2350 ms from 3.00 s: "Arcanum…" wiggle (3.10), "…stellae…" hop-wiggle (3.50) and the wind-up tremble (3.90–4.26).
+   The stubborn card adds its head-shake "no" (4.90–5.35), which its padlock copies (wz-lock-shake). */
+@keyframes wz-chant {
+  0%, 4.255% { transform: none; }
+  6.809% { transform: rotate(-3deg); }
+  10.213% { transform: rotate(3deg); }
+  13.617% { transform: rotate(-2deg); }
+  17.021% { transform: rotate(1deg); }
+  19.574%, 21.277% { transform: none; }
+  24.255% { transform: translateY(-4%) rotate(-5deg); }
+  27.660% { transform: translateY(-4%) rotate(5deg); }
+  31.064% { transform: translateY(-2%) rotate(-4deg); }
+  34.468% { transform: rotate(2deg); }
+  37.447%, 38.298% { transform: none; }
+  39.574% { transform: rotate(1.5deg); }
+  40.851% { transform: rotate(-1.5deg); }
+  42.128% { transform: rotate(1.5deg); }
+  43.404% { transform: rotate(-1.5deg); }
+  44.681% { transform: rotate(1.5deg); }
+  45.957% { transform: rotate(-1.5deg); }
+  47.234% { transform: rotate(1.5deg); }
+  48.511% { transform: rotate(-1.5deg); }
+  49.787% { transform: rotate(1.5deg); }
+  51.064% { transform: rotate(-1.5deg); }
+  52.340% { transform: rotate(1.5deg); }
+  53.617%, 100% { transform: none; }
+}
+@keyframes wz-chant-stuck {
+  0%, 4.255% { transform: none; }
+  6.809% { transform: rotate(-3deg); }
+  10.213% { transform: rotate(3deg); }
+  13.617% { transform: rotate(-2deg); }
+  17.021% { transform: rotate(1deg); }
+  19.574%, 21.277% { transform: none; }
+  24.255% { transform: translateY(-4%) rotate(-5deg); }
+  27.660% { transform: translateY(-4%) rotate(5deg); }
+  31.064% { transform: translateY(-2%) rotate(-4deg); }
+  34.468% { transform: rotate(2deg); }
+  37.447%, 38.298% { transform: none; }
+  39.574% { transform: rotate(1.5deg); }
+  40.851% { transform: rotate(-1.5deg); }
+  42.128% { transform: rotate(1.5deg); }
+  43.404% { transform: rotate(-1.5deg); }
+  44.681% { transform: rotate(1.5deg); }
+  45.957% { transform: rotate(-1.5deg); }
+  47.234% { transform: rotate(1.5deg); }
+  48.511% { transform: rotate(-1.5deg); }
+  49.787% { transform: rotate(1.5deg); }
+  51.064% { transform: rotate(-1.5deg); }
+  52.340% { transform: rotate(1.5deg); }
+  53.617%, 80.851% { transform: none; }
+  84.043% { transform: rotate(-6deg); }
+  87.234% { transform: rotate(6deg); }
+  90.426% { transform: rotate(-6deg); }
+  93.617% { transform: rotate(5deg); }
+  96.809% { transform: rotate(-3deg); }
+  100% { transform: none; }
+}
+@keyframes wz-flap { 0% { opacity: 1; transform: none; } 45% { transform: scaleY(.04); } 75% { opacity: 1; transform: scaleY(-.5); } 100% { opacity: 0; transform: scaleY(-.62); } }
+/* Seal glow steps up on each chant word (3.12, 3.51) and peaks for the wind-up (3.88). */
+@keyframes wz-glow {
+  0%, 8% { opacity: 0; transform: scale(.8); }
+  11% { opacity: .45; transform: scale(.9); }
+  40% { opacity: .45; transform: scale(.9); }
+  43% { opacity: .75; transform: scale(.98); }
+  70% { opacity: .75; transform: scale(.98); }
+  72% { opacity: 1; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes wz-swell { from { transform: none; } to { transform: scale(1.2); } }
+@keyframes wz-seal-fizz { 0%, 100% { transform: none; } 45% { transform: scale(.88) rotate(-10deg); } }
+@keyframes wz-seal-pop { 0% { opacity: 1; transform: none; } 35% { opacity: 1; transform: scale(1.21); } 100% { opacity: 0; transform: scale(1.33); } }
+/* The boop's pop is the biggest of all (x1.4). */
+@keyframes wz-seal-pop-big { 0% { opacity: 1; transform: none; } 35% { opacity: 1; transform: scale(1.294); } 100% { opacity: 0; transform: scale(1.462); } }
+@keyframes wz-puff { 0% { opacity: 0; transform: scale(.3); } 15% { opacity: .9; } 100% { opacity: 0; transform: scale(1.1); } }
+@keyframes wz-burst { 0% { opacity: 0; transform: scale(.3); } 10% { opacity: 1; } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes wz-burst-big { 0% { opacity: 0; transform: scale(.3); } 10% { opacity: 1; } 100% { opacity: 0; transform: scale(2.24); } }
+@keyframes wz-flash { 0% { opacity: 0; transform: scale(.2); } 28% { opacity: .95; transform: scale(.85); } 45% { opacity: .9; } 100% { opacity: 0; transform: scale(1.3); } }
+
+/* ---------- Stage (full screen, above every cover) ---------- */
+.wizard-scene { position: absolute; inset: 0; overflow: hidden; animation: wz-fade-out 1ms 7100ms both; }
+
+/* The gutter night never passes through a grey wash: it is an opaque curtain. It wipes down from the top (0.05–0.43 s):
+   the clip box slides down from above while its content slides up by the same amount, so the night itself stands still.
+   For "lights on" (5.10–5.30 s) it rises again: the inner clip box slides up and its content down. Four nested wrappers,
+   one transform animation each (VEIL_WIPE in wizardTimeline.ts). */
+.wizard-veil, .wizard-veil-clip, .wizard-veil-lift, .wizard-veil-hold, .wizard-veil-art { position: absolute; inset: 0; }
+.wizard-veil-clip, .wizard-veil-lift { overflow: hidden; }
+.wizard-veil-clip { animation: wz-veil-drop 380ms 50ms cubic-bezier(.4,0,.2,1) both; }
+.wizard-veil-art { animation: wz-veil-drop-hold 380ms 50ms cubic-bezier(.4,0,.2,1) both; }
+.wizard-veil-lift { animation: wz-veil-lift 200ms 5100ms cubic-bezier(.4,0,.6,1) both; }
+.wizard-veil-hold { animation: wz-veil-lift-hold 200ms 5100ms cubic-bezier(.4,0,.6,1) both; }
+.wizard-veil-art > svg { position: absolute; left: 0; top: 0; }
+@keyframes wz-veil-drop { from { transform: translateY(-100%); } to { transform: none; } }
+@keyframes wz-veil-drop-hold { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes wz-veil-lift { from { transform: none; } to { transform: translateY(-100%); } }
+@keyframes wz-veil-lift-hold { from { transform: none; } to { transform: translateY(100%); } }
+
+.wizard-twinkle { position: absolute; width: 0; height: 0; animation: wz-fade-in 400ms var(--tw-in) ease-out both; }
+.wizard-twinkle-out { position: absolute; width: 0; height: 0; animation: wz-fade-out 300ms 4550ms ease-in both; }
+.wizard-twinkle-out > svg { position: absolute; width: var(--tw-size); height: var(--tw-size); margin: calc(var(--tw-size) / -2) 0 0 calc(var(--tw-size) / -2); animation: wz-twinkle 900ms var(--tw-delay) ease-in-out infinite alternate both; }
+@keyframes wz-twinkle { from { transform: scale(.5) rotate(0); opacity: .35; } to { transform: scale(1) rotate(25deg); opacity: 1; } }
+
+/* Candles pop up from the wick (fully opaque, with a springy overshoot) just after the night reaches them, then bob
+   and flicker. To leave, the flame is snuffed (80 ms, glow and all) and a wisp of smoke curls up; then the candle
+   itself zips up and shrinks away (160 ms, ease-in), fully opaque until its last 50 ms, so it never reads as a grey
+   see-through stick. The slot point is the wick. */
+.wizard-candle { position: absolute; width: 0; height: 0; animation: wz-candle-in 300ms var(--candle-in) cubic-bezier(.34,1.56,.64,1) both; }
+.wizard-candle-out { position: absolute; width: 0; height: 0; animation: wz-candle-out 160ms var(--candle-drift, 5120ms) cubic-bezier(.55,0,1,.45) both; }
+.wizard-candle-bob { position: absolute; width: calc(var(--candle-w) * 3.4); height: calc(var(--candle-w) * 6); left: calc(var(--candle-w) * -1.7); top: calc(var(--candle-w) * -2.6); animation: wz-bob var(--candle-bob) ease-in-out infinite alternate both; }
+.wizard-candle-bob > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wizard-flame-out { position: absolute; left: calc(var(--candle-w) * 1.7); top: calc(var(--candle-w) * 2.58); width: 0; height: 0; animation: wz-snuff 80ms var(--candle-out, 5000ms) ease-in both; }
+.wizard-candle-glow { position: absolute; left: calc(var(--candle-w) * -1.7); top: calc(var(--candle-w) * -2.68); width: calc(var(--candle-w) * 3.4); height: calc(var(--candle-w) * 3.4); border-radius: 50%; background: radial-gradient(circle, #ffd98a8c 0%, #ffd98a29 50%, #ffd98a00 100%); }
+.wizard-flame { position: absolute; left: calc(var(--candle-w) * -.6); top: calc(var(--candle-w) * -1.6); width: calc(var(--candle-w) * 1.2); height: calc(var(--candle-w) * 1.6); transform-origin: 50% 100%; animation: wz-flicker var(--candle-flicker) ease-in-out infinite alternate both; }
+.wizard-flame > svg { display: block; width: 100%; height: 100%; }
+.wizard-wisp { position: absolute; left: calc(var(--candle-w) * -.5); top: calc(var(--candle-w) * -2.2); width: var(--candle-w); height: calc(var(--candle-w) * 2); transform-origin: 50% 100%; animation: wz-wisp 480ms calc(var(--candle-out, 5000ms) + 40ms) ease-out both; }
+.wizard-wisp > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes wz-candle-in { from { transform: scale(0); } to { transform: none; } }
+@keyframes wz-candle-out { 0% { opacity: 1; transform: none; } 68.75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-4vh) scale(.5); } }
+@keyframes wz-snuff { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0, .2); } }
+@keyframes wz-wisp { 0% { opacity: 0; transform: translateY(15%) scale(.5); } 25% { opacity: .85; } 100% { opacity: 0; transform: translateY(-75%) scale(1.25, 1.4); } }
+@keyframes wz-bob { from { transform: translateY(-.7vh); } to { transform: translateY(.7vh); } }
+@keyframes wz-flicker { from { transform: scaleY(.9) skewX(-3deg); } to { transform: scaleY(1.08) skewX(3deg); } }
+
+.wizard-word { position: absolute; width: 0; height: 0; transform: rotate(var(--word-rot)); }
+.wizard-word-art { position: absolute; left: 0; top: 0; animation: wz-word-in 250ms var(--word-in) cubic-bezier(.34,1.56,.64,1) both; }
+.wizard-word-out { position: absolute; left: 0; top: 0; animation: wz-word-out 140ms var(--word-out) linear both; }
+.wizard-word-out > svg { position: absolute; display: block; overflow: visible; }
+.wizard-word text { font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif; font-weight: 900; letter-spacing: .01em; }
+/* Pop in: solid within ~40 ms while still small, then the overshooting scale does the popping (never a faint ghost). */
+@keyframes wz-word-in { 0% { opacity: 0; transform: scale(.3); } 15% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+/* Pop out: swell to 1.2x (60 ms), then shrink away to nothing (80 ms), fully opaque all the way (never a ghost). */
+@keyframes wz-word-out {
+  0% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(.3,.7,.4,1); }
+  42.857% { opacity: 1; transform: scale(1.2); animation-timing-function: cubic-bezier(.5,0,.9,.6); }
+  99% { opacity: 1; }
+  100% { opacity: 0; transform: scale(0); }
+}
+
+/* Letter flights: from the satchel (inline start transforms) to the card centre. Each envelope grows out of the
+   satchel from nothing, fully opaque (a fade-in over the night would read as a grey ghost envelope).
+   Any keyframe pair that reaches scale(0) lists the same functions in the same order on both sides, so each one
+   interpolates on its own: a mismatched list falls back to matrices, and scale(0) cannot be decomposed (the
+   browser would then jump at the halfway point instead of growing or shrinking). */
+.wizard-flight { position: absolute; width: 0; height: 0; }
+.wizard-flight-x { animation: wz-to-none 380ms var(--at) linear both; }
+.wizard-flight-y { animation: wz-to-none 380ms var(--at) cubic-bezier(.22,.61,.36,1) both; }
+.wizard-flight-art { position: absolute; width: var(--wz-env-w); height: var(--wz-env-h); margin: calc(var(--wz-env-h) / -2) 0 0 calc(var(--wz-env-w) / -2); animation: wz-fly-art 380ms var(--at) ease-out both; }
+@keyframes wz-fly-art { 0% { opacity: 1; transform: rotate(-38deg) scale(0); } 99.9% { opacity: 1; transform: rotate(6deg) scale(1); } 100% { opacity: 0; transform: rotate(6deg) scale(1); } }
+
+/* The star burst ("APERIO!"). In (4.20) > squash-and-burst (4.34–4.64) on nested wrappers; the white-hot overlay heats up during
+   the squash; the core flash and the shockwave ring fire at 4.42. */
+.wizard-star { position: absolute; width: 0; height: 0; }
+.wizard-star-art { position: absolute; width: var(--star-size); height: var(--star-size); margin: calc(var(--star-size) / -2) 0 0 calc(var(--star-size) / -2); animation: wz-star-in 220ms 4200ms cubic-bezier(.34,1.8,.64,1) both; }
+.wizard-star-burst { position: absolute; inset: 0; animation: wz-star-burst 300ms 4340ms linear both; }
+.wizard-star-burst > svg, .wizard-star-hot > svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.wizard-star-hot { position: absolute; inset: 0; animation: wz-star-hot 110ms 4310ms ease-in both; }
+.wizard-star-flash { position: absolute; width: calc(var(--star-size) * 2.2); height: calc(var(--star-size) * 2.2); margin: calc(var(--star-size) * -1.1) 0 0 calc(var(--star-size) * -1.1); border-radius: 50%; background: radial-gradient(circle, #fff6d8 0%, #ffe27a 28%, #ffd35c 42%, #ffd35c00 58%); animation: wz-star-flash 240ms 4200ms ease-out both; }
+/* The white-hot core: solid white with a narrow gold edge. It collapses to a point while still bright and only
+   fades once it is tiny, so it never lingers as a big milky disc over the night. */
+.wizard-star-core { position: absolute; width: calc(var(--star-size) * 2.5); height: calc(var(--star-size) * 2.5); margin: calc(var(--star-size) * -1.25) 0 0 calc(var(--star-size) * -1.25); border-radius: 50%; background: radial-gradient(circle, #fffbea 0%, #fff6d8 44%, #ffe27a 54%, #ffd35c 60%, #ffd35c00 68%); animation: wz-star-core 260ms 4420ms linear both; }
+/* The shockwave: a saturated gold ring with a pale core that races out and thins away to nothing as it goes (its
+   strokes animate stroke-width: a 400 ms repaint of one small SVG). It stays fully opaque, so it never goes grey. */
+.wizard-star-ring { position: absolute; width: var(--ring-size); height: var(--ring-size); margin: calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2); animation: wz-star-ring 400ms 4420ms linear both; }
+.wizard-star-ring > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.wizard-star-ring circle { fill: none; animation: wz-ring-thin 400ms 4420ms cubic-bezier(.3,.3,.6,1) both; }
+.wizard-star-ring .wz-ring-gold { stroke: #ffc94d; }
+.wizard-star-ring .wz-ring-core { stroke: #fff3c4; animation-name: wz-ring-thin-core; }
+@keyframes wz-ring-thin { from { stroke-width: 18px; } to { stroke-width: 0; } }
+@keyframes wz-ring-thin-core { from { stroke-width: 7px; } to { stroke-width: 0; } }
+@keyframes wz-star-in { from { transform: scale(0) rotate(-20deg); } to { transform: none; } }
+/* Squash (4.34–4.42), then flare to 1.4x in 40 ms and burn out by 4.51 under the core flash: no ghost star lingers. */
+@keyframes wz-star-burst {
+  0% { transform: none; animation-timing-function: cubic-bezier(.45,0,.55,1); }
+  26.667% { opacity: 1; transform: scale(.84) rotate(-10deg); animation-timing-function: cubic-bezier(.15,.8,.3,1); }
+  40% { opacity: 1; transform: scale(1.4) rotate(3deg); animation-timing-function: linear; }
+  56% { opacity: 0; transform: scale(1.72) rotate(8deg); }
+  100% { opacity: 0; transform: scale(1.72) rotate(8deg); }
+}
+@keyframes wz-star-hot { from { opacity: 0; } to { opacity: .88; } }
+/* The pop-in glow swells behind the star, then shrinks back under it (hidden by the star) rather than fading wide. */
+@keyframes wz-star-flash { 0% { opacity: 0; transform: scale(.3); } 30% { opacity: 1; transform: none; } 100% { opacity: 0; transform: scale(.45); } }
+@keyframes wz-star-core {
+  0% { opacity: 0; transform: scale(.45); animation-timing-function: cubic-bezier(.2,.8,.4,1); }
+  9% { opacity: 1; transform: scale(.85); animation-timing-function: cubic-bezier(.2,.8,.4,1); }
+  30% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(.5,0,.75,.4); }
+  85% { opacity: 1; transform: scale(.28); animation-timing-function: cubic-bezier(.5,0,1,1); }
+  100% { opacity: 1; transform: scale(0); }
+}
+@keyframes wz-star-ring {
+  0% { opacity: 0; transform: scale(.3); animation-timing-function: linear; }
+  5% { opacity: 1; transform: scale(.55); animation-timing-function: cubic-bezier(.25,.6,.4,1); }
+  100% { opacity: 1; transform: scale(2.42); }
+}
+
+/* Burst rays: fat gold sparkles and stars that shoot out, fully opaque until 85% of the flight, then shrink away. */
+.wizard-ray { position: absolute; width: 0; height: 0; }
+.wizard-ray-go { position: absolute; width: 0; height: 0; animation: wz-from-none var(--ray-dur, 440ms) 4420ms cubic-bezier(.15,.75,.3,1) both; }
+.wizard-ray-art { position: absolute; width: var(--ray-size); height: var(--ray-size); margin: calc(var(--ray-size) / -2) 0 0 calc(var(--ray-size) / -2); animation: wz-ray-art var(--ray-dur, 440ms) 4420ms linear both; }
+.wizard-ray-art > svg, .wz-cf-art > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes wz-ray-art { 0% { opacity: 0; transform: scale(.6); } 6% { opacity: 1; transform: scale(1.15) rotate(20deg); } 85% { opacity: 1; transform: scale(.9) rotate(145deg); } 97% { opacity: 1; } 100% { opacity: 0; transform: scale(0) rotate(170deg); } }
+/* Star-confetti: an ease-out throw (out and up) plus an ease-in fall sum to a gravity arc; the art tumbles, then shrinks away. */
+.wizard-confetti { position: absolute; width: 0; height: 0; }
+.wz-cf-go { animation: wz-from-none var(--cf-dur) 4420ms cubic-bezier(.25,.46,.45,.94) both; }
+.wz-cf-fall { animation: wz-from-none var(--cf-dur) 4420ms cubic-bezier(.55,.085,.68,.53) both; }
+.wz-cf-art { position: absolute; width: var(--cf-size); height: var(--cf-size); margin: calc(var(--cf-size) / -2) 0 0 calc(var(--cf-size) / -2); animation: wz-cf-spin var(--cf-dur) 4420ms linear both; }
+.wz-cf-art.is-ccw { animation-name: wz-cf-spin-ccw; }
+@keyframes wz-cf-spin { 0% { opacity: 0; transform: scale(.4); } 6% { opacity: 1; transform: scale(1.1) rotate(25deg); } 86% { opacity: 1; transform: scale(.9) rotate(300deg); } 98% { opacity: 1; } 100% { opacity: 0; transform: scale(0) rotate(340deg); } }
+@keyframes wz-cf-spin-ccw { 0% { opacity: 0; transform: scale(.4); } 6% { opacity: 1; transform: scale(1.1) rotate(-25deg); } 86% { opacity: 1; transform: scale(.9) rotate(-300deg); } 98% { opacity: 1; } 100% { opacity: 0; transform: scale(0) rotate(-340deg); } }
+
+/* Seal sparks: from the star to each seal (inline end transforms), arriving exactly at that card's pop. */
+.wizard-spark { position: absolute; width: 0; height: 0; }
+.wizard-spark-x { animation: wz-from-none var(--spark-dur) 4420ms linear both; }
+.wizard-spark-y { animation: wz-from-none var(--spark-dur) 4420ms cubic-bezier(.55,0,1,.45) both; }
+.wizard-spark.is-odd .wizard-spark-x { animation-timing-function: cubic-bezier(.55,0,1,.45); }
+.wizard-spark.is-odd .wizard-spark-y { animation-timing-function: linear; }
+.wizard-spark-art { position: absolute; width: var(--spark-size); height: var(--spark-size); margin: calc(var(--spark-size) / -2) 0 0 calc(var(--spark-size) / -2); animation: wz-spark-art var(--spark-dur) 4420ms linear both; }
+.wizard-spark-star { position: absolute; inset: 0; }
+.wizard-spark-tail { position: absolute; top: 50%; right: 50%; width: calc(var(--spark-size) * 1.8); height: calc(var(--spark-size) * .34); margin-top: calc(var(--spark-size) * -.17); transform-origin: 100% 50%; transform: rotate(var(--spark-angle)); border-radius: 50%; background: linear-gradient(90deg, #ffd35c00, #ffd35ccc); }
+@keyframes wz-spark-art { 0% { opacity: 0; transform: scale(.6); } 10% { opacity: 1; transform: scale(1.2); } 99.9% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+.wizard-fizz { position: absolute; width: var(--fizz-size); height: var(--fizz-size); margin: calc(var(--fizz-size) / -2) 0 0 calc(var(--fizz-size) / -2); animation: wz-fizz 450ms var(--fizz-at) ease-out both; }
+.wizard-fizz > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes wz-fizz { 0% { opacity: 0; transform: scale(.5); } 20% { opacity: .95; } 100% { opacity: 0; transform: translateY(-20%) scale(1.4); } }
+
+/* The stubborn letter's padlock (no words needed). It hangs off the envelope's shake pivot and shakes "no" with it
+   (wz-lock-shake is the end of wz-chant-stuck: 4.90–5.35, same angles and easing). It pops on (4.96) with its shackle
+   up; the shackle clicks shut at 5.02 (the body squashes); at the boop (6.00) the shackle springs open and the
+   padlock swells and pops away by shrinking, fully opaque (gone 6.16). Body width --lock-size; the art box is
+   1.2 x 1.6 of it with the body centre at 50% 66.25% (viewBox -60 -106 120 160 in wizard.tsx). */
+.wizard-lock, .wizard-lock-shake, .wizard-lock-at { position: absolute; width: 0; height: 0; }
+.wizard-lock-shake { animation: wz-lock-shake 450ms 4900ms ease-in-out both; }
+.wizard-lock-pop { position: absolute; left: calc(var(--lock-size) * -.6); top: calc(var(--lock-size) * -1.06); width: calc(var(--lock-size) * 1.2); height: calc(var(--lock-size) * 1.6); transform-origin: 50% 66.25%; animation: wz-lock-pop 1200ms 4960ms linear both; }
+.wizard-lock-pop > svg, .wizard-lock-shackle > svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+.wizard-lock-shackle { position: absolute; inset: 0; transform-origin: 75% 47.5%; animation: wz-lock-shackle 1100ms 4960ms linear both; }
+@keyframes wz-lock-shake {
+  0% { transform: none; }
+  16.667% { transform: rotate(-6deg); }
+  33.333% { transform: rotate(6deg); }
+  50% { transform: rotate(-6deg); }
+  66.667% { transform: rotate(5deg); }
+  83.333% { transform: rotate(-3deg); }
+  100% { transform: none; }
+}
+@keyframes wz-lock-pop {
+  0% { transform: scale(0) rotate(-24deg); animation-timing-function: cubic-bezier(.3,1.5,.6,1); }
+  5% { transform: scale(1.1, .9) rotate(0deg); animation-timing-function: cubic-bezier(.3,.6,.4,1); }
+  10% { transform: scale(.97, 1.04) rotate(0deg); }
+  13.333% { transform: none; }
+  86.667% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(.2,.8,.4,1); }
+  90% { transform: translateY(-4%) rotate(5deg) scale(1.16); animation-timing-function: cubic-bezier(.55,0,1,.45); }
+  99.9% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-26%) rotate(24deg) scale(0); }
+}
+@keyframes wz-lock-shackle {
+  0%, 2.727% { transform: translateY(-10%); animation-timing-function: cubic-bezier(.6,0,1,.6); }
+  5.455% { transform: none; }
+  94.545% { transform: none; animation-timing-function: cubic-bezier(.2,.9,.4,1.3); }
+  100% { transform: translateY(-13%) rotate(28deg); }
+}
+
+/* Letters: jump out (rise to the inline translateY), then sail to the inline (dx, dy) while fluttering: a sway
+   against the travel (in % of the letter's own width) and a rock. They stay fully opaque (a see-through letter over
+   the night or over names reads as a grey ghost) and pop away at the end by shrinking to nothing (88% on), with the
+   opacity step only in the last 1.5%. A letter with nowhere clear to go (.is-pop: a crowded screen) twirls in place
+   and shrinks away instead (62% on). The easings and the times (--go) match letterPlan, letterFlutter and
+   letterBoxAt in wizardTimeline.ts; the stubborn letter leaves faster, and on a crowded screen all of them do. */
+.wizard-letter { position: absolute; width: 0; height: 0; }
+.wizard-letter-rise { animation: wz-letter-rise 280ms var(--a1) cubic-bezier(.34,1.56,.64,1) both; }
+.wizard-letter-go { animation: wz-from-none var(--go, 750ms) var(--a2) cubic-bezier(.3,.15,.6,1) both; }
+.wizard-letter.is-stuck .wizard-letter-go { animation-timing-function: cubic-bezier(.2,.55,.4,1); }
+.wizard-letter-flutter { position: absolute; width: var(--lw); height: var(--lh); margin: calc(var(--lh) / -2) 0 0 calc(var(--lw) / -2); animation: wz-letter-flutter var(--go, 750ms) var(--a2) ease-in-out both; }
+.wizard-letter.is-left .wizard-letter-flutter { animation-name: wz-letter-flutter-left; }
+.wizard-letter.is-pop .wizard-letter-flutter { animation-name: wz-letter-pop; }
+.wizard-letter-flutter > svg { display: block; width: 100%; height: 100%; }
+@keyframes wz-letter-pop {
+  0% { opacity: 1; transform: none; }
+  45% { transform: translateY(-6%) rotate(-7deg) scale(1.06); }
+  62% { opacity: 1; transform: translateY(0) rotate(-2deg) scale(1); animation-timing-function: cubic-bezier(.55,0,1,.45); }
+  98.5% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(0) rotate(14deg) scale(0); }
+}
+@keyframes wz-letter-rise { 0% { opacity: 0; transform: scale(.5, .18); } 20% { opacity: 1; } }
+@keyframes wz-letter-flutter {
+  0% { opacity: 1; transform: none; }
+  30% { transform: translateX(-4%) rotate(-8deg); }
+  55% { transform: translateX(-26%) rotate(18deg) scale(.9); }
+  78% { transform: translateX(-6%) rotate(-10deg) scale(.8); }
+  88% { opacity: 1; transform: translateX(-2%) rotate(-4deg) scale(.78); animation-timing-function: cubic-bezier(.55,0,1,.45); }
+  98.5% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(0) rotate(10deg) scale(0); }
+}
+@keyframes wz-letter-flutter-left {
+  0% { opacity: 1; transform: none; }
+  30% { transform: translateX(4%) rotate(8deg); }
+  55% { transform: translateX(26%) rotate(-18deg) scale(.9); }
+  78% { transform: translateX(6%) rotate(10deg) scale(.8); }
+  88% { opacity: 1; transform: translateX(2%) rotate(4deg) scale(.78); animation-timing-function: cubic-bezier(.55,0,1,.45); }
+  98.5% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(0) rotate(-10deg) scale(0); }
+}
+
+/* ---------- Actors (owl, trail, dust, feathers): Web Animations tracks from wizardTracks.ts ---------- */
+.wizard-actors { position: absolute; inset: 0; }
+.wizard-defs { position: absolute; width: 0; height: 0; }
+.wizard-part { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+.wizard-part > svg { position: absolute; overflow: visible; }
+/* Short-lived actors (glints, dust, feathers, sparks) run only in their live window (fill 'none'): hidden outside it. */
+.wizard-part.wz-off { opacity: 0; }
+.wizard-trail { position: absolute; inset: 0; opacity: 0; }
+.wizard-trail-seg { position: absolute; overflow: visible; opacity: 0; }
+.wizard-glint { position: absolute; width: 0; height: 0; }

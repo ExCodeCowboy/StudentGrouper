@@ -2,21 +2,29 @@
   "version": 1,
   "verifiedAt": "2026-09-07",
   "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "notes": "Source pages explicitly identify these assets as CC0. SHA-256 hashes identify original downloaded files before editing. Reveal-specific excerpts, processing and outputs are listed separately under files. No NASA audio is included.",
+  "notes": "Source pages explicitly identify these assets as CC0. SHA-256 hashes identify original downloaded files before editing. The authored-* sources are electronic game sounds synthesized in this repository by deterministic scripts and dedicated CC0; they have no download. Reveal-specific excerpts, processing and outputs are listed separately under files. No NASA audio is included.",
   "sources": [
     {
       "id": "cat",
       "title": "Cat Purr & Meow",
       "author": "Kerzoven",
       "sourceUrl": "https://opengameart.org/content/cat-purr-meow",
-      "notes": "Creator-recorded cat vocalization. The page notes background noise in the meows. The alternate cat_softmew.wav candidate is not used.",
+      "notes": "Creator-recorded cat vocalizations. The page notes background noise in the meows. Two of the page's files are used: cat_mewpurr.wav (download) and cat_softmew.wav (additionalDownloads; its link, size and CC0 license were checked on the source page on 2026-09-25).",
       "license": "CC0-1.0",
       "download": {
         "url": "https://opengameart.org/sites/default/files/cat_mewpurr.wav",
         "filename": "cat_mewpurr.wav",
         "bytes": 124464,
         "sha256": "a58487959ee00c812f9f02ca822a668173bcf04a98c6dd98a902514a1d3994ea"
-      }
+      },
+      "additionalDownloads": [
+        {
+          "url": "https://opengameart.org/sites/default/files/cat_softmew.wav",
+          "filename": "cat_softmew.wav",
+          "bytes": 218620,
+          "sha256": "7de9fed4401b677ccbf072781182857d875093a8e9b5727fc21b38028cfd5a90"
+        }
+      ]
     },
     {
       "id": "water",
@@ -93,20 +101,6 @@
       }
     },
     {
-      "id": "zipper",
-      "title": "Zipper",
-      "author": "AntumDeluge",
-      "sourceUrl": "https://opengameart.org/content/zipper",
-      "notes": "A recorded jacket zipper. The description and license field both explicitly state CC0. Downloaded locally as zipper.wav.",
-      "license": "CC0-1.0",
-      "download": {
-        "url": "https://opengameart.org/sites/default/files/zipper-1.wav",
-        "filename": "zipper-1.wav",
-        "bytes": 72494,
-        "sha256": "0b3def41d4c76b40bc4edc45391115b29494c3380110bd42b0b53819d9d8475c"
-      }
-    },
-    {
       "id": "rocket",
       "title": "Rocket Engine",
       "author": "theMinesAreShakin",
@@ -161,12 +155,73 @@
         "bytes": 22271,
         "sha256": "8b74bc75568a431ebabf639525e1ad7acb4cbe07ae1d36434c61a2975219d985"
       }
+    },
+    {
+      "id": "authored-pixel-quest",
+      "title": "Pixel Quest chiptune stems (authored in-repo)",
+      "author": "Student Grouper contributors",
+      "sourceUrl": "https://github.com/ExCodeCowboy/StudentGrouper/blob/master/scripts/authored-sounds/pixel-quest.py",
+      "script": "scripts/authored-sounds/pixel-quest.py",
+      "notes": "Synthesized in this repository by a deterministic script (numpy; no samples): band-limited pulse waves, a 4-bit stepped triangle and 15-bit LFSR noise playing an original melody. It imitates no famous game melody or trademark sound. Running `python scripts/authored-sounds/pixel-quest.py work/open-sounds` writes the stems to work/open-sounds/authored/pixel-quest/ plus NOTES.json listing every note. The script and its output are dedicated to the public domain under CC0-1.0.",
+      "license": "CC0-1.0"
+    },
+    {
+      "id": "authored-block-mine",
+      "title": "Block mine game blips (authored in-repo)",
+      "author": "Student Grouper contributors",
+      "sourceUrl": "https://github.com/ExCodeCowboy/StudentGrouper/blob/master/scripts/authored-sounds/block-mine.py",
+      "script": "scripts/authored-sounds/block-mine.py",
+      "notes": "Synthesized in this repository by a deterministic script (numpy; no samples): soft mallet-style electronic blips (fast-decaying sine partials plus a short filtered-noise strike) on a stepwise C-major pentatonic, modelled on no existing game's sounds. Running `python scripts/authored-sounds/block-mine.py work/open-sounds` writes the stems to work/open-sounds/authored/block-mine/ plus NOTES.json listing every note. The script and its output are dedicated to the public domain under CC0-1.0.",
+      "license": "CC0-1.0"
     }
   ],
   "files": [
     {
-      "file": "balloons.wav",
-      "sha256": "cfb15d020d51af1d0b9bab966a186b2566b1b120f7f95971fed2f50fd616f9c5",
+      "file": "moon.wav",
+      "sha256": "250d622def8c6ffac45d24aead452f4327f960ab63b566e4aeea262befec5fc4",
+      "sourceIds": [
+        "foley",
+        "magic",
+        "rocket",
+        "swishes"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "black-hole.wav",
+      "sha256": "58b483590880342f55ceacb82e00a330978680f7efb61775b116ce1282e3ef1d",
+      "sourceIds": [
+        "bubbles",
+        "foley",
+        "magic"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "pixel-quest.wav",
+      "sha256": "dee7bcfb22982e29b27bfd9430e88a1f098b41214c5ab5a1107e7d8f7f3eebd0",
+      "sourceIds": [
+        "authored-pixel-quest"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "block-mine.wav",
+      "sha256": "dc47965cfcb7b57fe9bb49bad5c452d6be6c21c162ccd10bac3e158e19581aa4",
+      "sourceIds": [
+        "authored-block-mine",
+        "foley",
+        "swishes"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "dot-to-dot.wav",
+      "sha256": "3e5bf032979191948439824e6a6527ca521cca46d9b3d800cd1dd15213a8f1a4",
       "sourceIds": [
         "foley",
         "swishes"
@@ -175,56 +230,69 @@
       "cueManifest": "CUES.json"
     },
     {
-      "file": "zipper.wav",
-      "sha256": "a394f8027939016a162696348c57ea0dcaddb3a5e12865da121f84357c32798a",
+      "file": "dino-egg.wav",
+      "sha256": "f5efd6d34bcc44d3a26e998ba7d389e4b8ccc2c376e9981a9143e2554bd507e9",
       "sourceIds": [
-        "zipper"
+        "foley",
+        "giggle",
+        "rocket",
+        "swishes"
       ],
       "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
       "cueManifest": "CUES.json"
     },
     {
-      "file": "dragon.wav",
-      "sha256": "3dcfda108a5b6cfdda3ec4ad678ba186cae8a1e6e325f618018b8972f4c7d7f1",
+      "file": "wizard.wav",
+      "sha256": "fdd57730c55a11c7a37ec34aa412b0b9fc6e9dab4e24d01e11ba925b07a6d0cc",
       "sourceIds": [
-        "bubbles"
+        "bubbles",
+        "foley",
+        "giggle",
+        "magic",
+        "swishes"
+      ],
+      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
+      "cueManifest": "CUES.json"
+    },
+    {
+      "file": "squishy-bounce.wav",
+      "sha256": "7e42caa7769e144d00abc13070e33da780770cfe1792494596abe4922971f5f5",
+      "sourceIds": [
+        "bubbles",
+        "foley",
+        "giggle",
+        "swishes"
       ],
       "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
       "cueManifest": "CUES.json"
     },
     {
       "file": "cat.wav",
-      "sha256": "41442e90b25e6b15183328c082207df7ba5c37afc37f1841713d8d0daa06b95c",
+      "sha256": "2301c910ce3c24ab8c0bb51db03d8ac03a03a2d812aa91419f44488e4c4863c3",
       "sourceIds": [
         "cat",
-        "foley"
+        "foley",
+        "swishes"
       ],
       "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
       "cueManifest": "CUES.json"
     },
     {
-      "file": "moon.wav",
-      "sha256": "91fa3be30bf589728251082a1e2c4b92f8d57fb8068422ce1737405079b4eef4",
+      "file": "balloons.wav",
+      "sha256": "201202977bf1ded6868747a3935460782ecfe1b33aa4f1e2b1c411a4eef29e9c",
       "sourceIds": [
         "foley",
-        "rocket"
-      ],
-      "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
-      "cueManifest": "CUES.json"
-    },
-    {
-      "file": "black-hole.wav",
-      "sha256": "a6ce7ebe9936b3ca601548a24d223126b4c07929c1d15324396322469f167b3b",
-      "sourceIds": [
-        "magic"
+        "giggle",
+        "swishes"
       ],
       "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
       "cueManifest": "CUES.json"
     },
     {
       "file": "fairy.wav",
-      "sha256": "d1482ad09ca270a07659af8cf1faaddc92e76a9a13d23d30bd1da858f37f5365",
+      "sha256": "b9e85610b32849315ce0c4feb9e2b275165cfb1673f3b0e5790bd9928b06021e",
       "sourceIds": [
+        "foley",
         "giggle",
         "magic",
         "swishes"
@@ -234,8 +302,11 @@
     },
     {
       "file": "wave.wav",
-      "sha256": "23eed75efff0950354376a7073917839ea80711d9f78724d519fa2a643e9aaa9",
+      "sha256": "96cd63ce1164ef6028ef832b623f863675a9077d9755ecad096a10cb708404a0",
       "sourceIds": [
+        "bubbles",
+        "foley",
+        "swishes",
         "water"
       ],
       "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
@@ -243,10 +314,12 @@
     },
     {
       "file": "confetti.wav",
-      "sha256": "3290c83dc8c77ba543348cf179ac761726d9ed1c34c414fbdb2dae81793bde88",
+      "sha256": "68fb093b391afd2bbd4d8793162b32649b776ef730879dddadc37cdb424f9a1c",
       "sourceIds": [
         "drumroll",
-        "fanfare"
+        "fanfare",
+        "foley",
+        "swishes"
       ],
       "edits": "Excerpted, downmixed to mono, resampled with anti-alias filtering, faded, level matched and mixed on the reveal timeline. Per-cue trimming, playback speed and EQ appear in CUES.json.",
       "cueManifest": "CUES.json"

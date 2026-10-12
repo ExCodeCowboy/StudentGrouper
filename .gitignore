@@ -39,4 +39,6 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
-/tooling/animation-workbench/dist/
+
+# python bytecode
+scripts/__pycache__/

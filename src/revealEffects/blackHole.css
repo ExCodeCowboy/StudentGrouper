@@ -1,32 +1,404 @@
-.black-hole-scene { position: absolute; inset: 0; animation: black-hole-scene 2450ms ease both; }
-.black-hole-halo { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 46%, #9a73ef38 0%, #5954cd16 28%, transparent 65%); }
-.black-hole-core { position: absolute; left: 50%; top: 46%; width: min(38vw, 340px); height: min(38vw, 340px); transform: translate(-50%, -50%); filter: drop-shadow(0 0 25px #a798f7); animation: black-hole-grow 2450ms ease-in-out both; }
-.black-hole-core i { position: absolute; inset: 5%; border: 9px solid transparent; border-top-color: #a297fc; border-bottom-color: #d9cdff; border-radius: 50%; box-shadow: 0 0 18px #b19cf7, inset 0 0 18px #7d65c6; animation: black-hole-spin 650ms linear infinite; }
-.black-hole-core i:nth-child(2) { inset: 17%; border-width: 11px; border-top-color: #f7d488; border-bottom-color: #ffe9b3; animation-direction: reverse; animation-duration: 900ms; }
-.black-hole-core i:nth-child(3) { inset: 27%; border-width: 6px; border-top-color: #fff9dc; border-bottom-color: #bcb9ff; animation-duration: 500ms; }
-.black-hole-core > span { position: absolute; inset: 35%; background: #241c44; border-radius: 50%; box-shadow: 0 0 24px #593b83; }
-.black-hole-stardust { position: absolute; left: 50%; top: 46%; width: 8px; height: 8px; border-radius: 50%; background: #d4b7ff; box-shadow: 0 0 8px #a085e1; animation: black-hole-dust 1200ms var(--dust-delay) ease-in both; }
-/* Fixed covers can orbit outside the daily chart's scrolling boundary. */
-.black-hole-paper { position: fixed; left: var(--reveal-cover-left); top: var(--reveal-cover-top); width: var(--reveal-cover-width); height: var(--reveal-cover-height); }
-/* Rotate and shrink about the shared portal, not each ribbon's own center. */
-.black-hole-paper-orbit { position: absolute; inset: 0; transform-origin: calc(50% + var(--reveal-target-x)) calc(50% + var(--reveal-target-y)); --orbit-delay: calc(140ms + var(--slice) * 40ms + var(--reveal-left) * 100ms); animation: black-hole-orbit 1900ms var(--orbit-delay) linear both; }
-.black-hole-paper-orbit > i { position: absolute; left: calc(var(--slice) * 16.6667%); top: 0; bottom: 0; width: 17%; display: grid; place-items: center; background: repeating-linear-gradient(25deg, #f1eaff 0 16px, #e6dcf9 16px 18px); border-inline: 1px dashed #b5a2d4; color: #997ac5; animation: black-hole-tumble 1900ms var(--orbit-delay) ease-in both; }
-.black-hole-paper-orbit > i > span { font-size: 35px; font-style: normal; }
-@keyframes black-hole-spin { to { transform: rotate(360deg) scaleY(.7); } }
-@keyframes black-hole-grow { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 18% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 86% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; } }
-@keyframes black-hole-scene { 0%, 100% { opacity: 0; } 12%, 85% { opacity: 1; } }
-@keyframes black-hole-dust { 0% { opacity: 0; transform: rotate(var(--dust-angle)) translateX(var(--dust-distance)) scale(1); } 12% { opacity: 1; } 100% { opacity: 0; transform: rotate(calc(var(--dust-angle) + 80deg)) translateX(0) scale(.1); } }
-@keyframes black-hole-orbit {
-  0% { transform: rotate(0deg) scale(1); opacity: 1; }
-  12% { transform: rotate(12deg) scale(.88); opacity: 1; }
-  32% { transform: rotate(90deg) scale(.68); }
-  54% { transform: rotate(205deg) scale(.43); }
-  76% { transform: rotate(355deg) scale(.2); opacity: 1; }
-  92% { transform: rotate(495deg) scale(.065); opacity: 1; }
-  100% { transform: rotate(585deg) scale(0); opacity: 0; }
+/* Black-hole whoosh (5300 ms). CSS-only and compositor-friendly: every element renders once,
+   all delays are absolute ms from mount (the beats in blackHoleTimeline.ts).
+   Performance rules: no clip-path or filter on anything that moves, no animation on pseudo-elements,
+   no animated-opacity wrapper around the flying strips, one animated element per strip, only
+   transform/opacity are animated (the tiny face groups in the core SVG are the only non-composited ones). */
+[data-reveal-effect="black-hole"] {
+  --bh-size: min(50vmin, 560px);
 }
-@keyframes black-hole-tumble {
-  0% { transform: none; }
-  16% { transform: translateY(calc((var(--slice) - 2.5) * 6px)) rotate(var(--slice-turn)); }
-  100% { transform: rotate(calc(var(--slice-turn) + 190deg)); }
+/* A four-point twinkle with curved sides (superellipse |x|^(2/3.4) + |y|^(2/3.4) = 1), so no star depends on font glyphs. */
+.bh-star { display: block; clip-path: polygon(100% 50%, 94.4% 50.5%, 80.7% 54.7%, 65.4% 65.4%, 54.7% 80.7%, 50.5% 94.4%, 50% 100%, 49.5% 94.4%, 45.3% 80.7%, 34.6% 65.4%, 19.3% 54.7%, 5.6% 50.5%, 0% 50%, 5.6% 49.5%, 19.3% 45.3%, 34.6% 34.6%, 45.3% 19.3%, 49.5% 5.6%, 50% 0%, 50.5% 5.6%, 54.7% 19.3%, 65.4% 34.6%, 80.7% 45.3%, 94.4% 49.5%); }
+
+/* ---------- Stage (full screen, above the covers) ---------- */
+/* No scene-wide fade: an animated-opacity wrapper would render the whole stage into one offscreen surface for
+   the full 5.3 s. Every element ends invisible on its own (the last, the twinkle and its minis, pop out by 5.16 s). */
+.bh-scene { position: absolute; inset: 0; }
+.bh-scene svg { display: block; width: 100%; height: 100%; overflow: visible; }
+/* Dusk: deepest at the portal, fading to nothing before the app header (~64 px) and footer (~66 px),
+   which sit above the stage, so there is no hard seam where they cut it off (BLACK_HOLE_DUSK in blackHoleTimeline.ts). */
+.bh-dim { position: absolute; left: 0; right: 0; top: 64px; bottom: 66px; opacity: 0; background: radial-gradient(ellipse 78% 46% at 50% 45.5%, rgba(44, 20, 128, .46) 0%, rgba(48, 22, 134, .3) 38%, rgba(52, 24, 140, .1) 72%, rgba(52, 24, 140, 0) 96%); animation: bh-dim 4190ms 250ms both; }
+.bh-stars { position: absolute; left: 50%; top: 46%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; opacity: 0; animation: bh-dim 4190ms 250ms both, bh-stars-turn 5300ms linear both; }
+/* The spark peaks at the focal point, or (--bh-spark-y, inline on the scene) just above a "?" that sits under the portal,
+   and sinks back to the focal point as it fades into the opening portal. */
+.bh-spark { position: absolute; left: 50%; top: 46%; width: calc(var(--bh-size) * .2); height: calc(var(--bh-size) * .2); margin: calc(var(--bh-size) * -.1); opacity: 0; animation: bh-spark 380ms 80ms both; }
+.bh-spark > i { width: 100%; height: 100%; background: radial-gradient(circle, #fff 0 14%, #e3d6ff 26%, #9a74ff 52%, #5b35d8 100%); }
+/* Warm flash behind the hole at the burp (a 92vmin square, not the whole screen). */
+.bh-flash { position: absolute; left: 50%; top: 46%; width: 92vmin; height: 92vmin; margin: -46vmin; border-radius: 50%; opacity: 0; background: radial-gradient(circle closest-side, rgba(255, 253, 245, 1) 0, rgba(255, 246, 214, .85) 35%, rgba(255, 236, 190, 0) 100%); animation: bh-flash 360ms 4200ms ease-out both; }
+
+/* Tug copies: each card's "?" tile, drawn by the stage above every cover and above the dusk (so the tiles stay
+   bright butter-yellow while they star in the gag, and a long taffy pull is never hidden under a neighbouring card).
+   At rest a copy sits exactly on its cover's tile; it fades into the dusk and vanishes at the hand-off (1700 ms). */
+.bh-tugs { position: absolute; inset: 0; }
+.bh-tug { position: absolute; width: var(--T); height: var(--T); margin: calc(var(--T) / -2); display: grid; place-items: center; }
+/* Hop (only for a "?" right under the portal), then rotate into the pull direction (inline), stretch along it, rotate back upright. */
+.bh-tug-hop, .bh-tug-aim { position: absolute; inset: 0; display: grid; place-items: center; }
+.bh-tug.is-hop > .bh-tug-hop { animation: bh-hop 1600ms 100ms both; }
+/* A hopped "?" is drawn twice with the same animations: under the portal until the BOING squash, then over it (and over
+   the power-up pulse) for the slurp, so the slurp is never washed out; the swap is exact (both copies are identical). */
+.bh-tug.is-under { animation: bh-off 1ms 1499ms both; }
+.bh-tug.is-over { opacity: 0; animation: bh-on 1ms 1499ms both; }
+/* The slurped "?" pulls a gold taffy trail loose from the spot where it sat: wide behind the tile, necking to a thin strand
+   that ends in a sticky drop (static art, pointing back down its path; --bh-trail-angle and the stretch per key come inline
+   from blackHoleTrail, so the drop stays on that spot until the trail lets go and snaps up into the tile). */
+.bh-trail { position: absolute; left: 50%; top: 50%; width: calc(var(--T) * 2); height: calc(var(--T) * .8); margin-top: calc(var(--T) * -.4); transform-origin: 0 50%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 80' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g'%3E%3Cstop offset='.3' stop-color='%23fff0bd'/%3E%3Cstop offset='.55' stop-color='%23ffe293'/%3E%3Cstop offset='.85' stop-color='%23ffd46e'/%3E%3Cstop offset='1' stop-color='%23ffc955'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 12H80C98 12 104 34 125 34C135 32 140 30.5 147 31C155 31.5 158 37 166 35C176 33 181 25 189 25Q199 25 199 44Q199 63 189 63C181 63 176 55 166 55C158 57 155 51.5 147 51C140 50.5 135 52 125 54C104 54 98 76 80 76H0Z' fill='%23ebd799'/%3E%3Cpath d='M0 8H80C98 8 104 30 125 30C135 28 140 26.5 147 27C155 27.5 158 33 166 31C176 29 181 21 189 21Q199 21 199 40Q199 59 189 59C181 59 176 51 166 51C158 53 155 47.5 147 47C140 46.5 135 48 125 50C104 50 98 72 80 72H0Z' fill='url(%23g)' stroke='%23e3cc85' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M84 15C98 16 104 29 125 33.5C136 31.5 141 30.5 147 31' fill='none' stroke='%23fffaf0' stroke-width='3' stroke-linecap='round' opacity='.85' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat; animation: bh-trail 200ms 1500ms both; }
+/* The portal's lip (a copy of its core and photon ring) covers the slurped "?" as it slides in; with a hopper,
+   the portal (and its lip) gulps it down. The gulp runs without fill: it starts and ends where the opening ends. */
+.bh-hole.bh-lip { opacity: 0; animation: bh-open 700ms 300ms both, bh-gulp 180ms 1680ms, bh-window 150ms 1600ms; }
+.bh-scene.has-hop .bh-hole:not(.bh-lip) { animation: bh-open 700ms 300ms both, bh-gulp 180ms 1680ms; }
+.bh-tug-stretch, .bh-tug-mark, .bh-tug-wash { grid-area: 1 / 1; display: grid; place-items: center; }
+.bh-tug-upright { display: grid; place-items: center; transform: rotate(calc(-1 * var(--bh-angle, 0deg))); }
+.bh-tug-stretch { animation: bh-tile-stretch 1250ms 450ms both; }
+/* The "?" rides in its own layer (so it does not stretch with the tile); it tilts like the tile. */
+.bh-tug-mark { animation: bh-tile-mark 1250ms 450ms both; }
+.bh-tug-mark .bh-tile-mark { transform: rotate(var(--team-tilt, 0deg)); }
+/* The portal's light: a gold rim (and a violet edge) on the side of the stretched tile facing the hole (static gradient inline). */
+.bh-rim { position: absolute; inset: -2px; border-radius: inherit; opacity: 0; animation: bh-rim 1250ms 450ms both; }
+/* The dusk over this tile (the colour and alpha .bh-dim lays there, inline), faded in just before the hand-off. */
+.bh-tug-wash { opacity: 0; animation: bh-wash 140ms 1560ms both; }
+.bh-tile.is-wash { background: var(--bh-wash-color); background-clip: padding-box; border-color: var(--bh-wash-color); box-shadow: 0 calc(var(--T) * .05) 0 var(--bh-wash-color); }
+.bh-tile.is-wash > .bh-tile-star { background: var(--bh-wash-color); }
+/* A tapered taffy strand (static art, gold toward the portal) behind the tile, pointing at the hole; hidden behind the tile at rest. */
+.bh-strand { position: absolute; left: 50%; top: 50%; width: calc(var(--T) * 2.12); height: calc(var(--T) * .8); margin-top: calc(var(--T) * -.38); transform-origin: 0 47.5%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 212 80' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g'%3E%3Cstop offset='.45' stop-color='%23fff0bd'/%3E%3Cstop offset='.8' stop-color='%23ffdf8a'/%3E%3Cstop offset='1' stop-color='%23f1ddff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 8H118C142 8 148 34 176 36C190 37 200 37.5 207 38Q211 40.5 207 43C200 43.5 190 44 176 45C148 47 142 76 118 76H0Z' fill='%23ebd799'/%3E%3Cpath d='M0 4H118C142 4 148 30 176 32C190 33 200 33.5 207 34Q211 36.5 207 39C200 39.5 190 40 176 41C148 43 142 72 118 72H0Z' fill='url(%23g)' stroke='%23e3cc85' stroke-width='2' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M40 14H116C136 14 146 30 168 33.5' fill='none' stroke='%23fffaf0' stroke-width='3' stroke-linecap='round' opacity='.85' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat; animation: bh-strand 1250ms 450ms both; }
+.bh-streaks, .bh-burst, .bh-minis { position: absolute; left: 50%; top: 46%; width: 0; height: 0; }
+/* Crumbs come out of the mouth, a little below the centre. */
+.bh-crumbs { position: absolute; left: 50%; top: calc(46% + var(--bh-size) * .06); width: 0; height: 0; }
+.bh-streak { position: absolute; left: 0; top: 0; width: 0; height: 0; animation: bh-streak-orbit var(--dur) var(--d) cubic-bezier(.4, 0, .85, .5) both; }
+.bh-streak > b { position: absolute; left: -3.5px; top: calc(-1 * var(--len)); width: 7px; height: var(--len); border-radius: 4px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--c)); transform-origin: 50% 100%; opacity: 0; animation: bh-streak-fall var(--dur) var(--d) cubic-bezier(.55, 0, .9, .45) both; }
+.bh-streak > b > em { position: absolute; left: 50%; bottom: 0; width: var(--head); height: var(--head); margin: 0 0 calc(var(--head) / -2) calc(var(--head) / -2); background: radial-gradient(circle, #fff 0 22%, var(--c) 58%); }
+
+/* Hole = open (iris) x grow (size) x act (squash and stretch). */
+.bh-hole { position: absolute; left: calc(50% - var(--bh-size) / 2); top: calc(46% - var(--bh-size) / 2); width: var(--bh-size); height: var(--bh-size); animation: bh-open 700ms 300ms both; }
+.bh-grow, .bh-act { position: absolute; inset: 0; }
+.bh-grow { animation: bh-grow 3560ms 1440ms both; }
+.bh-act { animation: bh-act 3820ms 900ms both; }
+.bh-glow { position: absolute; inset: -28%; border-radius: 50%; background: radial-gradient(circle closest-side, #0a0620 0%, #0a0620 17%, #1d1255 27%, rgba(58, 35, 150, .8) 40%, rgba(109, 79, 224, .38) 58%, rgba(150, 120, 255, .13) 76%, rgba(150, 120, 255, 0) 100%); }
+/* The swirl lies in a tilted plane; rings spin inside it at different speeds. */
+.bh-disk { position: absolute; inset: 0; transform: rotate(-14deg) scaleY(.78); }
+.bh-band { position: absolute; inset: 2%; border-radius: 50%; background: radial-gradient(circle closest-side, rgba(255, 244, 214, 0) 31%, rgba(255, 241, 205, .92) 34.5%, rgba(255, 199, 124, .6) 45%, rgba(255, 143, 196, .36) 59%, rgba(163, 136, 255, .22) 75%, rgba(122, 108, 255, 0) 97%); }
+.bh-disk-boost { position: absolute; inset: 0; animation: bh-boost 2640ms 1560ms cubic-bezier(.5, 0, .8, .6) both; }
+.bh-arms, .bh-ring, .bh-doppler, .bh-photon { position: absolute; inset: 0; }
+.bh-arms { inset: -6%; animation: bh-arms-unfurl 700ms 300ms cubic-bezier(.2, .8, .3, 1) both; }
+.bh-arms > svg { animation: bh-spin 1900ms linear infinite; }
+.bh-ring > svg { animation: bh-spin var(--period) linear infinite; }
+.bh-core { position: absolute; left: 35%; top: 35%; width: 30%; height: 30%; }
+.bh-face .bh-eyes-open, .bh-face .bh-happy, .bh-face .bh-mouth-o, .bh-face .bh-mouth-small, .bh-face .bh-cheeks { transform-box: fill-box; transform-origin: center; }
+.bh-eyes-open { opacity: 0; animation: bh-eyes-open 410ms 3440ms both; }
+.bh-pupils { animation: bh-glance 330ms 3520ms both; }
+/* "Only during" windows: no fill, over a base opacity of 0. */
+.bh-eyes-squeeze, .bh-mouth-o, .bh-mouth-small, .bh-mouth-hold, .bh-cheeks { opacity: 0; }
+.bh-mouth-small { animation: bh-mouth 380ms 3470ms; }
+.bh-mouth-hold { animation: bh-window 350ms 3850ms; }
+.bh-eyes-squeeze { animation: bh-window 490ms 3850ms; }
+.bh-cheeks { animation: bh-window 490ms 3850ms; }
+.bh-mouth-o { animation: bh-mouth 140ms 4200ms; }
+/* The happy face pops in (from a visible .55) as the burp ring clears, and stays until the portal winks out. It fills
+   forwards only (over a base opacity of 0), so it takes over from the squeeze and the O mouth (which end exactly then)
+   on the same frame: no blank face. */
+.bh-happy { opacity: 0; animation: bh-happy 220ms 4340ms forwards; }
+
+/* Disk scraps: bits of torn paper whirl in the tilted disk and drop under the core. */
+.bh-scraps { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.bh-scrap { position: absolute; left: 0; top: 0; animation: bh-scrap-orbit var(--dur) var(--d) cubic-bezier(.3, 0, .75, .6) both; }
+.bh-scrap > b { position: absolute; left: calc(var(--bh-size) * var(--w) / -200); top: calc(var(--bh-size) * var(--h) / -200); width: calc(var(--bh-size) * var(--w) / 100); height: calc(var(--bh-size) * var(--h) / 100); border-radius: 2px; background: repeating-linear-gradient(-45deg, #fffaf0 0 3px, #efe4cc 3px 4px); box-shadow: inset 0 0 0 1.5px #b79cff; opacity: 0; animation: bh-scrap-fall var(--dur) var(--d) cubic-bezier(.45, 0, .85, .55) both; }
+.bh-scrap.is-tile > b { border-radius: 4px; background: #fff0bd; box-shadow: inset 0 0 0 1.5px #e0c77f, inset 0 -3px 0 #ebd799; }
+
+/* The annoyed power-up pulse. */
+.bh-pulse { position: absolute; left: 50%; top: 46%; width: var(--bh-size); height: var(--bh-size); margin: calc(var(--bh-size) / -2); border-radius: 50%; border: calc(var(--bh-size) * .024) solid rgba(222, 208, 255, .95); box-shadow: 0 0 0 calc(var(--bh-size) * .014) rgba(143, 110, 255, .45), inset 0 0 0 calc(var(--bh-size) * .012) rgba(255, 214, 140, .55); opacity: 0; animation: bh-pulse 440ms 1560ms cubic-bezier(.2, .7, .3, 1) both; }
+
+/* The burp. */
+.bh-shock { position: absolute; left: 50%; top: 46%; width: 90vmin; height: 90vmin; margin: -45vmin; border-radius: 50%; border: 6px solid #ffe28a; box-shadow: 0 0 0 4px rgba(255, 120, 190, .5), inset 0 0 0 4px rgba(150, 120, 255, .45); opacity: 0; animation: bh-shock 420ms 4210ms cubic-bezier(.15, .7, .3, 1) both; }
+.bh-burp-ring { position: absolute; left: 50%; top: 46%; width: var(--bh-size); height: var(--bh-size); margin: calc(var(--bh-size) / -2); border-radius: 50%; border: calc(var(--bh-size) * .07) solid rgba(255, 255, 255, .92); box-shadow: 0 0 calc(var(--bh-size) * .05) rgba(226, 214, 255, .95), inset 0 0 calc(var(--bh-size) * .05) rgba(226, 214, 255, .95); opacity: 0; animation: bh-burp-ring 360ms 4200ms cubic-bezier(.2, .8, .3, 1) both; }
+.bh-burst > i { position: absolute; left: calc(var(--size) / -2); top: calc(var(--size) / -2); width: var(--size); height: var(--size); opacity: 0; animation: bh-burst var(--dur) calc(4210ms + var(--d)) cubic-bezier(.12, .75, .3, 1) both; }
+.bh-burst > i > em { width: 100%; height: 100%; background: radial-gradient(circle, #fff 0 16%, var(--c) 42%); }
+.bh-crumbs > i { position: absolute; left: -13px; top: -18px; width: 26px; height: 36px; border-radius: 3px; background: repeating-linear-gradient(-45deg, #fffaf0 0 5px, #f1e8d4 5px 6px); box-shadow: inset 0 0 0 2px #b79cff; opacity: 0; animation: bh-crumb 520ms calc(4220ms + var(--d)) cubic-bezier(.2, .7, .4, 1) both; }
+/* The DING: a saturated gold star with a crisp darker rim and a small white core, plus four mini sparkles. */
+.bh-twinkle { position: absolute; left: 50%; top: 46%; width: calc(var(--bh-size) * .34); height: calc(var(--bh-size) * .34); margin: calc(var(--bh-size) * -.17); opacity: 0; animation: bh-twinkle 240ms 4920ms both; }
+.bh-twinkle > i { position: absolute; inset: 0; }
+.bh-twinkle > .bh-twinkle-rim { background: #d98a00; }
+.bh-twinkle > .bh-twinkle-body { inset: 7%; background: radial-gradient(circle, #fff 0 7%, #fff3bf 13%, #ffc21a 30%, #ff9f1c 72%); }
+.bh-minis > i { position: absolute; left: calc(var(--bh-size) * -.04); top: calc(var(--bh-size) * -.04); width: calc(var(--bh-size) * .08); height: calc(var(--bh-size) * .08); opacity: 0; background: radial-gradient(circle, #fff 0 9%, #ffc21a 32%, #ff9f1c 76%); animation: bh-mini 180ms 4980ms cubic-bezier(.2, .7, .4, 1) both; }
+
+/* ---------- Cover (inside every card; fixed so strips can leave scroll containers) ---------- */
+.bh-paper {
+  position: fixed; left: var(--reveal-cover-left); top: var(--reveal-cover-top); width: var(--reveal-cover-width); height: var(--reveal-cover-height); border-radius: inherit;
+  /* The "?" tile: 1.45x the question size, but never taller than 60% of a small cover. */
+  --T: min(calc(var(--reveal-question-size, 56px) * 1.45), calc(var(--reveal-cover-height, 400px) * .6));
 }
+/* The intact sheet never moves (so it never uncovers the strips underneath or the card border). It steps away at the
+   rip only once its strips are in place (.is-armed; on a very slow device a late cover's ribbons then appear mid-flight,
+   because both join the reveal clock), and --bh-clock re-bases the delay where Web Animations are missing. */
+.bh-sheet { position: absolute; inset: 0; border-radius: inherit; }
+.bh-paper.is-armed .bh-sheet { animation: bh-swap-out 1ms 1780ms both; animation-delay: calc(1780ms - var(--bh-clock, 0ms)); }
+.bh-print { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; border-radius: inherit; background: repeating-linear-gradient(-45deg, rgba(243, 236, 217, 0) 0 10px, rgba(243, 236, 217, .6) 10px 12px), #fffaf0; }
+.bh-speck { position: absolute; width: calc(var(--T) * .22); height: calc(var(--T) * .22); background: #c9b3ff; }
+.bh-speck.is-a { left: 13%; top: 11%; }
+.bh-speck.is-b { right: 13%; bottom: 11%; }
+.bh-tile { position: relative; display: grid; place-items: center; width: var(--T); height: var(--T); border-radius: calc(var(--T) * .3); background: #fff0bd; border: 2px solid #ebd799; box-shadow: 0 calc(var(--T) * .05) 0 #ebd799; transform: rotate(var(--team-tilt, 0deg)); }
+.bh-tile-mark { display: block; color: #a27131; font-size: calc(var(--T) / 1.45); font-weight: 850; line-height: 1; }
+/* While the stage draws this tile's tug (above every cover), the sheet's own tile steps aside. */
+.bh-paper[data-bh-tug] .bh-sheet .bh-tile { animation: bh-away 1250ms 450ms; }
+/* A "?" right under the portal hops out and is slurped up by the stage, so this cover never shows its own tile again. */
+.bh-paper.is-center[data-bh-tug] .bh-tile { opacity: 0; }
+.bh-tile-star { position: absolute; top: -14%; right: -14%; width: 32%; height: 32%; background: #e5b03f; transform: rotate(14deg); }
+/* The tear seams and the paper creases glow in together (one animated layer per cover, not one per seam),
+   exactly as the strips underneath draw them, so the swap at 1780 ms is invisible. The crease shading
+   repeats once per strip (background-size inline). */
+.bh-seams { position: absolute; inset: 0; opacity: 0; background: linear-gradient(to right, rgba(255, 255, 255, .25), rgba(255, 255, 255, 0) 28%, rgba(255, 255, 255, 0) 58%, rgba(108, 76, 196, .1)) 0 0 repeat-x; animation: bh-show 70ms 1700ms both; }
+/* A seam sits on the LEFT edge of the strip that follows it (inside that strip's box, so it is never clipped or
+   covered) and peels away with it: a 3 px dashed perforation in a 5 px lavender glow. */
+.bh-seams > i, .bh-strip-seam { position: absolute; top: 3%; bottom: 3%; width: 5px; background: repeating-linear-gradient(to bottom, #9b7bff 0 7px, rgba(155, 123, 255, 0) 7px 12px) 1px 0 / 3px 100% no-repeat, linear-gradient(to right, rgba(205, 184, 255, .4), rgba(205, 184, 255, .8) 50%, rgba(205, 184, 255, .4)); }
+/* The strips are added under the sheet when this empty trigger's 1 ms animation ends (its delay inline: 0.5 to 1.2 s, nearest cover first),
+   not in the first frame, so styling them never stalls the opening. */
+.bh-mount { position: absolute; width: 0; height: 0; animation: bh-mount 1ms 500ms; }
+/* Strips sit UNDER the sheet (never wrap them in an animated-opacity parent). */
+.bh-strips { position: absolute; inset: 0; }
+/* One element per strip: overflow (not clip-path, which forces a mask surface per strip) and a single
+   animation that orbits the portal and tumbles the strip about its own centre. Each strip's box, pivot
+   (the portal), --bh-vx/--bh-vy (strip centre - portal), --bh-k and delay come inline from
+   blackHoleStripLayout (nearest card first; within a card, the strip nearest the hole first). */
+.bh-strip { position: absolute; top: 0; bottom: 0; overflow: hidden; animation: bh-strip-fly 1080ms linear both; }
+.bh-strip:first-child { border-radius: var(--bh-radius, 0px) 0 0 var(--bh-radius, 0px); }
+.bh-strip:last-child { border-radius: 0 var(--bh-radius, 0px) var(--bh-radius, 0px) 0; }
+/* The full card print, offset (inline) so this strip shows its own slice, with soft static paper-crease shading
+   baked into the background (lit left edge, shaded right edge: the same shading the sheet's seams layer glows in). */
+.bh-strip > .bh-print {
+  right: auto; border-radius: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, .25), rgba(255, 255, 255, 0) 28%, rgba(255, 255, 255, 0) 58%, rgba(108, 76, 196, .1)) no-repeat, repeating-linear-gradient(-45deg, rgba(243, 236, 217, 0) 0 10px, rgba(243, 236, 217, .6) 10px 12px), #fffaf0;
+}
+.bh-strip-seam { left: 0; }
+
+/* ---------- Keyframes ---------- */
+@keyframes bh-on { to { opacity: 1; } }
+@keyframes bh-off { to { opacity: 0; } }
+@keyframes bh-show { to { opacity: 1; } }
+@keyframes bh-swap-out { to { opacity: 0; } }
+@keyframes bh-away { from, to { opacity: 0; } }
+@keyframes bh-mount { from, to { opacity: 0; } }
+@keyframes bh-window { from, to { opacity: 1; } }
+@keyframes bh-spin { to { transform: rotate(360deg); } }
+@keyframes bh-stars-turn { from { transform: rotate(0deg) scale(1.06); } to { transform: rotate(12deg) scale(.94); } }
+@keyframes bh-spark { 0% { transform: translateY(var(--bh-spark-y, 0px)) scale(0) rotate(0deg); opacity: 1; } 45% { transform: translateY(var(--bh-spark-y, 0px)) scale(1.3) rotate(45deg); opacity: 1; } 100% { transform: translateY(0px) scale(.4) rotate(120deg); opacity: 0; } }
+@keyframes bh-streak-orbit { from { transform: rotate(var(--a)); } to { transform: rotate(calc(var(--a) + var(--sweep))); } }
+@keyframes bh-streak-fall { 0% { transform: translateX(var(--r0)) rotate(-16deg) scale(1); opacity: 0; } 12% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(calc(var(--bh-size) * .17)) rotate(-16deg) scale(.35); opacity: 0; } }
+@keyframes bh-open { 0% { transform: scale(0) rotate(-120deg); animation-timing-function: cubic-bezier(.2, .7, .3, 1); } 68% { transform: scale(1.08) rotate(6deg); animation-timing-function: ease-in-out; } 100% { transform: scale(1) rotate(0deg); } }
+@keyframes bh-arms-unfurl { from { transform: scale(.3) rotate(-160deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+@keyframes bh-boost { from { transform: rotate(0deg); } to { transform: rotate(980deg); } }
+@keyframes bh-mouth { 0% { opacity: 1; transform: scale(.3, .5); } 20% { opacity: 1; transform: scale(1.15, 1.2); } 45% { transform: scale(.95, 1); } 100% { opacity: 1; transform: scale(1, 1); } }
+@keyframes bh-happy { 0% { opacity: 1; transform: scale(.55); } 35% { transform: scale(1.14); } 65% { transform: scale(.96); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes bh-scrap-orbit { from { transform: rotate(var(--a)); } to { transform: rotate(calc(var(--a) + var(--sweep))); } }
+@keyframes bh-scrap-fall { 0% { transform: translateX(calc(var(--bh-size) * .48)) rotate(0deg) scale(.5); opacity: 0; } 18% { transform: translateX(calc(var(--bh-size) * .43)) rotate(calc(var(--spin) * .2)) scale(1); opacity: 1; } 88% { opacity: 1; } 100% { transform: translateX(calc(var(--bh-size) * .13)) rotate(var(--spin)) scale(.4); opacity: 0; } }
+@keyframes bh-pulse { 0% { transform: scale(.5); opacity: 0; } 14% { opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes bh-flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes bh-shock { 0% { transform: scale(.06); opacity: 0; } 2% { opacity: 1; } 60% { opacity: .9; } 82% { opacity: 0; } 100% { transform: scale(1); opacity: 0; } }
+@keyframes bh-burp-ring { 0% { transform: scale(.3, .3); opacity: 0; } 12% { opacity: 1; } 42% { transform: scale(.95, .82); } 74% { transform: scale(1.14, 1.2); opacity: 1; } 100% { transform: scale(1.42, 1.38); opacity: 0; } }
+/* Sparkles are born at the core rim (.2 x the hole size) and fly straight out, never across the face, then twinkle out
+   (shrink to a point, fully opaque: no fading ghosts over the freshly revealed names). */
+@keyframes bh-burst { 0% { transform: rotate(var(--a)) translateX(calc(var(--bh-size) * .2)) rotate(calc(-1 * var(--a))) scale(.3); opacity: 0; } 4% { opacity: 1; } 66% { transform: rotate(var(--a)) translateX(calc(var(--dist) * .96)) rotate(calc(var(--spin) * .8 - var(--a))) scale(1); animation-timing-function: cubic-bezier(.5, 0, .9, .6); } 100% { transform: rotate(var(--a)) translateX(var(--dist)) rotate(calc(var(--spin) - var(--a))) scale(0); opacity: 1; } }
+/* Crumbs leave the mouth unseen (inside the black core) and appear once past the rim, then drop, flip and shrink away (no fade). */
+@keyframes bh-crumb { 0% { transform: translate(0px, 0px) rotate(0deg) scale(.2, .2); opacity: 0; } 22% { transform: translate(calc(var(--dx) * .42), calc(var(--dy) * .42)) rotate(calc(var(--rot) * .15)) scale(.8, .8); opacity: 0; } 30% { transform: translate(calc(var(--dx) * .52), calc(var(--dy) * .52)) rotate(calc(var(--rot) * .22)) scale(1, 1); opacity: 1; } 60% { transform: translate(calc(var(--dx) * .86), calc(var(--dy) * .86 + 2vmin)) rotate(calc(var(--rot) * .55)) scale(1, 1); } 82% { transform: translate(calc(var(--dx) * .94), calc(var(--dy) * .94 + 7.5vmin)) rotate(calc(var(--rot) * .8)) scale(-.4, 1); animation-timing-function: ease-in; } 100% { transform: translate(var(--dx), calc(var(--dy) + 12vmin)) rotate(var(--rot)) scale(0, .3); opacity: 1; } }
+@keyframes bh-twinkle { 0% { transform: scale(0) rotate(0deg); opacity: 1; } 35% { transform: scale(1.12) rotate(22deg); opacity: 1; } 50% { transform: scale(1) rotate(32deg); opacity: 1; } 100% { transform: scale(0) rotate(70deg); opacity: 1; } }
+@keyframes bh-gulp { 0% { transform: scale(1, 1); } 22% { transform: scale(1.07, .93); } 60% { transform: scale(.98, 1.02); } 100% { transform: scale(1, 1); } }
+@keyframes bh-mini { 0% { transform: translate(calc(var(--mx) * var(--bh-size) * .08), calc(var(--my) * var(--bh-size) * .08)) scale(0); opacity: 1; } 40% { transform: translate(calc(var(--mx) * var(--bh-size) * .19), calc(var(--my) * var(--bh-size) * .19)) scale(1.1); opacity: 1; } 100% { transform: translate(calc(var(--mx) * var(--bh-size) * .26), calc(var(--my) * var(--bh-size) * .26)) scale(0); opacity: 1; } }
+
+/* ---------- Beat keyframes ----------
+   Each keyframe notes its absolute time; percentages = (time - delay) / duration.
+   tests/reveal-black-hole.test.ts checks every line against its window. */
+/* BEGIN BEAT KEYFRAMES */
+/* dusk: soft while the portal is small, full after the power-up, lifts at the burp; window 250..4440 ms */
+@keyframes bh-dim {
+  0% { opacity: 0; } /* 250ms */
+  17.9%, 31.26% { opacity: .6; } /* 1000ms, 1560ms */
+  34.61%, 94.27% { opacity: 1; } /* 1700ms, 4200ms */
+  100% { opacity: 0; } /* 4440ms */
+}
+/* hole size: hungry .72 portal, power-up after the boing, swells while eating, stays big and happy after the burp, deflates, winds up, vanishes; window 1440..5000 ms */
+@keyframes bh-grow {
+  0%, 3.37% { transform: scale(.72); animation-timing-function: cubic-bezier(.3, 1.4, .5, 1); } /* 1440ms, 1560ms */
+  8.99% { transform: scale(1.04); animation-timing-function: ease-in-out; } /* 1760ms */
+  11.8% { transform: scale(1); animation-timing-function: ease-in-out; } /* 1860ms */
+  55.06% { transform: scale(1.12); animation-timing-function: linear; } /* 3400ms */
+  77.25% { transform: scale(1.15); animation-timing-function: ease-out; } /* 4190ms */
+  81.46% { transform: scale(1.08); animation-timing-function: ease-in-out; } /* 4340ms */
+  86.52% { transform: scale(1.1); animation-timing-function: ease-in-out; } /* 4520ms */
+  91.57% { transform: scale(1.08); animation-timing-function: ease-in-out; } /* 4700ms */
+  94.94% { transform: scale(.6); animation-timing-function: ease-in-out; } /* 4820ms */
+  96.63% { transform: scale(.66); animation-timing-function: cubic-bezier(.6, 0, .9, .5); } /* 4880ms */
+  100% { transform: scale(0); } /* 5000ms */
+}
+/* squash and stretch: hungry tugs, flinch at the boing, gulps, last bite, holding the burp in, burp recoil, a happy giggle; window 900..4720 ms */
+@keyframes bh-act {
+  0% { transform: scale(1, 1); } /* 900ms */
+  4.19% { transform: scale(1.04, 0.97); } /* 1060ms */
+  7.33% { transform: scale(0.99, 1.01); } /* 1180ms */
+  9.42% { transform: scale(1.05, 0.96); } /* 1260ms */
+  11.26% { transform: scale(1.01, 0.99); } /* 1330ms */
+  12.83% { transform: scale(1.06, 0.95); } /* 1390ms */
+  14.14% { transform: scale(1, 1); } /* 1440ms */
+  15.71% { transform: scale(0.93, 1.05); } /* 1500ms */
+  17.8% { transform: scale(1.05, 0.97); } /* 1580ms */
+  19.9% { transform: scale(1, 1); } /* 1660ms */
+  35.6% { transform: scale(1, 1); } /* 2260ms */
+  37.7% { transform: scale(1.06, 0.95); } /* 2340ms */
+  40.31% { transform: scale(0.98, 1.02); } /* 2440ms */
+  42.93% { transform: scale(1, 1); } /* 2540ms */
+  45.03% { transform: scale(1, 1); } /* 2620ms */
+  47.12% { transform: scale(1.06, 0.95); } /* 2700ms */
+  49.74% { transform: scale(0.98, 1.02); } /* 2800ms */
+  52.36% { transform: scale(1, 1); } /* 2900ms */
+  54.45% { transform: scale(1, 1); } /* 2980ms */
+  56.54% { transform: scale(1.06, 0.95); } /* 3060ms */
+  59.16% { transform: scale(0.98, 1.02); } /* 3160ms */
+  61.78% { transform: scale(1, 1); } /* 3260ms */
+  65.45% { transform: scale(1, 1); } /* 3400ms */
+  66.75% { transform: scale(1.12, 0.9); } /* 3450ms */
+  68.85% { transform: scale(0.95, 1.06); } /* 3530ms */
+  70.94% { transform: scale(1, 1); } /* 3610ms */
+  77.23% { transform: scale(1, 1); } /* 3850ms */
+  78.8% { transform: scale(1.1, 0.95); } /* 3910ms */
+  80.63% { transform: scale(1.06, 0.98); } /* 3980ms */
+  82.72% { transform: scale(1.14, 0.95); } /* 4060ms */
+  84.03% { transform: scale(1.1, 0.97); } /* 4110ms */
+  85.6% { transform: scale(1.2, 0.96); animation-timing-function: cubic-bezier(.2, 0, .2, 1); } /* 4170ms */
+  87.17% { transform: scale(0.82, 1.22); } /* 4230ms */
+  88.74% { transform: scale(1.1, 0.92); } /* 4290ms */
+  90.05% { transform: scale(0.97, 1.03); } /* 4340ms */
+  91.62% { transform: scale(1, 1); } /* 4400ms */
+  93.72% { transform: scale(1.05, 0.95); } /* 4480ms */
+  95.81% { transform: scale(0.97, 1.03); } /* 4560ms */
+  97.91% { transform: scale(1.02, 0.99); } /* 4640ms */
+  100% { transform: scale(1, 1); } /* 4720ms */
+}
+/* eyes pop open wide, stay open through the glance, then hand over to the squeeze; window 3440..3850 ms */
+@keyframes bh-eyes-open {
+  0% { transform: scaleY(0); opacity: 1; } /* 3440ms */
+  17.07% { transform: scaleY(1.18); } /* 3510ms */
+  26.83% { transform: scaleY(1); } /* 3550ms */
+  99.02% { opacity: 1; } /* 3846ms */
+  100% { transform: scaleY(1); opacity: 0; } /* 3850ms */
+}
+/* pupils dart left and hold, then dart right and hold (7 viewBox units, clipped to the eye); window 3520..3850 ms */
+@keyframes bh-glance {
+  0% { transform: translateX(0px); animation-timing-function: cubic-bezier(.3, 0, .2, 1); } /* 3520ms */
+  12.12% { transform: translateX(-7px); } /* 3560ms */
+  48.48% { transform: translateX(-7px); animation-timing-function: cubic-bezier(.3, 0, .2, 1); } /* 3680ms */
+  63.64% { transform: translateX(7px); } /* 3730ms */
+  100% { transform: translateX(7px); } /* 3850ms */
+}
+/* the tile leans toward the hole, stretches like taffy, strains ("almost!"), BOINGs back; window 450..1700 ms */
+@keyframes bh-tile-stretch {
+  0% { transform: translateX(calc(var(--T) * 0)) scale(1, 1); animation-timing-function: ease-in-out; } /* 450ms */
+  20% { transform: translateX(calc(var(--T) * 0.06)) scale(1.02, 0.99); animation-timing-function: cubic-bezier(.4, 0, .9, .6); } /* 700ms */
+  44% { transform: translateX(calc(var(--T) * 0.16)) scale(1.18, 0.93); animation-timing-function: cubic-bezier(.3, 0, .9, .7); } /* 1000ms */
+  68% { transform: translateX(calc(var(--T) * 0.46)) scale(1.72, 0.8); animation-timing-function: ease-in-out; } /* 1300ms */
+  71.2% { transform: translateX(calc(var(--T) * 0.43)) scale(1.64, 0.83); animation-timing-function: ease-in-out; } /* 1340ms */
+  74.4% { transform: translateX(calc(var(--T) * 0.48)) scale(1.78, 0.79); animation-timing-function: ease-in-out; } /* 1380ms */
+  77.6% { transform: translateX(calc(var(--T) * 0.44)) scale(1.68, 0.82); animation-timing-function: ease-in-out; } /* 1420ms */
+  79.2% { transform: translateX(calc(var(--T) * 0.47)) scale(1.74, 0.8); animation-timing-function: cubic-bezier(.2, 0, .1, 1); } /* 1440ms */
+  84% { transform: translateX(calc(var(--T) * -0.08)) scale(0.8, 1.12); } /* 1500ms */
+  89.6% { transform: translateX(calc(var(--T) * 0.04)) scale(1.1, 0.95); } /* 1570ms */
+  95.2% { transform: translateX(calc(var(--T) * -0.015)) scale(0.97, 1.02); } /* 1640ms */
+  99.68% { opacity: 1; } /* 1696ms */
+  100% { transform: translateX(calc(var(--T) * 0)) scale(1, 1); opacity: 0; } /* 1700ms */
+}
+/* the question mark rides with the tile and squashes only a little; window 450..1700 ms */
+@keyframes bh-tile-mark {
+  0% { transform: translateX(calc(var(--T) * 0)) scale(1, 1); animation-timing-function: ease-in-out; } /* 450ms */
+  20% { transform: translateX(calc(var(--T) * 0.06)) scale(1.003, 0.997); animation-timing-function: cubic-bezier(.4, 0, .9, .6); } /* 700ms */
+  44% { transform: translateX(calc(var(--T) * 0.16)) scale(1.027, 0.979); animation-timing-function: cubic-bezier(.3, 0, .9, .7); } /* 1000ms */
+  68% { transform: translateX(calc(var(--T) * 0.46)) scale(1.108, 0.94); animation-timing-function: ease-in-out; } /* 1300ms */
+  71.2% { transform: translateX(calc(var(--T) * 0.43)) scale(1.096, 0.949); animation-timing-function: ease-in-out; } /* 1340ms */
+  74.4% { transform: translateX(calc(var(--T) * 0.48)) scale(1.117, 0.937); animation-timing-function: ease-in-out; } /* 1380ms */
+  77.6% { transform: translateX(calc(var(--T) * 0.44)) scale(1.102, 0.946); animation-timing-function: ease-in-out; } /* 1420ms */
+  79.2% { transform: translateX(calc(var(--T) * 0.47)) scale(1.111, 0.94); animation-timing-function: cubic-bezier(.2, 0, .1, 1); } /* 1440ms */
+  84% { transform: translateX(calc(var(--T) * -0.08)) scale(0.97, 1.036); } /* 1500ms */
+  89.6% { transform: translateX(calc(var(--T) * 0.04)) scale(1.015, 0.985); } /* 1570ms */
+  95.2% { transform: translateX(calc(var(--T) * -0.015)) scale(0.996, 1.006); } /* 1640ms */
+  99.68% { opacity: 1; } /* 1696ms */
+  100% { transform: translateX(calc(var(--T) * 0)) scale(1, 1); opacity: 0; } /* 1700ms */
+}
+/* the taffy strand pulls out ahead of the tile and snaps back at the boing; window 450..1700 ms */
+@keyframes bh-strand {
+  0% { transform: scale(0.12, 1); animation-timing-function: ease-in-out; } /* 450ms */
+  20% { transform: scale(0.16, 1); animation-timing-function: cubic-bezier(.4, 0, .9, .6); } /* 700ms */
+  44% { transform: scale(0.4, 0.95); animation-timing-function: cubic-bezier(.3, 0, .9, .7); } /* 1000ms */
+  68% { transform: scale(1, 0.78); animation-timing-function: ease-in-out; } /* 1300ms */
+  71.2% { transform: scale(0.94, 0.8); animation-timing-function: ease-in-out; } /* 1340ms */
+  74.4% { transform: scale(1.05, 0.75); animation-timing-function: ease-in-out; } /* 1380ms */
+  77.6% { transform: scale(0.96, 0.78); animation-timing-function: ease-in-out; } /* 1420ms */
+  79.2% { transform: scale(1, 0.76); animation-timing-function: cubic-bezier(.2, 0, .1, 1); } /* 1440ms */
+  82% { transform: scale(.12, 1); } /* 1475ms */
+  99.68% { opacity: 1; } /* 1696ms */
+  100% { transform: scale(.12, 1); opacity: 0; } /* 1700ms */
+}
+/* a "?" under the portal startles at the spark (squash, leap), drops out of the way before the iris opens on it (a 190 ms fall, already falling as the spark peaks),
+   lands (.42) and bounces once; after the BOING squash it lifts off stretching toward the hole and is slurped in, under the portal's lip
+   for the last 40 ms (--bh-hop: rest to landing; --bh-in-x/y: rest to the portal's centre); window 100..1700 ms */
+@keyframes bh-hop {
+  0% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 0 + var(--bh-in-y) * 0 + var(--T) * 0)) scale(1, 1); animation-timing-function: ease-out; } /* 100ms */
+  2.5% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 0 + var(--bh-in-y) * 0 + var(--T) * 0.08)) scale(1.18, 0.82); animation-timing-function: cubic-bezier(.2, .6, .4, 1); } /* 140ms */
+  6.25% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * -0.05 + var(--bh-in-y) * 0 + var(--T) * 0)) scale(0.86, 1.16); animation-timing-function: cubic-bezier(.45, 0, .85, .6); } /* 200ms */
+  18.13% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 1 + var(--bh-in-y) * 0 + var(--T) * -0.06)) scale(0.9, 1.12); } /* 390ms */
+  20% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 1 + var(--bh-in-y) * 0 + var(--T) * 0.1)) scale(1.24, 0.8); animation-timing-function: ease-out; } /* 420ms */
+  24.38% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 1 + var(--bh-in-y) * 0 + var(--T) * -0.16)) scale(0.95, 1.06); animation-timing-function: cubic-bezier(.5, 0, .9, .5); } /* 490ms */
+  28.13% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 1 + var(--bh-in-y) * 0 + var(--T) * 0.04)) scale(1.1, 0.9); animation-timing-function: ease-out; } /* 550ms */
+  31.88% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 1 + var(--bh-in-y) * 0 + var(--T) * 0)) scale(1, 1); } /* 610ms */
+  87.5% { transform: translate(calc(var(--bh-in-x) * 0), calc(var(--bh-hop) * 1 + var(--bh-in-y) * 0 + var(--T) * 0)) scale(1, 1); animation-timing-function: cubic-bezier(.5, 0, .8, .6); } /* 1500ms */
+  92.5% { transform: translate(calc(var(--bh-in-x) * 0.1), calc(var(--bh-hop) * 0.9 + var(--bh-in-y) * 0.1 + var(--T) * 0)) scale(0.84, 1.2); animation-timing-function: ease-in; } /* 1580ms */
+  95.63% { transform: translate(calc(var(--bh-in-x) * 0.3), calc(var(--bh-hop) * 0.7 + var(--bh-in-y) * 0.3 + var(--T) * 0)) scale(0.72, 1.38); animation-timing-function: ease-in; } /* 1630ms */
+  97.5% { transform: translate(calc(var(--bh-in-x) * 0.46), calc(var(--bh-hop) * 0.54 + var(--bh-in-y) * 0.46 + var(--T) * 0)) scale(0.68, 1.42); animation-timing-function: cubic-bezier(.4, 0, 1, .7); } /* 1660ms */
+  100% { transform: translate(calc(var(--bh-in-x) * 1), calc(var(--bh-hop) * 0 + var(--bh-in-y) * 1 + var(--T) * 0)) scale(0.35, 0.8); } /* 1700ms */
+}
+/* the slurped "?"'s taffy trail: stuck to the spot where the tile sat, it stretches and thins as the tile lifts off (the same
+   easing as bh-hop, so its drop stays put), then lets go and snaps up into the tile; window 1500..1700 ms */
+@keyframes bh-trail {
+  0% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(0.225, 0.9); opacity: 1; animation-timing-function: cubic-bezier(.5, 0, .8, .6); } /* 1500ms */
+  40% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(var(--bh-trail-1, 0.29), 0.86); animation-timing-function: ease-in; } /* 1580ms */
+  65% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(var(--bh-trail-2, 0.43), 0.8); animation-timing-function: ease-in; } /* 1630ms */
+  80% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(var(--bh-trail-3, 0.56), 0.74); animation-timing-function: cubic-bezier(.2, .7, .3, 1); } /* 1660ms */
+  87.5% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(0.3, 1); } /* 1675ms */
+  98% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(0.22, 0.95); opacity: 1; } /* 1696ms */
+  100% { transform: rotate(var(--bh-trail-angle, 90deg)) scale(0.22, 0.95); opacity: 0; } /* 1700ms */
+}
+/* the portal rim-lights each stretched tile gold, until the boing; window 450..1700 ms */
+@keyframes bh-rim {
+  0%, 20% { opacity: 0; animation-timing-function: ease-in; } /* 450ms, 700ms */
+  44% { opacity: .45; } /* 1000ms */
+  68% { opacity: 1; } /* 1300ms */
+  79.2% { opacity: 1; animation-timing-function: cubic-bezier(.2, 0, .1, 1); } /* 1440ms */
+  85.6% { opacity: .15; } /* 1520ms */
+  92%, 100% { opacity: 0; } /* 1600ms, 1700ms */
+}
+/* each copy fades into the dusk before handing back to its cover; window 1560..1700 ms */
+@keyframes bh-wash {
+  0% { opacity: 0; } /* 1560ms */
+  97.14% { opacity: 1; } /* 1696ms */
+  100% { opacity: 0; } /* 1700ms */
+}
+/* Strips spiral in about the portal (accelerating, Kepler-ish, shrinking to nothing) while each twists into a noodle.
+   One element per strip: orbit about the portal, then the tumble about the strip centre (--bh-vx/--bh-vy = centre - portal). */
+@keyframes bh-strip-fly {
+  0% { transform: rotate(0deg) scale(1) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 0px)) rotate(calc(var(--bh-k) * 0deg + 0deg)) scale(1, 1) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  4% { transform: rotate(2deg) scale(0.992) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 0.16px)) rotate(calc(var(--bh-k) * 0.26deg + 0deg)) scale(1, 1) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  8% { transform: rotate(4deg) scale(0.985) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 0.64px)) rotate(calc(var(--bh-k) * 1.03deg + 0deg)) scale(1, 1) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  12% { transform: rotate(12deg) scale(0.956) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 1.48px)) rotate(calc(var(--bh-k) * 2.37deg + 0deg)) scale(1, 1) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  16% { transform: rotate(20deg) scale(0.926) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 2.76px)) rotate(calc(var(--bh-k) * 4.41deg + 0deg)) scale(1, 1) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  20% { transform: rotate(28deg) scale(0.897) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 5px)) rotate(calc(var(--bh-k) * 8deg + 0deg)) scale(1, 1) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  25% { transform: rotate(38deg) scale(0.86) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.98px)) rotate(calc(var(--bh-k) * 8.02deg + 0.7deg)) scale(0.999, 1.001) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  30% { transform: rotate(58.5deg) scale(0.805) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.94px)) rotate(calc(var(--bh-k) * 8.1deg + 2.7deg)) scale(0.995, 1.003) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  35% { transform: rotate(79deg) scale(0.75) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.86px)) rotate(calc(var(--bh-k) * 8.22deg + 6.2deg)) scale(0.989, 1.007) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  40% { transform: rotate(99.5deg) scale(0.695) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.75px)) rotate(calc(var(--bh-k) * 8.4deg + 11deg)) scale(0.98, 1.012) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  45% { transform: rotate(120deg) scale(0.64) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.61px)) rotate(calc(var(--bh-k) * 8.63deg + 17.2deg)) scale(0.969, 1.02) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  50% { transform: rotate(152.5deg) scale(0.58) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.44px)) rotate(calc(var(--bh-k) * 8.9deg + 24.8deg)) scale(0.955, 1.028) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  55% { transform: rotate(185deg) scale(0.52) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 4.23px)) rotate(calc(var(--bh-k) * 9.23deg + 34deg)) scale(0.938, 1.039) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  60% { transform: rotate(217.5deg) scale(0.46) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 3.99px)) rotate(calc(var(--bh-k) * 9.62deg + 44.6deg)) scale(0.919, 1.051) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  65% { transform: rotate(250deg) scale(0.4) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 3.71px)) rotate(calc(var(--bh-k) * 10.07deg + 56.9deg)) scale(0.897, 1.065) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  70% { transform: rotate(296.7deg) scale(0.337) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 3.39px)) rotate(calc(var(--bh-k) * 10.58deg + 70.9deg)) scale(0.871, 1.081) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  75% { transform: rotate(343.3deg) scale(0.273) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 3.03px)) rotate(calc(var(--bh-k) * 11.16deg + 86.8deg)) scale(0.842, 1.099) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  80% { transform: rotate(390deg) scale(0.21) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 2.62px)) rotate(calc(var(--bh-k) * 11.82deg + 104.9deg)) scale(0.809, 1.119) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); opacity: 1; }
+  84% { transform: rotate(436.7deg) scale(0.163) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 2.24px)) rotate(calc(var(--bh-k) * 12.41deg + 121.3deg)) scale(0.78, 1.138) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  88% { transform: rotate(483.3deg) scale(0.117) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 1.83px)) rotate(calc(var(--bh-k) * 13.08deg + 139.7deg)) scale(0.746, 1.159) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  92% { transform: rotate(530deg) scale(0.07) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 1.35px)) rotate(calc(var(--bh-k) * 13.85deg + 160.8deg)) scale(0.708, 1.183) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  96% { transform: rotate(585deg) scale(0.035) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 0.77px)) rotate(calc(var(--bh-k) * 14.76deg + 185.9deg)) scale(0.662, 1.211) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); }
+  100% { transform: rotate(640deg) scale(0) translate(var(--bh-vx), var(--bh-vy)) translateY(calc(var(--bh-k) * 0px)) rotate(calc(var(--bh-k) * 16deg + 220deg)) scale(0.6, 1.25) translate(calc(-1 * var(--bh-vx)), calc(-1 * var(--bh-vy))); opacity: 0; }
+}
+/* END BEAT KEYFRAMES */

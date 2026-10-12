@@ -1,0 +1,253 @@
+/* Pixel Quest. Covers are pure CSS; the Stage is memoised DOM animated by CSS
+   keyframes whose delays come from a plan computed once from the layout. Only
+   the hero and the HUD digits follow the scene clock. Safari-safe: custom
+   properties, calc, gradients with hard stops, steps(). */
+
+/* ------------------------------------------------------------------ cover */
+.reveal-cover[data-reveal-effect="pixel-quest"] {
+  --pq-p: 6px; --pq-e: 9px; --pq-tile-w: 60px; --pq-tile-h: 60px; --pq-art-h: var(--reveal-cover-height, 100%); --pq-hint-size: 40px;
+  --pq-hz1: 9999px; --pq-hz2: 9999px; --pq-gem-img: none;
+  --pq-cut-1: 1; --pq-cut-2: 1; --pq-cut-3: 1;
+  --pq-at-0: 5600ms; --pq-at-1: 5600ms; --pq-at-2: 5600ms; --pq-at-3: 5600ms;
+  --pq-hint-0: 50%; --pq-hint-1: 50%; --pq-hint-2: 50%; --pq-hint-3: 50%;
+}
+/* --pq-left/top/width/height are the card rect clipped to its scroll container (set by the Stage). */
+.pq-cover { position: fixed; left: var(--pq-left, var(--reveal-cover-left)); top: calc(var(--pq-top, var(--reveal-cover-top)) - var(--pq-e)); width: var(--pq-width, var(--reveal-cover-width)); height: calc(var(--pq-height, var(--reveal-cover-height)) + var(--pq-e)); pointer-events: none; }
+/* The backing matches the sky around the card's window, horizon stripes included, so the window is seamless. */
+.pq-slice {
+  position: absolute; top: 0; bottom: 0; left: calc(var(--from) * 100%); width: calc((var(--to) - var(--from)) * 100%); overflow: hidden;
+  background: linear-gradient(#63C8F7 var(--pq-hz1), #86D6F8 0 var(--pq-hz2), #A9E4FA 0);
+  animation: pq-gone-fallback 16ms steps(1, end) 5780ms both;
+}
+.pq-slice:nth-child(1) { --from: 0; --to: var(--pq-cut-1); --at: var(--pq-at-0); --hint: var(--pq-hint-0); }
+.pq-slice:nth-child(2) { --from: var(--pq-cut-1); --to: var(--pq-cut-2); --at: var(--pq-at-1); --hint: var(--pq-hint-1); }
+.pq-slice:nth-child(3) { --from: var(--pq-cut-2); --to: var(--pq-cut-3); --at: var(--pq-at-2); --hint: var(--pq-hint-2); }
+.pq-slice:nth-child(4) { --from: var(--pq-cut-3); --to: 1; --at: var(--pq-at-3); --hint: var(--pq-hint-3); }
+/* Unused slices take no style or animation work at all. */
+[data-pq-slices="1"] .pq-slice:nth-child(n+2), [data-pq-slices="2"] .pq-slice:nth-child(n+3), [data-pq-slices="3"] .pq-slice:nth-child(4) { display: none; }
+/* A distinct animation name restarts the timeline in the ready frame, so it never relies on live delay updates. */
+[data-pq-ready] .pq-slice { animation: pq-gone 16ms steps(1, end) calc(var(--at) + 180ms) both; }
+.pq-art {
+  position: absolute; left: 0; right: 0; top: var(--pq-e); height: var(--pq-art-h); background-color: #7C5CFF;
+  background-image:
+    linear-gradient(#2B1D52 0 var(--pq-p), transparent 0),
+    linear-gradient(90deg, #2B1D52 0 var(--pq-p), transparent 0),
+    linear-gradient(transparent var(--pq-p), #B6A4FF 0 calc(2 * var(--pq-p)), transparent 0),
+    linear-gradient(90deg, transparent var(--pq-p), #B6A4FF 0 calc(2 * var(--pq-p)), transparent 0),
+    linear-gradient(0deg, #5638C8 0 var(--pq-p), transparent 0),
+    linear-gradient(270deg, #5638C8 0 var(--pq-p), transparent 0);
+  background-size: var(--pq-tile-w) var(--pq-tile-h);
+  background-position: calc(var(--from) * var(--pq-width, var(--reveal-cover-width)) * -1) 0;
+  box-shadow: inset 0 calc(-1 * var(--pq-p)) #2B1D52, inset calc(-1 * var(--pq-p)) 0 #2B1D52;
+}
+[data-pq-ready] .pq-art { animation: pq-bump 140ms cubic-bezier(.2, .7, .4, 1) var(--at) both; }
+[data-pq-ready="hidden"] .pq-art { display: none; }
+/* The gem hint in the bottom-centre tile ("there's something inside"), and a glint that winks on it while the level waits. */
+.pq-art::before {
+  content: ''; position: absolute; left: var(--hint); bottom: calc(var(--pq-tile-h) / 2); width: var(--pq-hint-size); height: var(--pq-hint-size);
+  transform: translate(-50%, 50%); background: var(--pq-gem-img) center / 100% 100% no-repeat;
+}
+[data-pq-ready] .pq-art::before { animation: pq-gone 16ms steps(1, end) var(--at) both; }
+.pq-art::after {
+  content: ''; position: absolute; left: var(--hint); bottom: calc(var(--pq-tile-h) / 2 + var(--pq-hint-size) * .22); width: calc(var(--pq-p) * .8); height: calc(var(--pq-p) * .8);
+  margin-left: calc(var(--pq-hint-size) * -.22); background: #fff;
+  box-shadow: 0 calc(var(--pq-p) * -.8) #fff, 0 calc(var(--pq-p) * .8) #fff, calc(var(--pq-p) * -.8) 0 #fff, calc(var(--pq-p) * .8) 0 #fff;
+  opacity: 0; animation: pq-glint 1100ms steps(1, end) calc(var(--reveal-index, 0) * 170ms + 250ms) infinite;
+}
+[data-pq-ready] .pq-art::after { animation: pq-glint 1100ms steps(1, end) calc(var(--reveal-index, 0) * 170ms + 250ms) 2, pq-gone 16ms steps(1, end) var(--at) forwards; }
+@keyframes pq-glint { 0% { opacity: 1; transform: scale(1); } 8% { opacity: 1; transform: scale(.5); } 16%, 100% { opacity: 0; } }
+@keyframes pq-bump { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(calc(-1 * var(--pq-e))); } }
+@keyframes pq-gone { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pq-gone-fallback { from { opacity: 1; } to { opacity: 0; } }
+
+/* ------------------------------------------------------------------ stage */
+.pq-stage { position: absolute; inset: 0; overflow: hidden; }
+.pq-stage svg { display: block; overflow: visible; }
+.pq-img { display: block; flex: none; background-repeat: no-repeat; background-size: 100% 100%; }
+.pq-stage > *, .pq-act > *, .pq-world > * { position: absolute; }
+/* The level's sky and ground strips; their images come once, from the wrapper's custom properties. */
+.pq-world { left: 0; top: 0; width: 0; height: 0; }
+/* An act is a lazily mounted group; it adds no box or stacking context of its own. */
+.pq-stage > .pq-act { left: 0; top: 0; width: 0; height: 0; }
+/* An act mounts inside an animation frame, --shift seconds into the reveal, and its animations start on that frame:
+   every delay inside it subtracts --shift, so it still lands on the absolute beat. (Under the review lab's frozen clock
+   --shift is 0 and the lab seeks every animation to the frame's time.) */
+/* Show/hide windows use visibility: it is not composited, so hundreds of waiting elements cost no layers. */
+@keyframes pq-show { from, to { visibility: visible; } }
+
+.pq-sky { top: 0; background-repeat: no-repeat; background-image: var(--pq-sky-img); animation: pq-wipe 16ms steps(1, end) var(--d) forwards; }
+/* The sky leaves column by column, each one whole (no see-through fade): an 8-bit screen wipe. */
+@keyframes pq-wipe { from { visibility: visible; } to { visibility: hidden; } }
+/* The ground falls away strip by strip: a small shudder up, then gravity. */
+.pq-strip, .pq-fall { background-repeat: no-repeat; animation: pq-fall 440ms linear var(--d) forwards; }
+.pq-strip { background-image: var(--pq-ground-img); }
+@keyframes pq-fall {
+  0% { transform: translateY(calc(-1 * var(--j, 0px))); animation-timing-function: steps(1, end); }
+  9% { transform: translateY(calc(-1 * var(--j, 0px))); animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  100% { transform: translateY(var(--fall)); }
+}
+
+/* Props on the ground. */
+.pq-spring { transform-origin: 50% 100%; animation: pq-spring 180ms steps(1, end) var(--d); }
+@keyframes pq-spring { 0% { transform: scaleY(.6); } 55% { transform: scaleY(1.3); } 100% { transform: scaleY(1); } }
+.pq-trophy { animation: pq-gone 16ms steps(1, start) var(--d) forwards; }
+.pq-trophy-bob { animation: pq-bob 600ms steps(2, end) infinite; }
+@keyframes pq-bob { from { transform: translateY(0); } to { transform: translateY(calc(-2 * var(--pq-p))); } }
+.pq-trophy-glint { position: absolute; visibility: hidden; animation: pq-twinkle 900ms steps(1, end) 300ms infinite; }
+@keyframes pq-twinkle { 0% { visibility: visible; transform: scale(1); } 12% { visibility: visible; transform: scale(.5); } 24%, 100% { visibility: hidden; } }
+
+/* Headroom: sky over a block's bounce strip until its top row has crumbled. */
+.pq-headroom { visibility: hidden; background: #63C8F7; animation: pq-show var(--life) linear calc(var(--d) - var(--shift, 0ms)); }
+
+/* Crumble: each far tile shows when its slice vanishes, lights up as the wave reaches it, then cracks loose and
+   drops away, solid to the last frame. A visibility window plus the crumble steps (different properties). */
+.pq-tile {
+  visibility: hidden; background-color: #7C5CFF; background-size: var(--tw) var(--th);
+  background-image:
+    linear-gradient(#2B1D52 0 var(--pq-p), transparent 0),
+    linear-gradient(90deg, #2B1D52 0 var(--pq-p), transparent 0),
+    linear-gradient(transparent var(--pq-p), #B6A4FF 0 calc(2 * var(--pq-p)), transparent 0),
+    linear-gradient(90deg, transparent var(--pq-p), #B6A4FF 0 calc(2 * var(--pq-p)), transparent 0),
+    linear-gradient(0deg, #5638C8 0 var(--pq-p), transparent 0),
+    linear-gradient(270deg, #5638C8 0 var(--pq-p), transparent 0);
+  animation: pq-show var(--life) linear calc(var(--d) - var(--shift, 0ms)), pq-crumble 120ms steps(1, end) calc(var(--pop) - var(--shift, 0ms));
+}
+.pq-tile.is-r { box-shadow: inset calc(-1 * var(--pq-p)) 0 #2B1D52; }
+.pq-tile.is-b { box-shadow: inset 0 calc(-1 * var(--pq-p)) #2B1D52; }
+.pq-tile.is-r.is-b { box-shadow: inset 0 calc(-1 * var(--pq-p)) #2B1D52, inset calc(-1 * var(--pq-p)) 0 #2B1D52; }
+@keyframes pq-crumble {
+  0% { transform: translateY(calc(-.5 * var(--pq-p))) rotate(0deg); background-color: #C9B9FF; }
+  25% { transform: translate(calc(var(--s) * .5 * var(--pq-p)), var(--pq-p)) rotate(calc(var(--r) * .4)) scale(.84); background-color: #9A80FF; }
+  50% { transform: translate(calc(var(--s) * 1.2 * var(--pq-p)), calc(3.5 * var(--pq-p))) rotate(var(--r)) scale(.62); background-color: #7C5CFF; }
+  75%, 100% { transform: translate(calc(var(--s) * 2 * var(--pq-p)), calc(7.5 * var(--pq-p))) rotate(calc(var(--r) * 1.6)) scale(.38); background-color: #7C5CFF; }
+}
+
+/* Chunks: an exact parabola (and a steady turn) sampled at 10 keyframes. Burst quarters flash white first. */
+.pq-chunk { visibility: hidden; animation: pq-arc var(--life) linear calc(var(--d) - var(--shift, 0ms)); }
+.pq-chunk.is-flash { animation: pq-arc var(--life) linear calc(var(--d) - var(--shift, 0ms)), pq-chunk-flash 34ms steps(1, end) calc(var(--d) - var(--shift, 0ms)); }
+@keyframes pq-chunk-flash { from, to { background-color: #FFFFFF; box-shadow: none; } }
+@keyframes pq-arc {
+  0% { visibility: visible; transform: translate(0, 0) rotate(0deg); }
+  10% { visibility: visible; transform: translate(calc(var(--dx) * .1), calc(var(--a) * .1 + var(--b) * .01)) rotate(calc(var(--r, 0deg) * .1)); }
+  20% { visibility: visible; transform: translate(calc(var(--dx) * .2), calc(var(--a) * .2 + var(--b) * .04)) rotate(calc(var(--r, 0deg) * .2)); }
+  30% { visibility: visible; transform: translate(calc(var(--dx) * .3), calc(var(--a) * .3 + var(--b) * .09)) rotate(calc(var(--r, 0deg) * .3)); }
+  40% { visibility: visible; transform: translate(calc(var(--dx) * .4), calc(var(--a) * .4 + var(--b) * .16)) rotate(calc(var(--r, 0deg) * .4)); }
+  50% { visibility: visible; transform: translate(calc(var(--dx) * .5), calc(var(--a) * .5 + var(--b) * .25)) rotate(calc(var(--r, 0deg) * .5)); }
+  60% { visibility: visible; transform: translate(calc(var(--dx) * .6), calc(var(--a) * .6 + var(--b) * .36)) rotate(calc(var(--r, 0deg) * .6)); }
+  70% { visibility: visible; transform: translate(calc(var(--dx) * .7), calc(var(--a) * .7 + var(--b) * .49)) rotate(calc(var(--r, 0deg) * .7)); }
+  80% { visibility: visible; transform: translate(calc(var(--dx) * .8), calc(var(--a) * .8 + var(--b) * .64)) rotate(calc(var(--r, 0deg) * .8)); }
+  90% { visibility: visible; transform: translate(calc(var(--dx) * .9), calc(var(--a) * .9 + var(--b) * .81)) rotate(calc(var(--r, 0deg) * .9)); }
+  100% { visibility: visible; transform: translate(var(--dx), calc(var(--a) + var(--b))) rotate(var(--r, 0deg)); }
+}
+.pq-chunk { box-sizing: border-box; background: #7C5CFF; border: var(--o) solid #2B1D52; box-shadow: inset var(--o) var(--o) #B6A4FF; }
+.pq-chunk.pq-tone-1 { background: #6A4BE8; }
+.pq-chunk.pq-tone-2 { background: #9277FF; }
+.pq-chunk.pq-tone-3 { background: #4CC15A; box-shadow: inset var(--o) var(--o) #8BE36C; }
+.pq-chunk.pq-tone-4 { background: #C9824A; box-shadow: inset var(--o) var(--o) #E3A56C; }
+
+/* Pops: impact star, dust puffs, gems flying to the HUD, "+1". */
+.pq-impact { visibility: hidden; animation: pq-impact 120ms steps(1, end) calc(var(--d) - var(--shift, 0ms)); }
+@keyframes pq-impact { 0% { visibility: visible; transform: scale(1.4); } 50%, 100% { visibility: visible; transform: scale(1); } }
+.pq-puff { width: 0; height: 0; visibility: hidden; animation: pq-show 300ms linear calc(var(--d) - var(--shift, 0ms)); }
+.pq-puff > .pq-img { position: absolute; bottom: 0; animation: pq-puff-l 300ms steps(3, end) calc(var(--d) - var(--shift, 0ms)) both; }
+.pq-puff > .pq-puff-r { animation-name: pq-puff-r; }
+@keyframes pq-puff-l { from { transform: translate(-60%, 0) scale(1); } to { transform: translate(-200%, -60%) scale(.4); } }
+@keyframes pq-puff-r { from { transform: translate(-40%, 0) scale(1); } to { transform: translate(100%, -60%) scale(.4); } }
+.pq-puff.is-big > .pq-img { animation-duration: 360ms; }
+.pq-gem { visibility: hidden; background-repeat: no-repeat; background-size: calc(32 * var(--pq-p)) calc(8 * var(--pq-p)); animation: pq-gem 620ms linear calc(var(--d) - var(--shift, 0ms)) forwards, pq-gem-spin 240ms steps(4, end) calc(var(--d) - var(--shift, 0ms)) 3; }
+@keyframes pq-gem {
+  0% { visibility: visible; transform: translate(0, 0) scale(1); animation-timing-function: cubic-bezier(.33, .67, .67, 1); }
+  35.5% { visibility: visible; transform: translate(0, var(--rise)) scale(1.1); animation-timing-function: cubic-bezier(.33, 0, .67, .33); }
+  99.9% { visibility: visible; transform: translate(var(--dx), var(--dy)) scale(.65); }
+  100% { visibility: hidden; transform: translate(var(--dx), var(--dy)) scale(.65); }
+}
+/* The spin is a 4-frame sprite strip stepped through background-position: paint only, no extra layer. */
+@keyframes pq-gem-spin { from { background-position: 0 0; } to { background-position: calc(-32 * var(--pq-p)) 0; } }
+.pq-plus { visibility: hidden; animation: pq-plus-move 550ms cubic-bezier(.33, .67, .67, 1) calc(var(--d) - var(--shift, 0ms)); }
+@keyframes pq-plus-move { from { visibility: visible; transform: translateY(0); } to { visibility: visible; transform: translateY(var(--rise)); } }
+
+/* Star rings: spawn, trophy grab, final poof. */
+.pq-ring { visibility: hidden; animation: pq-ring 240ms steps(3, end) calc(var(--d) - var(--shift, 0ms)); }
+@keyframes pq-ring { from { visibility: visible; transform: translate(calc(var(--rx) * .35), calc(var(--ry) * .35)) scale(1); } to { visibility: visible; transform: translate(var(--rx), var(--ry)) scale(.5); } }
+
+/* The poof: four drawn frames held for 70, 80, 80 and 90 ms (swallow, bloom, break apart, wisps). Background-position
+   steps only: no transform, so every frame is drawn crisp at its own size. */
+.pq-poof { visibility: hidden; background-repeat: no-repeat; animation: pq-show 320ms linear calc(var(--d) - var(--shift, 0ms)), pq-poof 320ms steps(1, end) calc(var(--d) - var(--shift, 0ms)); }
+@keyframes pq-poof {
+  0% { background-position: 0 0; }
+  22% { background-position: calc(-1 * var(--fw)) 0; }
+  47% { background-position: calc(-2 * var(--fw)) 0; }
+  72%, 100% { background-position: calc(-3 * var(--fw)) 0; }
+}
+
+/* Fireworks: a rocket climbs, then 16 squares burst, droop and fade. */
+.pq-firework { width: 0; height: 0; }
+.pq-rocket { position: absolute; left: calc(-.5 * var(--pq-p)); top: 0; background: #FFF6C8; box-shadow: 0 calc(2 * var(--pq-p)) #FFE66D, 0 calc(4 * var(--pq-p)) #FF9F5A; opacity: 0; animation: pq-rocket 200ms cubic-bezier(.2, .7, .5, 1) calc(var(--launch) - var(--shift, 0ms)); }
+@keyframes pq-rocket { from { opacity: 1; transform: translateY(var(--climb)); } to { opacity: 1; transform: translateY(0); } }
+.pq-spark { position: absolute; left: 0; top: 0; opacity: 0; box-shadow: 0 0 0 calc(var(--pq-p) / 3) #2B1D52; animation: pq-spark 550ms calc(var(--d) - var(--shift, 0ms)); }
+.pq-flash { position: absolute; visibility: hidden; animation: pq-impact 120ms steps(1, end) calc(var(--d) - var(--shift, 0ms)); }
+/* Sparks fly out, droop and shrink away, solid to the last frame. */
+@keyframes pq-spark {
+  0% { opacity: 1; transform: translate(0, 0); animation-timing-function: cubic-bezier(.33, .67, .67, 1); }
+  60% { opacity: 1; transform: translate(calc(var(--rx) * .92), calc(var(--ry) * .92 + var(--droop) * .3)); animation-timing-function: linear; }
+  80% { opacity: 1; transform: translate(calc(var(--rx) * .97), calc(var(--ry) * .97 + var(--droop) * .65)) scale(.7); }
+  100% { opacity: 1; transform: translate(var(--rx), calc(var(--ry) + var(--droop))) scale(.3); }
+}
+
+/* Captions: a visibility window plus a 3-frame pop. */
+.pq-cap { visibility: hidden; animation: pq-show var(--life) linear var(--d); }
+.pq-cap-pop { animation: pq-cap-pop 120ms steps(1, end) var(--d); }
+@keyframes pq-cap-pop { 0% { transform: scale(1.35); } 33% { transform: scale(1.12); } 66%, 100% { transform: scale(1); } }
+.pq-cap-go > .pq-cap-pop, .pq-cap-player > .pq-cap-pop { animation: pq-cap-pop 120ms steps(1, end) var(--d), pq-cap-exit 80ms steps(2, end) 1620ms forwards; }
+/* GO! and PLAYER 1 leave with a two-frame pop (bigger, bigger, gone when their window closes): no half-see-through frame. */
+@keyframes pq-cap-exit { from { transform: scale(1.12); } to { transform: scale(1.4); } }
+
+/* LEVEL CLEAR! pops in, then leaves pixel-style: a hop up, a drop, a shrink, gone (no translucent fade). */
+.pq-banner { visibility: hidden; animation: pq-banner-in 150ms steps(1, end) calc(var(--d) - var(--shift, 0ms)) forwards, pq-banner-out 200ms steps(1, end) calc(var(--out) - var(--shift, 0ms)) forwards; }
+@keyframes pq-banner-in { 0% { visibility: visible; transform: scale(.6); } 33% { visibility: visible; transform: scale(1.15); } 66%, 100% { visibility: visible; transform: scale(1); } }
+@keyframes pq-banner-out {
+  0% { visibility: visible; transform: translateY(calc(-1 * var(--pq-p))) scale(1.05); }
+  30% { visibility: visible; transform: translateY(calc(2 * var(--pq-p))) scale(.9); }
+  60% { visibility: visible; transform: translateY(calc(4 * var(--pq-p))) scale(.5); }
+  85%, 100% { visibility: hidden; transform: translateY(calc(4 * var(--pq-p))) scale(.1); }
+}
+.pq-banner-plate { position: absolute; inset: 0; background: #2B1D52; box-shadow: inset 0 0 0 var(--pq-b) #2B1D52, inset 0 0 0 calc(2 * var(--pq-b)) #B6A4FF, 0 var(--pq-p) 0 #1A1036; }
+.pq-banner-text { position: absolute; }
+.pq-banner-text > .pq-letter { position: absolute; top: 0; }
+.pq-letter { opacity: 0; animation: pq-letter-in 90ms steps(1, end) calc(var(--d) - var(--shift, 0ms)) forwards, pq-letter-wave 480ms steps(1, end) calc(var(--wave) - var(--shift, 0ms)) infinite; }
+@keyframes pq-letter-in { 0% { opacity: 1; transform: translateY(calc(2 * var(--bob))); } 50% { opacity: 1; transform: translateY(var(--bob)); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes pq-letter-wave { 0% { transform: translateY(var(--bob)); } 25%, 100% { transform: translateY(0); } }
+
+/* Layering (one stacking context: the stage). */
+.pq-fall, .pq-trophy { z-index: 1; }
+.pq-tile, .pq-headroom { z-index: 2; }
+.pq-shadow { z-index: 3; }
+.pq-hero, .pq-trail { z-index: 4; }
+.pq-chunk, .pq-puff { z-index: 5; }
+.pq-impact, .pq-ring, .pq-poof, .pq-gem, .pq-plus, .pq-firework { z-index: 6; }
+.pq-hud { z-index: 7; }
+.pq-cap, .pq-banner { z-index: 8; }
+
+/* Live layer. */
+/* Translation only (whole pixels): growing and squashing resize the box, so the layer is re-drawn at every size. */
+.pq-hero { left: 0; top: 0; will-change: transform; }
+.pq-hero { visibility: hidden; }
+.pq-hero > .pq-hero-art { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+.pq-hero-trophy-wrap { display: none; }
+.pq-trail { visibility: hidden; }
+.pq-hero-trophy-wrap { position: absolute; }
+.pq-hero-trophy { width: 100%; height: 100%; }
+.pq-shadow { left: 0; top: 0; visibility: hidden; background: #2E9C5D; opacity: .55; }
+.pq-trail { left: 0; top: 0; }
+/* The HUD pops in at the spawn; once every gem is counted it slides up behind the header (off any card title). */
+.pq-hud { opacity: 0; animation: pq-hud-in 120ms steps(2, end) var(--d) forwards, pq-hud-out 150ms steps(1, end) var(--out) forwards; }
+@keyframes pq-hud-in { 0% { opacity: 1; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes pq-hud-out {
+  0% { opacity: 1; transform: translateY(calc(-.5 * var(--pq-p))) scale(1.06); }
+  30% { opacity: 1; transform: translateY(-45%); }
+  60% { opacity: 1; transform: translateY(calc(-100% - 2 * var(--pq-p))); }
+  90%, 100% { opacity: 1; visibility: hidden; transform: translateY(calc(-100% - 2 * var(--pq-p))); }
+}
+.pq-hud::before { content: ''; position: absolute; inset: 0; background: #2B1D52; box-shadow: inset 0 0 0 var(--pq-b) #2B1D52, inset 0 0 0 calc(2 * var(--pq-b)) #B6A4FF, 0 calc(.5 * var(--pq-p)) 0 #1A1036; }
+.pq-hud > * { position: absolute; }
+.pq-hud-count { transform-origin: 30% 50%; }

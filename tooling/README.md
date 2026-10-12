@@ -2,6 +2,4 @@
 
 Development tools live here so they can be versioned and improved alongside the app. They are separate entry points and are not included in the classroom application build.
 
-- [Motion Desk](animation-workbench/README.md): pose, retime, compare, and export the cat reveal using its real production illustration and rig.
-
-From the repository root, run `npm run animation:dev` and open http://127.0.0.1:5174/.
+There are no active tools at the moment. The Motion Desk cat workbench (`tooling/animation-workbench`, `npm run animation:*`) was retired when the cat reveal was rebuilt on baked timelines: it depended on the old cat rig (`catMotion.ts`, `catIllustration.tsx`), which no longer exists. It remains in git history if a workbench is wanted again.
